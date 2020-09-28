@@ -158,16 +158,17 @@ namespace Rock.Rest.Controllers
         /// <summary>
         /// Does the status change cause workflows to be triggered?
         /// </summary>
+        /// <param name="connectionOpportunityId">The connection opportunity identifier.</param>
         /// <param name="fromStatusId">From status identifier.</param>
         /// <param name="toStatusId">To status identifier.</param>
         /// <returns></returns>
         /// <exception cref="HttpResponseException"></exception>
         [Authenticate, Secured, HttpGet]
-        [System.Web.Http.Route( "api/ConnectionRequests/DoesStatusChangeCauseWorkflows/{fromStatusId}/{toStatusId}" )]
-        public WorkflowCheckViewModel DoesStatusChangeCauseWorkflows( int fromStatusId, int toStatusId )
+        [System.Web.Http.Route( "api/ConnectionRequests/DoesStatusChangeCauseWorkflows/{connectionOpportunityId}/{fromStatusId}/{toStatusId}" )]
+        public WorkflowCheckViewModel DoesStatusChangeCauseWorkflows( int connectionOpportunityId, int fromStatusId, int toStatusId )
         {
             var connectionRequestService = Service as ConnectionRequestService;
-            return connectionRequestService.DoesStatusChangeCauseWorkflows( fromStatusId, toStatusId );
+            return connectionRequestService.DoesStatusChangeCauseWorkflows( connectionOpportunityId, fromStatusId, toStatusId );
         }
 
         /// <summary>
