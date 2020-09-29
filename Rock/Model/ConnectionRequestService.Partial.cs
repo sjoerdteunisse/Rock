@@ -417,7 +417,7 @@ namespace Rock.Model
             // Filter state
             if ( args.ConnectionStates?.Any() == true )
             {
-                connectionRequestsQuery = connectionRequestsQuery.Where( cr => args.ConnectionStates.Contains( cr.ConnectionState.ToString() ) );
+                connectionRequestsQuery = connectionRequestsQuery.Where( cr => args.ConnectionStates.Contains( cr.ConnectionState ) );
             }
 
             // Filter last activity
@@ -620,7 +620,7 @@ namespace Rock.Model
         /// <summary>
         /// Gets or sets the connection states.
         /// </summary>
-        public List<string> ConnectionStates { get; set; }
+        public List<ConnectionState> ConnectionStates { get; set; }
 
         /// <summary>
         /// Gets or sets the last activity type ids.

@@ -220,7 +220,10 @@ namespace Rock.Rest.Controllers
                     MinDate = minDate,
                     MaxDate = maxDate,
                     StatusIds = delimitedStatusIds.SplitDelimitedValues().AsIntegerList(),
-                    ConnectionStates = delimitedConnectionStates.SplitDelimitedValues().ToList(),
+                    ConnectionStates = delimitedConnectionStates
+                        .SplitDelimitedValues()
+                        .Select( s => ( ConnectionState ) Enum.Parse( typeof( ConnectionState ), s ) )
+                        .ToList(),
                     LastActivityTypeIds = delimitedLastActivityTypeIds.SplitDelimitedValues().AsIntegerList()
                 },
                 statusIconsTemplate );
@@ -278,7 +281,10 @@ namespace Rock.Rest.Controllers
                     MinDate = minDate,
                     MaxDate = maxDate,
                     StatusIds = delimitedStatusIds.SplitDelimitedValues().AsIntegerList(),
-                    ConnectionStates = delimitedConnectionStates.SplitDelimitedValues().ToList(),
+                    ConnectionStates = delimitedConnectionStates
+                        .SplitDelimitedValues()
+                        .Select( s => ( ConnectionState ) Enum.Parse( typeof( ConnectionState ), s ) )
+                        .ToList(),
                     LastActivityTypeIds = delimitedLastActivityTypeIds.SplitDelimitedValues().AsIntegerList(),
                     SortProperty = sortProperty
                 },
