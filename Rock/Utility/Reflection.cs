@@ -21,6 +21,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using DDay.iCal;
 
 namespace Rock
 {
@@ -50,11 +51,7 @@ namespace Rock
         public static SortedDictionary<string, Type> FindTypes( Type baseType, string typeName = null )
         {
             SortedDictionary<string, Type> types = new SortedDictionary<string, Type>();
-
-            var assemblies = Reflection.GetPluginAssemblies();
-
-            Assembly executingAssembly = Assembly.GetExecutingAssembly();
-            assemblies.Add( executingAssembly );
+            var assemblies = GetRockAndPluginAssemblies();
 
             foreach ( var assemblyEntry in assemblies )
             {
@@ -297,6 +294,20 @@ namespace Rock
             {
                 _pluginAssemblies.Add( _appCodeAssembly );
             }
+        }
+
+        /// <summary>
+        /// Gets a list of Assemblies, including Rock and all those in the ~/Bin and ~/Plugins folders as well as the RockWeb.App_Code assembly that are
+        /// assemblies that might have plugins
+        /// </summary>
+        /// <returns></returns>
+        public static List<Assembly> GetRockAndPluginAssemblies()
+        {
+            var assemblies = GetPluginAssemblies();
+            var executingAssembly = Assembly.GetExecutingAssembly();
+            assemblies.Add( executingAssembly );
+
+            return assemblies;
         }
 
         /// <summary>

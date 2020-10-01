@@ -18,24 +18,9 @@
 namespace Rock.Bus.Message
 {
     /// <summary>
-    /// Start Task Message
+    /// A Rock Bus Message
     /// </summary>
-    public interface IStartTaskMessage : IRockMessage
+    public interface IRockMessage
     {
-        /// <summary>
-        /// Gets the name of the task.
-        /// </summary>
-        string TaskName { get; set; }
-    }
-
-    /// <summary>
-    /// Start Task Message
-    /// </summary>
-    public class StartTaskMessage : IStartTaskMessage
-    {
-        /// <summary>
-        /// Gets the name of the task.
-        /// </summary>
-        public string TaskName { get; set; }
     }
 }

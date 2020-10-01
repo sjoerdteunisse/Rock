@@ -270,17 +270,6 @@ namespace Rock.Data
                 // Cast entry as IEntity
                 var entity = entry.Entity as IEntity;
 
-                // Publish on the message bus if configured
-                if ( RockMessageBus.ShouldPublishEntityUpdate( entry.State, entity.TypeId ) )
-                {
-                    _ = RockMessageBus.PublishEntityUpdate( new EntityWasUpdatedMessage
-                    {
-                        EntityTypeId = entity.TypeId,
-                        EntityId = entity.Id,
-                        EntityState = entry.State.ToString()
-                    } );
-                }
-
                 // Get the context item to track audits
                 var contextItem = new ContextItem( entity, entry, enableAuditing );
 
@@ -396,6 +385,17 @@ namespace Rock.Data
             List<ITransaction> indexTransactions = new List<ITransaction>();
             foreach ( var item in updatedItems )
             {
+                // Publish on the message bus if configured
+                if ( RockMessageBus.ShouldPublishEntityUpdate( item.Entity.TypeId, item.PreSaveState ) )
+                {
+                    _ = RockMessageBus.PublishEntityUpdate( new EntityWasUpdatedMessage
+                    {
+                        EntityTypeId = item.Entity.TypeId,
+                        EntityId = item.Entity.Id,
+                        EntityState = item.PreSaveState.ToString()
+                    } );
+                }
+
                 if ( item.State == EntityState.Detached || item.State == EntityState.Deleted )
                 {
                     TriggerWorkflows( item, WorkflowTriggerType.PostDelete, personAlias );

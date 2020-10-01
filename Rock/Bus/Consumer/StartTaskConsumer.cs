@@ -19,13 +19,14 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using MassTransit;
 using Rock.Bus.Message;
+using Rock.Bus.Queue;
 
 namespace Rock.Bus.Consumer
 {
     /// <summary>
     /// Entity Update Consumer
     /// </summary>
-    public class StartTaskConsumer : IConsumer<IStartTaskMessage>
+    public class StartTaskConsumer : IRockConsumer<StartTaskQueue, IStartTaskMessage>
     {
         /// <summary>
         /// Consumes the specified context.

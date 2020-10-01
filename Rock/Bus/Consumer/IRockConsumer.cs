@@ -15,27 +15,19 @@
 // </copyright>
 //
 
-namespace Rock.Bus.Message
+using MassTransit;
+using Rock.Bus.Message;
+using Rock.Bus.Queue;
+
+namespace Rock.Bus.Consumer
 {
     /// <summary>
-    /// Start Task Message
+    /// Rock Consumer
     /// </summary>
-    public interface IStartTaskMessage : IRockMessage
+    /// <seealso cref="IConsumer" />
+    public interface IRockConsumer<TQueue, TMessage> : IConsumer<TMessage>
+        where TQueue : IRockQueue
+        where TMessage : class, IRockMessage
     {
-        /// <summary>
-        /// Gets the name of the task.
-        /// </summary>
-        string TaskName { get; set; }
-    }
-
-    /// <summary>
-    /// Start Task Message
-    /// </summary>
-    public class StartTaskMessage : IStartTaskMessage
-    {
-        /// <summary>
-        /// Gets the name of the task.
-        /// </summary>
-        public string TaskName { get; set; }
     }
 }

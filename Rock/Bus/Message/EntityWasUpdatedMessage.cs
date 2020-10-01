@@ -15,14 +15,12 @@
 // </copyright>
 //
 
-using System.Data.Entity;
-
 namespace Rock.Bus.Message
 {
     /// <summary>
     /// Entity Update Message
     /// </summary>
-    public interface IEntityWasUpdatedMessage
+    public interface IEntityWasUpdatedMessage : IRockMessage
     {
         /// <summary>
         /// Gets the entity type identifier.

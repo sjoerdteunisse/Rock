@@ -15,12 +15,13 @@
 // </copyright>
 //
 
-using Humanizer.Configuration;
 using MassTransit;
 using Rock.Bus.Consumer;
 using Rock.Bus.Message;
+using Rock.Bus.Queue;
 using Rock.Bus.Transport;
 using Rock.Web.Cache;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
@@ -58,20 +59,9 @@ namespace Rock.Bus
         private static TransportComponent _transportComponent = null;
 
         /// <summary>
-        /// Queue Names
+        /// The start task queue
         /// </summary>
-        public static class QueueName
-        {
-            /// <summary>
-            /// The entity updates
-            /// </summary>
-            public static readonly string EntityUpdates = "rock-entity-updates";
-
-            /// <summary>
-            /// The tasks
-            /// </summary>
-            public static readonly string Tasks = "rock-tasks";
-        }
+        private static StartTaskQueue _startTaskQueue = new StartTaskQueue();
 
         /// <summary>
         /// Starts this bus.
@@ -79,19 +69,7 @@ namespace Rock.Bus
         public static async Task Start()
         {
             _transportComponent = TransportContainer.Instance.Components.First().Value.Value;
-
-            _bus = _transportComponent.GetBusControl( configurator => {
-                configurator.ReceiveEndpoint( QueueName.EntityUpdates, e =>
-                {
-                    e.Consumer<EntityWasUpdatedConsumer>();
-                } );
-
-                configurator.ReceiveEndpoint( QueueName.Tasks, e =>
-                {
-                    e.Consumer<StartTaskConsumer>();
-                } );
-            } );
-
+            _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
             await _bus.StartAsync();
         }
 
@@ -101,7 +79,7 @@ namespace Rock.Bus
         /// <param name="entityState">State of the entity.</param>
         /// <param name="entityTypeId">The entity type identifier.</param>
         /// <returns></returns>
-        public static bool ShouldPublishEntityUpdate( EntityState entityState, int entityTypeId )
+        public static bool ShouldPublishEntityUpdate( int entityTypeId, EntityState entityState )
         {
             return
                 _statesToPublishOnBus.Contains( entityState ) &&
@@ -123,12 +101,12 @@ namespace Rock.Bus
         /// <param name="message">The message.</param>
         public static async Task SendStartTask( IEventBusTransaction message )
         {
-            var endpoint = _sendEndpoints.GetValueOrNull( QueueName.Tasks );
+            var endpoint = _sendEndpoints.GetValueOrNull( _startTaskQueue.Name );
 
-            if (endpoint == null)
+            if ( endpoint == null )
             {
-                endpoint = _transportComponent.GetSendEndpoint( _bus, QueueName.Tasks );
-                _sendEndpoints[QueueName.Tasks] = endpoint;
+                endpoint = _transportComponent.GetSendEndpoint( _bus, _startTaskQueue.Name );
+                _sendEndpoints[_startTaskQueue.Name] = endpoint;
             }
 
             await endpoint.Send( message );
