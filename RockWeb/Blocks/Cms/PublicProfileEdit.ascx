@@ -62,28 +62,20 @@
                     <hr />
 
                     <asp:Panel ID="pnlPersonAttributes" runat="server">
-                        <div class="panel-heading clearfix">
-                            <h4 class="panel-title pull-left">Additional Information</h4>
-                        </div>
-                        <div class="panel-body">
+                            <h3>Additional Information</h3>
                             <Rock:DynamicPlaceholder ID="phPersonAttributes" runat="server" />
-                        </div>
                         <hr />
                     </asp:Panel>
 
                     <asp:Panel ID="pnlFamilyAttributes" runat="server">
-                        <div class="panel-heading clearfix">
-                            <h4 class="panel-title pull-left">Family Information</h4>
-                        </div>
-                        <div class="panel-body">
+                            <h3>Family Information</h3>
                             <Rock:DynamicPlaceholder ID="phFamilyAttributes" runat="server" />
-                        </div>
                         <hr />
                     </asp:Panel>
 
                     <h3>Contact Info</h3>
                     <div class="row">
-                        <div class="col-md-10 col-md-offset-2">
+                        <div class="col-md-12">
                             <div class="form-group">
                                 <Rock:DataTextBox ID="tbEmail" PrependText="<i class='fa fa-envelope'></i>" runat="server" SourceTypeName="Rock.Model.Person, Rock" PropertyName="Email" Label="Email Address" />
                             </div>
@@ -109,22 +101,16 @@
                             <asp:Repeater ID="rContactInfo" runat="server">
                                 <ItemTemplate>
                                     <div id="divPhoneNumberContainer" runat="server" class="form-group">
-                                        <div class="control-label col-md-2"><%# Eval("NumberTypeValue.Value")  %></div>
+                                        <div class="control-label col-md-2 mb-2 mb-md-0 text-left text-md-right"><%# Eval("NumberTypeValue.Value") %></div>
                                         <div class="controls col-md-10">
                                             <div class="row">
-                                                <div class="col-md-7">
+                                                <div class="col-sm-7">
                                                     <asp:HiddenField ID="hfPhoneType" runat="server" Value='<%# Eval("NumberTypeValueId")  %>' />
                                                     <Rock:PhoneNumberBox ID="pnbPhone" runat="server" CountryCode='<%# Eval("CountryCode")  %>' Number='<%# Eval("NumberFormatted")  %>' />
                                                 </div>
-                                                <div class="col-md-5">
-                                                    <div class="row">
-                                                        <div class="col-md-6">
-                                                            <asp:CheckBox ID="cbSms" runat="server" Text="SMS" Checked='<%# (bool)Eval("IsMessagingEnabled") %>' CssClass="js-sms-number" />
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <asp:CheckBox ID="cbUnlisted" runat="server" Text="Unlisted" Checked='<%# (bool)Eval("IsUnlisted") %>' />
-                                                        </div>
-                                                    </div>
+                                                <div class="col-sm-5 text-right text-sm-left">
+                                                    <Rock:RockCheckBox ID="cbSms" runat="server" Text="SMS" Checked='<%# (bool)Eval("IsMessagingEnabled") %>' DisplayInline="true" CssClass="js-sms-number" />
+                                                    <Rock:RockCheckBox ID="cbUnlisted" runat="server" Text="Unlisted" Checked='<%# (bool)Eval("IsUnlisted") %>' DisplayInline="true" />
                                                 </div>
                                             </div>
                                         </div>
@@ -138,14 +124,14 @@
                     <asp:Panel ID="pnlAddress" runat="server">
                         <fieldset>
                             <h3>
-                                <asp:Literal ID="lAddressTitle" runat="server" /></h3>
-
+                                <asp:Literal ID="lAddressTitle" runat="server" />
+                            </h3>
 
                             <div class="clearfix">
-                                <div class="pull-left margin-b-md">
+                                <div class="pull-left mb-3">
                                     <asp:Literal ID="lPreviousAddress" runat="server" />
                                 </div>
-                                <div class="pull-right">
+                                <div class="pull-right mb-3">
                                     <asp:LinkButton ID="lbMoved" CssClass="btn btn-default btn-xs" runat="server" OnClick="lbMoved_Click"><i class="fa fa-truck"></i> Moved</asp:LinkButton>
                                 </div>
                             </div>
@@ -159,7 +145,7 @@
 
                             <Rock:AddressControl ID="acAddress" runat="server" RequiredErrorMessage="Your Address is Required" />
 
-                            <div class="margin-b-md">
+                            <div class="mb-3">
                                 <Rock:RockCheckBox ID="cbIsMailingAddress" runat="server" Text="This is my mailing address" Checked="true" />
                                 <Rock:RockCheckBox ID="cbIsPhysicalAddress" runat="server" Text="This is my physical address" Checked="true" />
                             </div>
