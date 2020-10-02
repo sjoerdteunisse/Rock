@@ -7,12 +7,12 @@ body {
   background-color: @background-color;
   -ms-content-zooming: none; /* Disables zooming */
 
-  & when not (@logo-image-url = "") {
+  & when not (@logo-image = "") {
     &::before {
       display: block;
       height: 52px;
       content: " ";
-      background: url(@logo-image-url);
+      background: url(@logo-image);
       background-color: transparent;
       background-repeat: no-repeat;
       background-position: 50%;
@@ -37,9 +37,6 @@ body {
   @media (min-width: @screen-xs-min) {
     display: inline-block;
     padding: 20px 150px;
-    svg {
-      margin: inherit;
-    }
   }
 
   @media (min-width: @screen-sm-min) {
@@ -90,8 +87,10 @@ body {
   border-bottom: 1px solid #000;
 }
 
-@media (min-width: @screen-xs-min) {
-  .btn-block + .btn-block {
+
+.btn-block + .btn-block {
+  margin-top: 10px;
+  @media (min-width: @screen-xs-min) {
     margin-top: 14px;
   }
 }

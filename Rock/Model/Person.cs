@@ -1994,7 +1994,11 @@ namespace Rock.Model
 
             RecordTypeValueId = RecordTypeValueId ?? DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() ).Id;
             RecordStatusValueId = RecordStatusValueId ?? DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid() ).Id;
-            ConnectionStatusValueId = ConnectionStatusValueId ?? DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR.AsGuid() ).Id;
+
+            if ( !IsBusiness() && !ConnectionStatusValueId.HasValue )
+            {
+                ConnectionStatusValueId = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_VISITOR.AsGuid() ).Id;
+            }
 
             if ( string.IsNullOrWhiteSpace( NickName ) )
             {
@@ -2003,11 +2007,17 @@ namespace Rock.Model
 
             if ( PhotoId.HasValue )
             {
-                BinaryFileService binaryFileService = new BinaryFileService( ( RockContext ) dbContext );
-                var binaryFile = binaryFileService.Get( PhotoId.Value );
-                if ( binaryFile != null && binaryFile.IsTemporary )
+                var originalPhotoId = entry.OriginalValues["PhotoId"].ToStringSafe().AsIntegerOrNull();
+                var isPhotoIdModified = entry.State == EntityState.Modified &&
+                                        ( ( originalPhotoId.HasValue && originalPhotoId.Value != PhotoId.Value ) || !originalPhotoId.HasValue );
+                if ( entry.State == EntityState.Added || isPhotoIdModified )
                 {
-                    binaryFile.IsTemporary = false;
+                    BinaryFileService binaryFileService = new BinaryFileService( ( RockContext ) dbContext );
+                    var binaryFile = binaryFileService.Get( PhotoId.Value );
+                    if ( binaryFile != null && binaryFile.IsTemporary )
+                    {
+                        binaryFile.IsTemporary = false;
+                    }
                 }
             }
 
@@ -2018,6 +2028,13 @@ namespace Rock.Model
                 {
                     this.Aliases.Add( new PersonAlias { AliasPerson = this, AliasPersonGuid = this.Guid, Guid = Guid.NewGuid() } );
                 }
+            }
+
+            if ( entry.State == EntityState.Modified || entry.State == EntityState.Added )
+            {
+                this.FirstName = this.FirstName.StandardizeQuotes();
+                this.LastName = this.LastName.StandardizeQuotes();
+                this.NickName = this.NickName.StandardizeQuotes();
             }
 
             if ( this.AnniversaryDate.HasValue )
@@ -2201,7 +2218,7 @@ namespace Rock.Model
         /// <param name="dbContext">The database context.</param>
         public override void PostSaveChanges( Data.DbContext dbContext )
         {
-            if ( HistoryChanges != null && HistoryChanges.Any() )
+            if ( HistoryChanges?.Any() == true )
             {
                 HistoryService.SaveChanges( ( RockContext ) dbContext, typeof( Person ), Rock.SystemGuid.Category.HISTORY_PERSON_DEMOGRAPHIC_CHANGES.AsGuid(), this.Id, HistoryChanges, true, this.ModifiedByPersonAliasId );
             }

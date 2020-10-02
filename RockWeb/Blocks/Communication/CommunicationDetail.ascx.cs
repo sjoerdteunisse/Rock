@@ -639,6 +639,7 @@ namespace RockWeb.Blocks.Communication
                 var dataContext = this.GetDataContext();
 
                 var service = new CommunicationService( dataContext );
+                var communicationRecipientService = new CommunicationRecipientService( dataContext );
                 var communication = service.Get( CommunicationId.Value );
                 if ( communication != null )
                 {
@@ -658,15 +659,37 @@ namespace RockWeb.Blocks.Communication
                     newCommunication.ReviewerNote = string.Empty;
                     newCommunication.SendDateTime = null;
 
-                    communication.Recipients.ToList().ForEach( r =>
+                    // Get the recipients from the original communication,
+                    // but only for recipients that are using the person's primary alias id.
+                    // This will avoid an issue where a copied communication will include the same person multiple times
+                    // if they have been merged since the original communication was created
+                    var primaryAliasRecipients = communicationRecipientService.Queryable()
+                        .Where( a => a.CommunicationId == communication.Id )
+                        .Select( a => new
+                        {
+                            a.PersonAlias.Person,
+                            a.AdditionalMergeValuesJson,
+                            a.PersonAliasId
+                        } ).ToList()
+                        .GroupBy( a => a.Person.PrimaryAliasId )
+                        .Select( s => new
+                        {
+                            PersonAliasId = s.Key,
+                            AdditionalMergeValuesJson = s.Where( a => a.PersonAliasId == s.Key ).Select( x => x.AdditionalMergeValuesJson ).FirstOrDefault()
+                        } )
+                        .Where( s => s.PersonAliasId.HasValue )
+                        .ToList();
+
+                    foreach ( var primaryAliasRecipient in primaryAliasRecipients )
+                    {
                         newCommunication.Recipients.Add( new CommunicationRecipient()
                         {
-                            PersonAliasId = r.PersonAliasId,
+                            PersonAliasId = primaryAliasRecipient.PersonAliasId.Value,
                             Status = CommunicationRecipientStatus.Pending,
                             StatusNote = string.Empty,
-                            AdditionalMergeValuesJson = r.AdditionalMergeValuesJson
-                        } ) );
-
+                            AdditionalMergeValuesJson = primaryAliasRecipient.AdditionalMergeValuesJson
+                        } );
+                    }
 
                     foreach ( var attachment in communication.Attachments.ToList() )
                     {
@@ -932,6 +955,7 @@ namespace RockWeb.Blocks.Communication
         #region Recipients Grid Events
 
         private bool _GridIsExporting = false;
+        private bool _GridIsCommunication = false;
 
         /// <summary>
         /// Handles the GridRebind event of the Recipient grid controls.
@@ -941,7 +965,7 @@ namespace RockWeb.Blocks.Communication
         void gRecipients_GridRebind( object sender, GridRebindEventArgs e )
         {
             _GridIsExporting = e.IsExporting;
-
+            _GridIsCommunication = e.IsCommunication;
             BindRecipientsGrid();
         }
 
@@ -964,7 +988,7 @@ namespace RockWeb.Blocks.Communication
                 return;
             }
 
-            if ( _GridIsExporting )
+            if ( _GridIsExporting || _GridIsCommunication )
             {
                 return;
             }
@@ -1656,8 +1680,13 @@ namespace RockWeb.Blocks.Communication
                 {
                     contentType = ReportOutputBuilder.ReportOutputBuilderFieldContentSpecifier.FormattedText;
                 }
-                else
+                else if ( !_GridIsCommunication )
                 {
+
+                    /* 27-May-2020 - SK
+                     * Not allow paging if grid is binded for exporting OR Communication.
+                     */
+
                     // Only retrieve data for the current grid page.
                     pageSize = gRecipients.PageSize;
                     pageIndex = gRecipients.PageIndex;
@@ -1689,7 +1718,10 @@ namespace RockWeb.Blocks.Communication
             }
             catch ( Exception ex )
             {
-                throw new Exception( "An unexpected error occurred while building the Recipients List.", ex );
+                ExceptionLogService.LogException( ex );
+                nbAnalyticsNotAvailable.Visible = true;
+                nbAnalyticsNotAvailable.Text = "An unexpected error occurred while building the Recipients List.";
+                return;
             }
 
             // If the grid is sorted by a communication-specific column, apply the sort now.
@@ -1747,7 +1779,7 @@ namespace RockWeb.Blocks.Communication
                 var interactions = new InteractionService( dataContext )
                     .Queryable()
                     .Include( a => a.PersonAlias.Person )
-                    .Where( r => r.InteractionComponent.Channel.Guid == interactionChannelGuid && r.InteractionComponent.EntityId == CommunicationId.Value );
+                    .Where( r => r.InteractionComponent.InteractionChannel.Guid == interactionChannelGuid && r.InteractionComponent.EntityId == CommunicationId.Value );
 
                 var sortProperty = gInteractions.SortProperty;
                 if ( sortProperty != null )
@@ -2152,7 +2184,7 @@ namespace RockWeb.Blocks.Communication
 
             var interactionQuery = interactionService.Queryable()
                                     .AsNoTracking()
-                                    .Where( a => a.InteractionComponent.ChannelId == interactionChannelCommunication.Id
+                                    .Where( a => a.InteractionComponent.InteractionChannelId == interactionChannelCommunication.Id
                                     && a.InteractionComponent.EntityId.Value == communicationId );
 
             return interactionQuery;
@@ -2648,9 +2680,18 @@ namespace RockWeb.Blocks.Communication
             dataTable.Columns.Add( "HasOpened", typeof( bool ) );
             dataTable.Columns.Add( "HasClicked", typeof( bool ) );
 
-            var query = GetRecipientInfoQuery( dataContext );
+            // order by ModifiedDateTime to get a consistent result in case a person has received the communication more than once (more than one recipient record for the same person)
+            var query = GetRecipientInfoQuery( dataContext ).OrderByDescending( a => a.ModifiedDateTime );
+            var queryList = query.ToList();
 
-            var recipients = query.ToDictionary( k => k.PersonId, v => v );
+            // create dictionary
+            var recipients = new Dictionary<int, RecipientInfo>();
+            foreach ( var recipient in queryList )
+            {
+                // since we order by ModifiedDateTime this will end up ignoring any order recipient records for the personid
+                // NOTE: We tried to do this in SQL but it caused performance issues, so we'll do it in C# instead.
+                recipients.AddOrIgnore( recipient.PersonId, recipient );
+            }
 
             builder.FillDataColumnValues( dataTable, recipients );
         }
@@ -2681,7 +2722,6 @@ namespace RockWeb.Blocks.Communication
             var recipientQuery = recipientService.Queryable()
                     .AsNoTracking()
                     .Where( x => x.CommunicationId == CommunicationId.Value )
-                    .OrderByDescending( x => x.ModifiedDateTime )
                     .Select( x => new RecipientInfo
                     {
                         PersonId = x.PersonAlias.PersonId,
@@ -2691,10 +2731,9 @@ namespace RockWeb.Blocks.Communication
                         DeliveryStatus = ( x.Status == CommunicationRecipientStatus.Opened ? "Delivered" : ( x.Status == CommunicationRecipientStatus.Sending ? "Pending" : x.Status.ToString() ) ),
                         DeliveryStatusNote = x.StatusNote,
                         HasOpened = ( x.Status == CommunicationRecipientStatus.Opened ),
-                        HasClicked = clickRecipientsIdList.Contains( x.PersonAlias.PersonId )
-                    }
-                    ).GroupBy( k => k.PersonId, v => v )
-                    .Select( x => x.FirstOrDefault() );
+                        HasClicked = clickRecipientsIdList.Contains( x.PersonAlias.PersonId ),
+                        ModifiedDateTime = x.ModifiedDateTime
+                    } );
 
             return recipientQuery;
         }
@@ -2738,11 +2777,6 @@ namespace RockWeb.Blocks.Communication
                     .Queryable()
                     .AsNoTracking()
                     .Where( x => x.CommunicationId == CommunicationId.Value );
-
-            // If a person has received the communication more than once, select the most recently updated recipient record.
-            recipientQuery = recipientQuery.OrderByDescending( x => x.ModifiedDateTime )
-                .GroupBy( k => k.PersonAlias.PersonId )
-                .Select( g => g.FirstOrDefault() );
 
             // Filter by: Communication Medium
             var mediumList = filterSettingsKeyValueMap[FilterSettingName.CommunicationMedium].SplitDelimitedValues( "," ).AsGuidList();
@@ -3188,6 +3222,7 @@ namespace RockWeb.Blocks.Communication
             public string DeliveryStatus { get; set; }
             public string DeliveryStatusNote { get; set; }
             public string CommunicationMediumName { get; set; }
+            public DateTime? ModifiedDateTime { get; set; }
         }
 
         /// <summary>

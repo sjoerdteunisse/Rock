@@ -761,5 +761,39 @@ namespace Rock.Plugin.HotFixes {
                 return ResourceManager.GetString("_104_MigrationRollupsFor10_3_0_spFinance_PledgeAnalyticsQuery", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to UPDATE [LavaShortcode] SET [Description]=N&apos;Adding dynamic charts to a page can be difficult, even for an experienced Javascript developer. The chart shortcode allows anyone to create charts with just a few lines of Lava.&apos;, [Documentation]=N&apos;&lt;p&gt;
+        ///    Adding dynamic charts to a page can be difficult, even for an experienced Javascript developer. The 
+        ///    chart shortcode allows anyone to create charts with just a few lines of Lava. There are two modes for 
+        ///    creating a chart. The first ‘simple’ mode create [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string _113_MigrationRollupsFor10_3_2_FixChartYAxisShortcode {
+            get {
+                return ResourceManager.GetString("_113_MigrationRollupsFor10_3_2_FixChartYAxisShortcode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to /*
+        ///&lt;doc&gt;
+        ///	&lt;summary&gt;
+        ///		This procedure merges the data from the non-primary person to the primary person.  It
+        ///		is used when merging people in Rock and should never be used outside of that process. 
+        ///	&lt;/summary&gt;
+        ///
+        ///	&lt;returns&gt;
+        ///	&lt;/returns&gt;
+        ///	&lt;param name=&quot;Old Id&quot; datatype=&quot;int&quot;&gt;The person id of the non-primary Person being merged&lt;/param&gt;
+        ///	&lt;param name=&quot;New Id&quot; datatype=&quot;int&quot;&gt;The person id of the primary Person being merged&lt;/param&gt;
+        ///	&lt;remarks&gt;	
+        ///		Uses the following constants:
+        ///			* Group Type - Family: 790E [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string _134_AddDocumentsToPersonMerge_spCrm_PersonMerge {
+            get {
+                return ResourceManager.GetString("_134_AddDocumentsToPersonMerge_spCrm_PersonMerge", resourceCulture);
+            }
+        }
     }
 }

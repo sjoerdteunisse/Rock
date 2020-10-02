@@ -124,13 +124,12 @@ namespace Rock.Badge.Component
             // Need a list of primitive types for assessmentTestsTaken linq
             var availableTypes = assessmentTypes.Select( t => t.Id ).ToList();
 
-            int personAliasId = Person.PrimaryAliasId.Value;
-
             var assessmentTestsTaken = new AssessmentService( new RockContext() )
                 .Queryable()
                 .AsNoTracking()
-                .Where( a => a.PersonAliasId == personAliasId )
-                .Where( a => availableTypes.Contains( a.AssessmentTypeId ) )
+                .Where( a => a.PersonAlias != null
+                             && a.PersonAlias.PersonId == Person.Id
+                             && availableTypes.Contains( a.AssessmentTypeId ) )
                 .OrderByDescending( a => a.CompletedDateTime ?? a.RequestedDateTime )
                 .Select( a => new PersonBadgeAssessment { AssessmentTypeId = a.AssessmentTypeId, RequestedDateTime = a.RequestedDateTime, Status = a.Status } )
                 .ToList();
@@ -273,12 +272,16 @@ namespace Rock.Badge.Component
             writer.Write( badgeRow1.ToString() );
             writer.Write( badgeRow2.ToString() );
             writer.Write( "</div></div>" );
-            writer.Write( $@"
-                <script>
-                    Sys.Application.add_load(function () {{
-                        $('.badge-id-{badge.Id}').children('.badge-grid').tooltip({{ sanitize: false }});
-                    }});
-                </script>" );
+        }
+
+        /// <summary>
+        /// Gets the java script.
+        /// </summary>
+        /// <param name="badge"></param>
+        /// <returns></returns>
+        protected override string GetJavaScript( BadgeCache badge )
+        {
+            return $"$('.badge-id-{badge.Id}').children('.badge-grid').tooltip({{ sanitize: false }});";
         }
 
         /// <summary>

@@ -16,7 +16,9 @@
 //
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data.Entity;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Web;
@@ -53,6 +55,9 @@ namespace Rock.Jobs
     /// NOTE: It should do this regardless of the person's IsDeceased flag.
     /// NOTE: The job can sync new people at about 45/sec or 2650/minute.
     /// </summary>
+    [DisplayName( "Group Sync" )]
+    [Description( "Processes groups that are marked to be synced with a data view." )]
+
     [DisallowConcurrentExecution]
     [BooleanField( "Require Password Reset On New Logins", "Determines if new logins should be created in such a way that the individual will need to reset the password on their first login.", Key = "RequirePasswordReset" )]
     [IntegerField( "Command Timeout", "Maximum amount of time (in seconds) to wait for each operation to complete. Leave blank to use the default for this job (180).", false, 3 * 60, "General", 1, "CommandTimeout" )]
@@ -98,8 +103,11 @@ namespace Rock.Jobs
                 {
                     // Get groups that are not archived and are still active.
                     activeSyncList = new GroupSyncService( rockContext )
-                        .Queryable().AsNoTracking()
-                        .Where( x => !x.Group.IsArchived && x.Group.IsActive )
+                        .Queryable()
+                        .AsNoTracking()
+                        .AreNotArchived()
+                        .AreActive()
+                        .NeedToBeSynced()
                         .Select( x => new GroupSyncInfo { SyncId = x.Id, GroupName = x.Group.Name } )
                         .ToList();
                 }
@@ -131,23 +139,38 @@ namespace Rock.Jobs
                             continue;
                         }
 
-                        List<string> syncErrors = new List<string>();
-
                         dataViewName = sync.SyncDataView.Name;
                         groupName = sync.Group.Name;
 
-                        // Get the person id's from the data view (source)
-                        var dataViewQry = sync.SyncDataView.GetQuery( null, rockContext, commandTimeout, out syncErrors );
-                        var sourcePersonIds = dataViewQry.Select( q => q.Id ).ToList();
+                        Stopwatch stopwatch = Stopwatch.StartNew();
 
-                        // If any error occurred trying get the 'where expression' from the sync-data-view,
-                        // just skip trying to sync that particular group's Sync Data View for now.
-                        if ( syncErrors.Count > 0 )
+                        // Get the person id's from the data view (source)
+                        var dataViewGetQueryArgs = new DataViewGetQueryArgs
                         {
-                            errors.AddRange( syncErrors );
-                            ExceptionLogService.LogException( new Exception( string.Format( "An error occurred while trying to GroupSync group '{0}' and data view '{1}' so the sync was skipped. Error: {2}", groupName, dataViewName, String.Join( ",", syncErrors ) ) ) );
+                            DbContext = rockContext,
+                            DatabaseTimeoutSeconds = commandTimeout
+                        };
+
+                        List<int> sourcePersonIds;
+
+                        try
+                        {
+                            var dataViewQry = sync.SyncDataView.GetQuery( dataViewGetQueryArgs );
+                            sourcePersonIds = dataViewQry.Select( q => q.Id ).ToList();
+                        }
+                        catch ( Exception ex )
+                        {
+                            // If any error occurred trying get the 'where expression' from the sync-data-view,
+                            // just skip trying to sync that particular group's Sync Data View for now.
+                            var errorMessage = $"An error occurred while trying to GroupSync group '{groupName}' and data view '{dataViewName}' so the sync was skipped. Error: {ex.Message}";
+                            errors.Add( errorMessage );
+                            ExceptionLogService.LogException( new Exception( errorMessage , ex ) );
                             continue;
                         }
+
+                        stopwatch.Stop();
+                        DataViewService.AddRunDataViewTransaction( sync.SyncDataView.Id,
+                                                        Convert.ToInt32( stopwatch.Elapsed.TotalMilliseconds ) );
 
                         // Get the person id's in the group (target) for the role being synced.
                         // Note: targetPersonIds must include archived group members
@@ -376,6 +399,18 @@ namespace Rock.Jobs
 
                         // Increment the Groups Synced Counter
                         groupsSynced++;
+                    }
+
+                    // Update last refresh datetime in different context to avoid side-effects.
+                    using ( var rockContext = new RockContext() )
+                    {
+                        var sync = new GroupSyncService( rockContext )
+                            .Queryable()
+                            .FirstOrDefault( s => s.Id == syncId );
+
+                        sync.LastRefreshDateTime = RockDateTime.Now;
+
+                        rockContext.SaveChanges();
                     }
                 }
 

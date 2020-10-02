@@ -40,9 +40,9 @@ namespace RockWeb.Blocks.Cms
     /// <summary>
     ///
     /// </summary>
-    [DisplayName("Content Channel Item Detail")]
-    [Category("CMS")]
-    [Description("Displays the details for a content channel item.")]
+    [DisplayName( "Content Channel Item Detail" )]
+    [Category( "CMS" )]
+    [Description( "Displays the details for a content channel item." )]
 
     #region Block Attributes
 
@@ -84,8 +84,8 @@ namespace RockWeb.Blocks.Cms
         /// </summary>
         private static class PageParameterKey
         {
-            public const string ContentItemId = "contentItemId";
-            public const string ContentChannelId = "contentChannelId";
+            public const string ContentItemId = "ContentItemId";
+            public const string ContentChannelId = "ContentChannelId";
             public const string EventItemOccurrenceId = "EventItemOccurrenceId";
             public const string EventCalendarId = "EventCalendarId";
             public const string EventItemId = "EventItemId";
@@ -158,6 +158,9 @@ namespace RockWeb.Blocks.Cms
 
                 $(document).ready( function() {{
 
+                    // Change tracking enable/disabled added to prevent late arriving blur events from blocking the save
+                    var changeTrackingEnabled = true;
+
                     window.addEventListener('beforeunload', function(e) {{
                         if ( $('#{2}').val() == 'true' ) {{
                             var timeout = setTimeout( function() {{
@@ -172,17 +175,28 @@ namespace RockWeb.Blocks.Cms
                     }});
 
                     $('.js-item-details').find('input').blur( function() {{
-                        $('#{2}').val('true')
+                        contentChanged();
                     }});
 
                     $('.js-item-details').find('textarea').blur( function() {{
-                        $('#{2}').val('true')
+                        contentChanged();
                     }});
 
                     $('#{3}').on('summernote.blur', function() {{
-                        $('#{2}').val('true')
+                        contentChanged();
                     }});
                 }});
+
+                function contentChanged() {{
+                    if ( changeTrackingEnabled ) {{
+                        $('#{2}').val( 'true' );
+                    }}
+                }}
+
+                function clearDirtyBit( e ) {{
+                    changeTrackingEnabled = false;
+                    $('#{2}').val('false');
+                }}
 
                 function isDirty() {{
                     if ( $('#{2}').val() == 'true' ) {{
@@ -225,7 +239,7 @@ namespace RockWeb.Blocks.Cms
             gParentItems.GridRebind += gParentItems_GridRebind;
             gParentItems.EntityTypeId = EntityTypeCache.Get<ContentChannelItem>().Id;
 
-            string clearScript = string.Format( "$('#{0}').val('false');", hfIsDirty.ClientID );
+            string clearScript = string.Format( "clearDirtyBit(event);", hfIsDirty.ClientID ); 
             lbSave.OnClientClick = clearScript;
             lbCancel.OnClientClick = clearScript;
 
@@ -245,9 +259,9 @@ namespace RockWeb.Blocks.Cms
 
             if ( !Page.IsPostBack )
             {
-                if (string.IsNullOrWhiteSpace(GetAttributeValue( AttributeKey.ContentChannel )))
+                if ( string.IsNullOrWhiteSpace( GetAttributeValue( AttributeKey.ContentChannel ) ) )
                 {
-                    ShowDetail(PageParameter( PageParameterKey.ContentItemId ).AsInteger(), PageParameter( PageParameterKey.ContentChannelId ).AsIntegerOrNull());
+                    ShowDetail( PageParameter( PageParameterKey.ContentItemId ).AsInteger(), PageParameter( PageParameterKey.ContentChannelId ).AsIntegerOrNull() );
                 }
                 else
                 {
@@ -399,6 +413,13 @@ namespace RockWeb.Blocks.Cms
                         contentChannelItemSlugService.SaveSlug( contentItem.Id, hfSlug.Value, null );
                     }
 
+                    var slugInput = Request.Form["slugInput"];
+                    if ( !string.IsNullOrEmpty( slugInput ) )
+                    {
+                        var contentChannelItemSlugService = new ContentChannelItemSlugService( rockContext );
+                        contentChannelItemSlugService.SaveSlug( contentItem.Id, slugInput, null );
+                    }
+
                     rockContext.SaveChanges();
                     contentItem.SaveAttributeValues( rockContext );
 
@@ -416,7 +437,7 @@ namespace RockWeb.Blocks.Cms
                             .Queryable()
                             .Where( c =>
                                 c.ContentChannelItemId == contentItem.Id &&
-                                c.EventItemOccurrenceId == eventItemOccurrenceId.Value)
+                                c.EventItemOccurrenceId == eventItemOccurrenceId.Value )
                             .FirstOrDefault();
 
                         if ( occurrenceChannelItem == null )
@@ -453,7 +474,7 @@ namespace RockWeb.Blocks.Cms
                     .FirstOrDefault( t => t.Id == contentItemId );
             }
 
-            if (contentItem != null )
+            if ( contentItem != null )
             {
                 contentItemService.Delete( contentItem );
                 rockContext.SaveChanges();
@@ -513,6 +534,13 @@ namespace RockWeb.Blocks.Cms
             {
                 BindChildItemsGrid( contentItem );
             }
+
+            // Make sure correct tab is selected.
+            liParents.RemoveCssClass( "active" );
+            divParentItems.RemoveCssClass( "active" );
+
+            liChildren.AddCssClass( "active" );
+            divChildItems.AddCssClass( "active" );
         }
 
         private void gChildItems_Add( object sender, EventArgs e )
@@ -541,6 +569,11 @@ namespace RockWeb.Blocks.Cms
             ShowDialog( "AddChildItem", true );
         }
 
+        /// <summary>
+        /// Handles the GridReorder event of the gChildItems control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="GridReorderEventArgs"/> instance containing the event data.</param>
         private void gChildItems_GridReorder( object sender, GridReorderEventArgs e )
         {
             using ( var rockContext = new RockContext() )
@@ -549,13 +582,13 @@ namespace RockWeb.Blocks.Cms
                 if ( contentItem != null )
                 {
                     bool isFiltered = false;
-                    var items = GetChildItems( contentItem, out isFiltered ).OrderBy( a => a.Order ).ToList();
+                    var childItemAssociationList = GetChildItemAssociationList( contentItem, out isFiltered ).OrderBy( a => a.Order ).ToList();
 
                     // If the list was filtered due to VIEW security, don't sort it
                     if ( !isFiltered )
                     {
                         var service = new ContentChannelItemAssociationService( rockContext );
-                        service.Reorder( items, e.OldIndex, e.NewIndex );
+                        service.Reorder( childItemAssociationList, e.OldIndex, e.NewIndex );
                         rockContext.SaveChanges();
                     }
                 }
@@ -582,6 +615,13 @@ namespace RockWeb.Blocks.Cms
             {
                 BindParentItemsGrid( contentItem );
             }
+
+            // Make sure correct tab is selected.
+            liChildren.RemoveCssClass( "active" );
+            divChildItems.RemoveCssClass( "active" );
+
+            liParents.AddCssClass( "active" );
+            divParentItems.AddCssClass( "active" );
         }
 
         protected void gParentItems_RowSelected( object sender, RowEventArgs e )
@@ -595,8 +635,8 @@ namespace RockWeb.Blocks.Cms
             if ( channelId.HasValue )
             {
                 var qryParams = new Dictionary<string, string>();
-                qryParams.Add( "contentItemId", "0" );
-                qryParams.Add( "contentChannelId", channelId.Value.ToString() );
+                qryParams.Add( "ContentItemId", "0" );
+                qryParams.Add( "ContentChannelId", channelId.Value.ToString() );
 
                 var hierarchy = GetNavHierarchy();
                 hierarchy.Add( hfId.Value );
@@ -606,6 +646,11 @@ namespace RockWeb.Blocks.Cms
             }
         }
 
+        /// <summary>
+        /// Handles the Click event of the lbAddExistingChildItem control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void lbAddExistingChildItem_Click( object sender, EventArgs e )
         {
             int? itemId = hfId.Value.AsIntegerOrNull();
@@ -618,7 +663,7 @@ namespace RockWeb.Blocks.Cms
                     var service = new ContentChannelItemAssociationService( rockContext );
                     var order = service.Queryable().AsNoTracking()
                         .Where( a => a.ContentChannelItemId == itemId.Value )
-                        .Select( a => (int?)a.Order )
+                        .Select( a => ( int? ) a.Order )
                         .DefaultIfEmpty()
                         .Max();
 
@@ -789,10 +834,11 @@ namespace RockWeb.Blocks.Cms
             {
                 contentItem = contentItemService
                     .Queryable( "ContentChannel,ContentChannelType" )
+                    .Include( cci => cci.ChildItems.Select( cca => cca.ContentChannelItem ) )
                     .FirstOrDefault( t => t.Id == contentItemId );
             }
 
-            if ( contentItem == null)
+            if ( contentItem == null )
             {
                 var contentChannel = new ContentChannelService( rockContext ).Get( hfChannelId.Value.AsInteger() );
                 if ( contentChannel != null )
@@ -815,7 +861,7 @@ namespace RockWeb.Blocks.Cms
                             parentItem.ContentChannel.ChildContentChannels.Any( c => c.Id == contentChannel.Id ) )
                         {
                             var order = parentItem.ChildItems
-                                .Select( a => (int?)a.Order )
+                                .Select( a => ( int? ) a.Order )
                                 .DefaultIfEmpty()
                                 .Max();
 
@@ -874,7 +920,7 @@ namespace RockWeb.Blocks.Cms
             {
                 taglTags.EntityTypeId = EntityTypeCache.Get( typeof( ContentChannelItem ) ).Id;
                 taglTags.CategoryGuid = ( contentItem.ContentChannel != null && contentItem.ContentChannel.ItemTagCategory != null ) ?
-                     contentItem.ContentChannel.ItemTagCategory.Guid : (Guid?)null;
+                     contentItem.ContentChannel.ItemTagCategory.Guid : ( Guid? ) null;
                 taglTags.EntityGuid = contentItem.Guid;
                 taglTags.DelaySave = true;
                 taglTags.GetTagValues( CurrentPersonId );
@@ -958,7 +1004,7 @@ namespace RockWeb.Blocks.Cms
 
                 tbTitle.Text = contentItem.Title;
 
-                rSlugs.DataSource =  contentItem.ContentChannelItemSlugs;
+                rSlugs.DataSource = contentItem.ContentChannelItemSlugs;
                 rSlugs.DataBind();
 
                 htmlContent.Visible = false;
@@ -991,7 +1037,7 @@ namespace RockWeb.Blocks.Cms
                         htmlContent.StartInCodeEditorMode = contentItem.ContentChannel.ContentControlType == ContentControlType.CodeEditor;
                     }
                 }
-               
+
                 if ( contentItem.ContentChannelType.IncludeTime )
                 {
                     dpStart.Visible = false;
@@ -1012,7 +1058,7 @@ namespace RockWeb.Blocks.Cms
 
                     dpStart.SelectedDate = contentItem.StartDateTime.Date;
                     dpStart.Label = contentItem.ContentChannelType.DateRangeType == ContentChannelDateType.DateRange ? "Start" : "Active";
-                    dpExpire.SelectedDate = contentItem.ExpireDateTime.HasValue ? contentItem.ExpireDateTime.Value.Date : (DateTime?)null;
+                    dpExpire.SelectedDate = contentItem.ExpireDateTime.HasValue ? contentItem.ExpireDateTime.Value.Date : ( DateTime? ) null;
                 }
 
                 lblItemGlobalKey.Text = contentItem.ItemGlobalKey;
@@ -1101,7 +1147,7 @@ namespace RockWeb.Blocks.Cms
         private void NavigateToNewItem( string itemId )
         {
             var qryParams = new Dictionary<string, string>();
-            qryParams.Add( "contentItemId", itemId );
+            qryParams.Add( "ContentItemId", itemId );
 
             var hierarchy = GetNavHierarchy();
             hierarchy.Add( hfId.Value );
@@ -1180,7 +1226,24 @@ namespace RockWeb.Blocks.Cms
         private void BindChildItemsGrid( ContentChannelItem contentItem )
         {
             bool isFiltered = false;
-            var items = GetChildItems( contentItem, out isFiltered );
+            var childItemAssociationList = GetChildItemAssociationList( contentItem, out isFiltered );
+
+            gChildItems.ObjectList = new Dictionary<string, object>();
+            var childItemList = childItemAssociationList.Select( a => a.ChildContentChannelItem ).ToList();
+            var childItemAssociationOrder = childItemAssociationList.Distinct().ToDictionary( k => k.ChildContentChannelItemId, v => v.Order );
+            childItemList.ForEach( i => gChildItems.ObjectList.Add( i.Id.ToString(), i ) );
+
+            var items = childItemList.Select( i => new
+            {
+                i.Id,
+                i.Guid,
+                i.Title,
+                i.StartDateTime,
+                ExpireDateTime = i.ContentChannelType.DateRangeType == ContentChannelDateType.DateRange ? i.ExpireDateTime : ( DateTime? ) null,
+                Order = contentItem.ContentChannel.ChildItemsManuallyOrdered ? ( int? ) childItemAssociationOrder.GetValueOrNull( i.Id ) : ( int? ) null,
+                Status = ( i.ContentChannel.RequiresApproval && !i.ContentChannelType.DisableStatus ) ? DisplayStatus( i.Status ) : string.Empty,
+                CreatedBy = i.CreatedByPersonAlias != null && i.CreatedByPersonAlias.Person != null ? i.CreatedByPersonAlias.Person.NickName + " " + i.CreatedByPersonAlias.Person.LastName : string.Empty
+            } ).ToList();
 
             if ( contentItem.ContentChannel.ChildItemsManuallyOrdered && !isFiltered )
             {
@@ -1200,25 +1263,11 @@ namespace RockWeb.Blocks.Cms
                 }
                 else
                 {
-                    items = items.OrderByDescending( p => p.ChildContentChannelItem.StartDateTime ).ToList();
+                    items = items.OrderByDescending( p => p.StartDateTime ).ToList();
                 }
             }
 
-            gChildItems.ObjectList = new Dictionary<string, object>();
-            items.ForEach( i => gChildItems.ObjectList.Add( i.Id.ToString(), i ) );
-
-            gChildItems.DataSource = items.Select( i => new
-            {
-                i.ChildContentChannelItem.Id,
-                i.ChildContentChannelItem.Guid,
-                i.ChildContentChannelItem.Title,
-                i.ChildContentChannelItem.StartDateTime,
-                ExpireDateTime = i.ChildContentChannelItem.ContentChannelType.DateRangeType == ContentChannelDateType.DateRange ? i.ChildContentChannelItem.ExpireDateTime : ( DateTime? ) null,
-                Order = contentItem.ContentChannel.ChildItemsManuallyOrdered ? ( int? ) i.Order : ( int? ) null,
-                Status = ( i.ChildContentChannelItem.ContentChannel.RequiresApproval && !i.ChildContentChannelItem.ContentChannelType.DisableStatus ) ? DisplayStatus( i.ChildContentChannelItem.Status ) : string.Empty,
-                CreatedBy = i.CreatedByPersonAlias != null && i.CreatedByPersonAlias.Person != null ? i.CreatedByPersonAlias.Person.NickName + " " + i.CreatedByPersonAlias.Person.LastName : string.Empty
-            } ).ToList();
-
+            gChildItems.DataSource = items;
             gChildItems.DataBind();
         }
 
@@ -1226,43 +1275,46 @@ namespace RockWeb.Blocks.Cms
         {
             var items = GetParentItems( contentItem );
 
-            SortProperty sortProperty = gParentItems.SortProperty;
-            if ( sortProperty != null )
-            {
-                items = items.AsQueryable().Sort( sortProperty ).ToList();
-            }
-            else
-            {
-                items = items.OrderByDescending( p => p.ChildContentChannelItem.StartDateTime ).ToList();
-            }
-
             gParentItems.ObjectList = new Dictionary<string, object>();
             items.ForEach( i => gParentItems.ObjectList.Add( i.Id.ToString(), i ) );
 
-            gParentItems.DataSource = items.Select( i => new
+            var selectedItems = items.Select( i => new
             {
-                i.ChildContentChannelItem.Id,
-                i.ChildContentChannelItem.Guid,
-                i.ChildContentChannelItem.Title,
-                StartDateTime = i.ChildContentChannelItem.ContentChannelType.DateRangeType != ContentChannelDateType.NoDates ? i.ChildContentChannelItem.StartDateTime : ( DateTime? ) null,
-                ExpireDateTime = i.ChildContentChannelItem.ContentChannelType.DateRangeType == ContentChannelDateType.DateRange ? i.ChildContentChannelItem.ExpireDateTime : ( DateTime? ) null,
-                Order = contentItem.ContentChannel.ChildItemsManuallyOrdered ? ( int? ) null : ( int? ) i.ChildContentChannelItem.Order,
-                Status = ( i.ChildContentChannelItem.ContentChannel.RequiresApproval && !i.ChildContentChannelItem.ContentChannelType.DisableStatus ) ? DisplayStatus( i.ChildContentChannelItem.Status ) : string.Empty,
+                i.ContentChannelItem.Id,
+                i.ContentChannelItem.Guid,
+                i.ContentChannelItem.Title,
+                StartDateTime = i.ContentChannelItem.ContentChannelType.DateRangeType != ContentChannelDateType.NoDates ? i.ContentChannelItem.StartDateTime : ( DateTime? ) null,
+                ExpireDateTime = i.ContentChannelItem.ContentChannelType.DateRangeType == ContentChannelDateType.DateRange ? i.ContentChannelItem.ExpireDateTime : ( DateTime? ) null,
+                Order = contentItem.ContentChannel.ItemsManuallyOrdered ? ( int? ) null : ( int? ) i.ContentChannelItem.Order,
+                Status = ( i.ContentChannelItem.ContentChannel.RequiresApproval && !i.ContentChannelItem.ContentChannelType.DisableStatus ) ? DisplayStatus( i.ContentChannelItem.Status ) : string.Empty,
                 CreatedBy = i.CreatedByPersonAlias != null && i.CreatedByPersonAlias.Person != null ? i.CreatedByPersonAlias.Person.NickName + " " + i.CreatedByPersonAlias.Person.LastName : string.Empty
             } ).ToList();
+
+            SortProperty sortProperty = gParentItems.SortProperty;
+            if ( sortProperty != null )
+            {
+                selectedItems = selectedItems.AsQueryable().Sort( sortProperty ).ToList();
+            }
+            else
+            {
+                selectedItems = selectedItems.OrderByDescending( p => p.StartDateTime ).ToList();
+            }
+
+            gParentItems.DataSource = selectedItems;
             gParentItems.DataBind();
         }
 
-        private List<ContentChannelItemAssociation> GetChildItems( ContentChannelItem contentItem, out bool isFiltered )
+        private List<ContentChannelItemAssociation> GetChildItemAssociationList( ContentChannelItem contentItem, out bool isFiltered )
         {
             isFiltered = false;
-            var items = new List<ContentChannelItemAssociation>();
+            var contentChannelItemAssociationList = new List<ContentChannelItemAssociation>();
 
-            foreach ( var item in contentItem.ChildItems.ToList() )
+            foreach ( ContentChannelItemAssociation contentChannelItemAssociation in contentItem.ChildItems.ToList() )
             {
-                if ( item.ContentChannelItem.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
+                // see if the ContentChannel item of the ContentChannelItemAssociation is authorized
+                if ( contentChannelItemAssociation.ContentChannelItem.IsAuthorized( Authorization.VIEW, CurrentPerson ) )
                 {
-                    items.Add( item );
+                    contentChannelItemAssociationList.Add( contentChannelItemAssociation );
                 }
                 else
                 {
@@ -1270,7 +1322,7 @@ namespace RockWeb.Blocks.Cms
                 }
             }
 
-            return items;
+            return contentChannelItemAssociationList;
         }
 
         private List<ContentChannelItemAssociation> GetParentItems( ContentChannelItem contentItem )
@@ -1353,6 +1405,10 @@ namespace RockWeb.Blocks.Cms
             hfActiveDialog.Value = string.Empty;
         }
 
+        /// <summary>
+        /// When navigating to child items of childitems of childitems, the "Hierarchy" will be a list of how to navigate backwards thru the parents
+        /// </summary>
+        /// <returns></returns>
         private List<string> GetNavHierarchy()
         {
             var qryParam = PageParameter( PageParameterKey.Hierarchy );
@@ -1365,7 +1421,5 @@ namespace RockWeb.Blocks.Cms
         }
 
         #endregion
-
-
     }
 }

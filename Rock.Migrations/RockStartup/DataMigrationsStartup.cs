@@ -46,7 +46,12 @@ namespace Rock.Migrations.RockStartup
                 SystemGuid.ServiceJob.MIGRATE_FAMILY_CHECKIN_IDS.AsGuid(),
                 SystemGuid.ServiceJob.DATA_MIGRATIONS_90_SCHEDULEDTRANSACTIONNOTESTOHISTORY.AsGuid(),
                 SystemGuid.ServiceJob.DATA_MIGRATIONS_100_ATTRIBUTEVALUE_VALUEASNUMERIC.AsGuid(),
-                SystemGuid.ServiceJob.DATA_MIGRATIONS_100_SUNDAYDATE.AsGuid()
+                SystemGuid.ServiceJob.DATA_MIGRATIONS_100_SUNDAYDATE.AsGuid(),
+                SystemGuid.ServiceJob.DATA_MIGRATIONS_103_SPIRITUAL_GIFTS.AsGuid(),
+                SystemGuid.ServiceJob.DATA_MIGRATIONS_110_POPULATE_DATE_KEYS.AsGuid(),
+                SystemGuid.ServiceJob.DATA_MIGRATIONS_110_COMMUNICATIONRECIPIENT_RESPONSECODE_INDEX.AsGuid(),
+                SystemGuid.ServiceJob.DATA_MIGRATIONS_110_POPULATE_RELATED_DATAVIEW_ID.AsGuid(),
+                SystemGuid.ServiceJob.DATA_MIGRATIONS_120_UPDATE_INTERACTION_INDEXES.AsGuid(),
             };
 
             // run any of the above jobs if they still exist (they haven't run and deleted themselves)

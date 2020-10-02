@@ -40,5 +40,20 @@ namespace Rock.SystemGuid
         /// Gets the RSVP Response page route guid.
         /// </summary>
         public const string RSVP = "6BE4EE11-694A-4D3E-B3A7-F6B2946012B9";
+        
+        /// <summary>
+        /// The phone number lookup
+        /// </summary>
+        public const string PHONE_NUMBER_LOOKUP = "1FB5A224-9E26-47E6-9A20-5B5A59B5C7CF";
+
+        /// <summary>
+        /// The oidc authorize route.
+        /// </summary>
+        public const string OIDC_AUTHORIZE = "E35CD82E-C162-444E-AC5F-E42F20DA79F3";
+
+        /// <summary>
+        /// The oidc logout route.
+        /// </summary>
+        public const string OIDC_LOGOUT = "5137F15D-61EA-4935-A9E1-16534959AEFA";
     }
 }

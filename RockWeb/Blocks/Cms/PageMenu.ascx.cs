@@ -127,10 +127,12 @@ namespace RockWeb.Blocks.Cms
             this.BlockUpdated += PageMenu_BlockUpdated;
             this.AddConfigurationUpdateTrigger( upContent );
 
+            var cssFile =GetAttributeValue( AttributeKey.CSSFile );
+
             // add css file to page
-            if ( GetAttributeValue( AttributeKey.CSSFile ).Trim() != string.Empty )
+            if ( cssFile.IsNotNullOrWhiteSpace() )
             {
-                RockPage.AddCSSLink( ResolveRockUrl( GetAttributeValue( AttributeKey.CSSFile ) ), false );
+                RockPage.AddCSSLink( ResolveRockUrl( cssFile ), false );
             }
         }
 
@@ -200,7 +202,7 @@ namespace RockWeb.Blocks.Cms
                 var pageProperties = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson );
                 pageProperties.Add( "Site", GetSiteProperties( RockPage.Site ) );
                 pageProperties.Add( "IncludePageList", GetIncludePageList() );
-
+                pageProperties.Add( "CurrentPage", this.PageCache );
 
                 using ( var rockContext = new RockContext() )
                 {

@@ -28,6 +28,7 @@ using Newtonsoft.Json;
 using Rock.Communication;
 using Rock.Data;
 using Rock.Security;
+using Rock.Utility;
 
 namespace Rock.Model
 {
@@ -296,6 +297,41 @@ namespace Rock.Model
         [MaxLength( 100 )]
         public string PushSound { get; set; }
 
+        /// <summary>
+        /// Gets or sets the push image file identifier.
+        /// </summary>
+        /// <value>
+        /// The push image file identifier.
+        /// </value>
+        [DataMember]
+        public int? PushImageBinaryFileId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the push open action.
+        /// </summary>
+        /// <value>
+        /// The push open action.
+        /// </value>
+        [DataMember]
+        public PushOpenAction? PushOpenAction { get; set; }
+
+        /// <summary>
+        /// Gets or sets the push open message.
+        /// </summary>
+        /// <value>
+        /// The push open message.
+        /// </value>
+        [DataMember]
+        public string PushOpenMessage { get; set; }
+
+        /// <summary>
+        /// Gets or sets the push data.
+        /// </summary>
+        /// <value>
+        /// The push data.
+        /// </value>
+        [DataMember]
+        public string PushData { get; set; }
         #endregion
 
         #endregion
@@ -346,6 +382,15 @@ namespace Rock.Model
         public virtual bool IsPersonal => SenderPersonAliasId.HasValue;
 
         /// <summary>
+        /// Gets or sets the image file for the Template Preview Image
+        /// </summary>
+        /// <value>
+        /// The image file
+        /// </value>
+        [DataMember]
+        public virtual BinaryFile ImageFile {get; set;}
+
+        /// <summary>
         /// Gets or sets the logo binary file that email messages using this template can use for the logo in the message content
         /// </summary>
         /// <value>
@@ -355,6 +400,15 @@ namespace Rock.Model
         public virtual BinaryFile LogoBinaryFile { get; set; }
 
         /// <summary>
+        /// Gets or sets the push image file.
+        /// </summary>
+        /// <value>
+        /// The push image file.
+        /// </value>
+        [DataMember]
+        public virtual BinaryFile PushImageBinaryFile { get; set; }
+
+        /// <summary>
         /// Gets or sets the category.
         /// </summary>
         /// <value>
@@ -362,32 +416,6 @@ namespace Rock.Model
         /// </value>
         [DataMember]
         public virtual Category Category { get; set; }
-
-        /// <summary>
-        /// Gets the <see cref="Rock.Communication.MediumComponent"/> for the communication medium that is being used.
-        /// </summary>
-        /// <value>
-        /// The <see cref="Rock.Communication.MediumComponent"/> for the communication medium that is being used.
-        /// </value>
-        [NotMapped]
-        public virtual List<MediumComponent> Mediums
-        {
-            get
-            {
-                var mediums = new List<MediumComponent>();
-
-                foreach ( var serviceEntry in MediumContainer.Instance.Components )
-                {
-                    var component = serviceEntry.Value.Value;
-                    if ( component.IsActive )
-                    {
-                        mediums.Add( component );
-                    }
-                }
-
-                return mediums;
-            }
-        }
 
         /// <summary>
         /// Gets or sets the SMS from defined value.
@@ -530,7 +558,9 @@ namespace Rock.Model
         public CommunicationTemplateConfiguration()
         {
             this.HasOptional( c => c.Category ).WithMany().HasForeignKey( c => c.CategoryId ).WillCascadeOnDelete( false );
+            this.HasOptional( c => c.ImageFile ).WithMany().HasForeignKey( c => c.ImageFileId ).WillCascadeOnDelete( false );
             this.HasOptional( c => c.LogoBinaryFile ).WithMany().HasForeignKey( c => c.LogoBinaryFileId ).WillCascadeOnDelete( false );
+            this.HasOptional( c => c.PushImageBinaryFile ).WithMany().HasForeignKey( c => c.PushImageBinaryFileId ).WillCascadeOnDelete( false );
             this.HasOptional( c => c.SenderPersonAlias ).WithMany().HasForeignKey( c => c.SenderPersonAliasId ).WillCascadeOnDelete( false );
             this.HasOptional( c => c.SMSFromDefinedValue ).WithMany().HasForeignKey( c => c.SMSFromDefinedValueId ).WillCascadeOnDelete( false );
         }

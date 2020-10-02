@@ -62,6 +62,9 @@ namespace Rock.Client
         {% if LatestStepStatus %}
             <span class=""label"" style=""background-color: {{ LatestStepStatus.StatusColor }};"">{{ LatestStepStatus.Name }}</span>
         {% endif %}
+        {% if ShowCampus and LatestStep and LatestStep.Campus != '' %}
+            <span class=""label label-campus"">{{ LatestStep.Campus.Name }}</span>
+        {% endif %}
         {% if LatestStep and LatestStep.CompletedDateTime != '' %}
             <br />
             <small>{{ LatestStep.CompletedDateTime | Date:'M/d/yyyy' }}</small>
@@ -185,6 +188,9 @@ namespace Rock.Client
     public partial class StepType : StepTypeEntity
     {
         /// <summary />
+        public ICollection<AchievementType> AchievementTypes { get; set; }
+
+        /// <summary />
         public DataView AudienceDataView { get; set; }
 
         /// <summary />
@@ -207,9 +213,6 @@ namespace Rock.Client
 
         /// <summary />
         public ICollection<StepWorkflowTrigger> StepWorkflowTriggers { get; set; }
-
-        /// <summary />
-        public ICollection<StreakTypeAchievementType> StreakTypeAchievementTypes { get; set; }
 
         /// <summary>
         /// NOTE: Attributes are only populated when ?loadAttributes is specified. Options for loadAttributes are true, false, 'simple', 'expanded' 

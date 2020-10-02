@@ -52,7 +52,7 @@ namespace Rock.Blocks.Types.Mobile.Events
 
     [LinkedPage( "Detail Page",
         Description = "The page to push onto the navigation stack when viewing details of an event.",
-        IsRequired = true,
+        IsRequired = false,
         Key = AttributeKeys.DetailPage,
         Order = 1 )]
 
@@ -112,7 +112,7 @@ namespace Rock.Blocks.Types.Mobile.Events
             public const string EventSummary = "EventSummary";
 
             /// <summary>
-            /// The show filter
+            /// Whether the filter should be shown or not.
             /// </summary>
             public const string ShowFilter = "ShowFilter";
         }
@@ -125,7 +125,7 @@ namespace Rock.Blocks.Types.Mobile.Events
             /// <summary>
             /// The event summary default value
             /// </summary>
-            public const string EventSummary = @"<Frame HasShadow=""false"" StyleClass=""calendar-event"">
+            public const string EventSummary = @"<Frame HasShadow=""false"" StyleClass=""calendar-event-summary"">
     <StackLayout Spacing=""0"">
         <Label StyleClass=""calendar-event-title"" Text=""{Binding Name}"" />
         {% if Item.EndDateTime == null %}
@@ -210,8 +210,6 @@ namespace Rock.Blocks.Types.Mobile.Events
         /// </returns>
         public override object GetMobileConfigurationValues()
         {
-            var rng = new Random();
-
             //
             // Indicate that we are a dynamic content providing block.
             //
@@ -219,13 +217,14 @@ namespace Rock.Blocks.Types.Mobile.Events
             {
                 Audiences = GetAudiences().Select( a => new
                 {
-                    a.Id,
+                    a.Guid,
                     Name = a.Value,
                     Color = a.GetAttributeValue( "HighlightColor")
                 } ),
                 SummaryContent = EventSummary,
                 DetailPage,
-                ShowFilter
+                ShowFilter,
+                IncludeCampusFilter = true /* Tell shell we support campus filtering */
             };
         }
 
@@ -263,10 +262,12 @@ namespace Rock.Blocks.Types.Mobile.Events
             var properties = new Dictionary<string, string>
             {
                 { "Id", "Id" },
+                { "Guid", "Guid" },
                 { "Name", "Name" },
                 { "StartDateTime", "DateTime" },
                 { "EndDateTime", "EndDateTime" },
                 { "Campus", "Campus" },
+                { "CampusGuid", "CampusGuid" },
                 { "Audiences", "Audiences" }
             };
 
@@ -304,13 +305,6 @@ namespace Rock.Blocks.Types.Mobile.Events
                             m.EventItem.IsActive &&
                             m.EventItem.IsApproved );
 
-                // Filter by audiences
-                var audiences = GetAudiences().Select( a => a.Id ).ToList();
-                if ( audiences.Any() )
-                {
-                    qry = qry.Where( i => i.EventItem.EventItemAudiences.Any( c => audiences.Contains( c.DefinedValueId ) ) );
-                }
-
                 // Get the occurrences
                 var occurrences = qry.ToList()
                     .SelectMany( a =>
@@ -323,23 +317,25 @@ namespace Rock.Blocks.Types.Mobile.Events
                             {
                                 Date = b,
                                 Duration = duration,
-                                AudienceIds = a.EventItem.EventItemAudiences.Select( c => c.DefinedValueId ).ToList(),
+                                AudienceGuids = a.EventItem.EventItemAudiences.Select( c => DefinedValueCache.Get( c.DefinedValueId )?.Guid ).Where( c => c.HasValue ).Select( c => c.Value ).ToList(),
                                 EventItemOccurrence = a
                             } );
                     } )
                     .Select( a => new
                     {
                         a.EventItemOccurrence,
-                        a.EventItemOccurrence.EventItem.Id,
+                        a.EventItemOccurrence.Guid,
+                        a.EventItemOccurrence.Id,
                         a.EventItemOccurrence.EventItem.Name,
                         DateTime = a.Date,
                         EndDateTime = a.Duration > 0 ? ( DateTime? ) a.Date.AddMinutes( a.Duration ) : null,
                         Date = a.Date.ToShortDateString(),
                         Time = a.Date.ToShortTimeString(),
+                        CampusGuid = a.EventItemOccurrence.Campus?.Guid,
                         Campus = a.EventItemOccurrence.Campus != null ? a.EventItemOccurrence.Campus.Name : "All Campuses",
                         Location = a.EventItemOccurrence.Campus != null ? a.EventItemOccurrence.Campus.Name : "All Campuses",
                         LocationDescription = a.EventItemOccurrence.Location,
-                        Audiences = a.AudienceIds,
+                        Audiences = a.AudienceGuids,
                         a.EventItemOccurrence.EventItem.Description,
                         a.EventItemOccurrence.EventItem.Summary,
                         OccurrenceNote = a.EventItemOccurrence.Note.SanitizeHtml()
@@ -358,22 +354,6 @@ namespace Rock.Blocks.Types.Mobile.Events
                 var output = lavaTemplate.ResolveMergeFields( mergeFields );
 
                 return ActionOk( new StringContent( output, Encoding.UTF8, "application/json" ) );
-
-                //foreach ( var occurrence in occurrences )
-                //{
-                //    mergeFields.AddOrReplace( "Item", occurrence );
-
-                //    items.Add( new
-                //    {
-                //        occurrence.EventItemOccurrence.Id,
-                //        occurrence.Name,
-                //        StartDateTime = occurrence.Date,
-                //        Summary = EventSummary.ResolveMergeFields( mergeFields ),
-                //        occurrence.Audiences
-                //    } );
-                //}
-
-                //return items;
             }
         }
 

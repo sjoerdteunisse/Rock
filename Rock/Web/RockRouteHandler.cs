@@ -84,7 +84,7 @@ namespace Rock.Web
                     // Does the page ID exist on the requesting site
                     isSiteMatch = IsSiteMatch( site, pageId.AsIntegerOrNull() );
 
-                    if( site.EnableExclusiveRoutes && !isSiteMatch )
+                    if ( site != null && site.EnableExclusiveRoutes && !isSiteMatch )
                     {
                         // If the site has to match and does not then don't use the page ID. Set it to empty so the 404 can be returned.
                         pageId = string.Empty;
@@ -92,7 +92,7 @@ namespace Rock.Web
                     else if ( !isSiteMatch )
                     {
                         // This page belongs to another site, make sure it is allowed to be loaded.
-                        if ( IsPageExclusiveToAnotherSite( site, pageId.AsIntegerOrNull() ) )
+                        if ( IsPageExclusiveToAnotherSite( site, pageId.AsIntegerOrNull(), null ) )
                         {
                             // If the page has to match the site and does not then don't use the page ID. Set it to empty so the 404 can be returned.
                             pageId = string.Empty;
@@ -353,18 +353,36 @@ namespace Rock.Web
         /// </summary>
         /// <param name="requestingSite">The requesting site.</param>
         /// <param name="pageId">The page identifier.</param>
+        /// <param name="routeId">The route identifier. Provide this to check the route's IsGlobal property.</param>
         /// <returns>
         ///   <c>true</c> if [is page exclusive to another site] [the specified requesting site]; otherwise, <c>false</c>.
         /// </returns>
-        private static bool IsPageExclusiveToAnotherSite( SiteCache requestingSite, int? pageId )
+        private static bool IsPageExclusiveToAnotherSite( SiteCache requestingSite, int? pageId, int? routeId )
         {
-            if ( pageId != null )
+            if ( pageId == null || requestingSite == null )
             {
-                var pageSite = PageCache.Get( pageId.Value )?.Layout.Site;
-                return pageSite == null ? false : pageSite.EnableExclusiveRoutes && requestingSite.Id != pageSite.Id;
+                // The default value is not to be exclusive
+                return false;
             }
 
-            return false;
+            var pageCache = PageCache.Get( pageId.Value );
+            var pageSite = pageCache?.Layout.Site;
+
+            if ( pageSite == null )
+            {
+                return false;
+            }
+
+            bool isGlobalRoute = routeId != null ? pageCache.PageRoutes.Where( r => r.Id == routeId ).Select( r => r.IsGlobal ).FirstOrDefault() : false;
+
+            // If pageRoute.IsGlobal then return false, this page is usable by all sites.
+            if ( isGlobalRoute )
+            {
+                return false;
+            }
+
+            // See if the requesting site is exclusive and if the requesting site is different from the page's site
+            return pageSite.EnableExclusiveRoutes && requestingSite.Id != pageSite.Id;
         }
 
         /// <summary>
@@ -477,48 +495,43 @@ namespace Rock.Web
             routeId = 0;
             isSiteMatch = false;
 
-            // Pages that use a custom URL route will have the page id in the RouteData.DataTokens collection
-            var pageAndRouteIds = ( List<PageAndRouteId> ) routeRequestContext.RouteData.DataTokens["PageRoutes"];
+            if ( site == null )
+            {
+                return;
+            }
 
-            if ( pageAndRouteIds == null && !pageAndRouteIds.Any() )
+            // Pages that use a custom URL route will have the page id in the RouteData.DataTokens collection, if there are not any then just return.
+            var pageAndRouteIds = ( List<PageAndRouteId> ) routeRequestContext.RouteData.DataTokens["PageRoutes"];
+            if ( pageAndRouteIds == null || !pageAndRouteIds.Any() )
             {
                 return;
             }
 
             // First try to find a match for the site
-            if ( site != null )
+            // See if this is a possible shortlink
+            if ( routeRequestContext.RouteData.DataTokens["RouteName"] != null && routeRequestContext.RouteData.DataTokens["RouteName"].ToStringSafe().StartsWith( "{" ) )
             {
-                // See if this is a possible shortlink
-                if ( routeRequestContext.RouteData.DataTokens["RouteName"] != null && routeRequestContext.RouteData.DataTokens["RouteName"].ToStringSafe().StartsWith( "{" ) )
-                {
-                    // Get the route value
-                    string routeValue = routeRequestContext.RouteData.Values.Values.FirstOrDefault().ToStringSafe();
+                // Get the route value
+                string routeValue = routeRequestContext.RouteData.Values.Values.FirstOrDefault().ToStringSafe();
 
-                    // See if the route value string matches a shortlink for this site.
-                    var pageShortLink = new PageShortLinkService( new Rock.Data.RockContext() ).GetByToken( routeValue, site.Id );
-                    if ( pageShortLink != null && pageShortLink.SiteId == site.Id )
-                    {
-                        // The route entered matches a shortlink for the site, so lets NOT set the page ID for a catch-all route and let the shortlink logic take over.
-                        return;
-                    }
+                // See if the route value string matches a shortlink for this site.
+                var pageShortLink = new PageShortLinkService( new Rock.Data.RockContext() ).GetByToken( routeValue, site.Id );
+                if ( pageShortLink != null && pageShortLink.SiteId == site.Id )
+                {
+                    // The route entered matches a shortlink for the site, so lets NOT set the page ID for a catch-all route and let the shortlink logic take over.
+                    return;
                 }
+            }
                 
-                // Not a short link so cycle through the pages and routes to find a match for the site.
-                foreach ( var pageAndRouteId in pageAndRouteIds )
+            // Not a short link so cycle through the pages and routes to find a match for the site.
+            foreach ( var pageAndRouteId in pageAndRouteIds )
+            {
+                var pageCache = PageCache.Get( pageAndRouteId.PageId );
+                if ( pageCache != null && pageCache.Layout != null && pageCache.Layout.SiteId == site.Id )
                 {
-                    var pageCache = PageCache.Get( pageAndRouteId.PageId );
-                    if ( pageCache != null && pageCache.Layout != null && pageCache.Layout.SiteId == site.Id )
-                    {
-                        pageId = pageAndRouteId.PageId.ToStringSafe();
-                        routeId = pageAndRouteId.RouteId;
-                        isSiteMatch = true;
-                        return;
-                    }
-                }
-
-                // If the requesting site uses exclusive routes and we didn't find anything for the site then just return
-                if ( site.EnableExclusiveRoutes )
-                {
+                    pageId = pageAndRouteId.PageId.ToStringSafe();
+                    routeId = pageAndRouteId.RouteId;
+                    isSiteMatch = true;
                     return;
                 }
             }
@@ -526,7 +539,7 @@ namespace Rock.Web
             // Default to first site/page that is not Exclusive
             foreach ( var pageAndRouteId in pageAndRouteIds )
             {
-                if ( !IsPageExclusiveToAnotherSite( site, pageAndRouteId.PageId ) )
+                if ( !IsPageExclusiveToAnotherSite( site, pageAndRouteId.PageId, pageAndRouteId.RouteId ) )
                 {
                     // These are safe to assign as defaults
                     pageId = pageAndRouteId.PageId.ToStringSafe();

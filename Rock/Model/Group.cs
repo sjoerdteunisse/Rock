@@ -327,6 +327,24 @@ namespace Rock.Model
         [DataMember]
         public int? RSVPReminderOffsetDays { get; set; }
 
+        /// <summary>
+        /// Gets or sets a flag indicating if the schedule toolbox access is disabled.
+        /// </summary>
+        /// <value>
+        /// A <see cref="System.Boolean"/> value that is <c>true</c> if the schedule toolbox access is disabled; otherwise <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool DisableScheduleToolboxAccess { get; set; }
+
+        /// <summary>
+        /// Gets or sets a flag indicating if scheduling is disabled.
+        /// </summary>
+        /// <value>
+        /// A <see cref="System.Boolean"/> value that is <c>true</c> if scheduling is disabled; otherwise <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool DisableScheduling { get; set; }
+
         #endregion
 
         #region Virtual Properties
@@ -964,7 +982,7 @@ namespace Rock.Model
         {
             var dataContext = ( RockContext ) dbContext;
 
-            if ( HistoryChangeList != null && HistoryChangeList.Any() )
+            if ( HistoryChangeList?.Any() == true )
             {
                 HistoryService.SaveChanges( dataContext, typeof( Group ), Rock.SystemGuid.Category.HISTORY_GROUP_CHANGES.AsGuid(), this.Id, HistoryChangeList, this.Name, null, null, true, this.ModifiedByPersonAliasId, dbContext.SourceOfChange );
             }

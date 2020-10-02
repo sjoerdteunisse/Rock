@@ -165,12 +165,12 @@ namespace Rock.Model
                 {
                     result = false;
 
-                    string criteria = GetWorklowAttributeValue( actionType.CriteriaAttributeGuid.Value ) ?? string.Empty;
+                    string criteria = GetWorkflowAttributeValue( actionType.CriteriaAttributeGuid.Value ) ?? string.Empty;
                     string value = actionType.CriteriaValue;
 
                     if ( IsValueAnAttribute( value ) )
                     {
-                        value = GetWorklowAttributeValue( actionType.CriteriaValue.AsGuid() );
+                        value = GetWorkflowAttributeValue( actionType.CriteriaValue.AsGuid() );
                     }
 
                     return criteria.CompareTo( value, actionType.CriteriaComparisonType );
@@ -287,13 +287,13 @@ namespace Rock.Model
         }
 
         /// <summary>
-        /// Gets a worklow attribute value.
+        /// Gets a worklfow attribute value.
         /// </summary>
         /// <param name="guid">The unique identifier.</param>
         /// <param name="formatted">if set to <c>true</c> [formatted].</param>
         /// <param name="condensed">if set to <c>true</c> [condensed].</param>
         /// <returns></returns>
-        public string GetWorklowAttributeValue( Guid guid, bool formatted = false, bool condensed = false )
+        public string GetWorkflowAttributeValue( Guid guid, bool formatted = false, bool condensed = false )
         {
             var attribute = AttributeCache.Get( guid );
             if ( attribute != null && Activity != null )
@@ -324,6 +324,51 @@ namespace Rock.Model
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Gets a entity from the attribute value -- but it only works for attributes who's field type is an IEntityFieldType.
+        /// </summary>
+        /// <param name="value">The action attribute value</param>
+        /// <param name="rockContext">The context</param>
+        /// <returns>The model if it can be resolved or null</returns>
+        public IEntity GetEntityFromAttributeValue( string value, RockContext rockContext = null )
+        {
+            rockContext = rockContext ?? new RockContext();
+
+            var attributeGuid = value.AsGuidOrNull();
+            if ( attributeGuid.HasValue )
+            {
+                var attribute = AttributeCache.Get( attributeGuid.Value );
+                if ( attribute != null )
+                {
+                    value = GetWorkflowAttributeValue( attributeGuid.Value );
+                    if ( !string.IsNullOrWhiteSpace( value ) )
+                    {
+                        var field = attribute.FieldType.Field;
+                        if ( field is Rock.Field.IEntityFieldType )
+                        {
+                            return ( ( Rock.Field.IEntityFieldType ) field ).GetEntity( value, rockContext );
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets a worklow attribute value.
+        /// </summary>
+        /// <param name="guid">The unique identifier.</param>
+        /// <param name="formatted">if set to <c>true</c> [formatted].</param>
+        /// <param name="condensed">if set to <c>true</c> [condensed].</param>
+        /// <returns></returns>
+        [RockObsolete( "1.11" )]
+        [Obsolete( "Use GetWorkflowAttributeValue instead (the one with the correct spelling)." )]
+        public string GetWorklowAttributeValue( Guid guid, bool formatted = false, bool condensed = false )
+        {
+            return GetWorkflowAttributeValue( guid, formatted, condensed );
         }
 
         /// <summary>
@@ -567,7 +612,7 @@ namespace Rock.Model
             ///   <c>true</c> if [is read only]; otherwise, <c>false</c>.
             /// </value>
             public bool IsReadOnly { get; set; }
-            
+
             /// <summary>
             /// Gets or sets a value indicating whether this instance is required.
             /// </summary>

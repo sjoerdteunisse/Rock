@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
+using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
@@ -54,7 +55,7 @@ namespace RockWeb.Blocks.Crm
         Description = "The document types that should be displayed.",
         IsRequired = false,
         Order = 2,
-        Key = AttributeKeys.DocumentTypes)]
+        Key = AttributeKeys.DocumentTypes )]
 
     [BooleanField( "Show Security Button",
         Description = "Show or hide the security button to add or edit security for the document.",
@@ -63,7 +64,7 @@ namespace RockWeb.Blocks.Crm
         Order = 3,
         Key = AttributeKeys.ShowSecurityButton )]
     #endregion Block Attributes
-    public partial class Documents : RockBlock
+    public partial class Documents : RockBlock, ISecondaryBlock
     {
         private static class AttributeKeys
         {
@@ -75,6 +76,19 @@ namespace RockWeb.Blocks.Crm
 
         protected string icon;
         protected string title;
+
+        #region ISecondaryBlock Implementation
+
+        /// <summary>
+        /// Hook so that other blocks can set the visibility of all ISecondaryBlocks on its page
+        /// </summary>
+        /// <param name="visible">if set to <c>true</c> [visible].</param>
+        public void SetVisible( bool visible )
+        {
+            pnlContent.Visible = visible;
+        }
+
+        #endregion ISecondaryBlock Implementation
 
         #region Control Overrides
 
@@ -93,7 +107,7 @@ namespace RockWeb.Blocks.Crm
             gFileList.Actions.ShowAdd = true;
             gFileList.RowSelected += gFileList_RowSelected;
             gFileList.IsDeleteEnabled = true;
-            
+
             // Configure security button
             var securityColumn = gFileList.ColumnsOfType<SecurityField>().FirstOrDefault();
             if ( this.ContextEntity() != null )
@@ -114,6 +128,12 @@ namespace RockWeb.Blocks.Crm
                 PopulateDocumentTypeDropDownLists();
                 BindGrid();
             }
+            else
+            {
+                // Register download buttons as PostBackControls since they are returning a File download
+                // Do this here because the postback control registration is lost after a partial postback and needs to be redone after a edit save/cancel.
+                RegisterDownloadButtonsAsPostBackControls();
+            }
 
             base.OnLoad( e );
         }
@@ -124,7 +144,7 @@ namespace RockWeb.Blocks.Crm
 
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
-            if ( ! IsValidBlockSettings() )
+            if ( !IsValidBlockSettings() )
             {
                 return;
             }
@@ -144,15 +164,46 @@ namespace RockWeb.Blocks.Crm
         /// <returns>true if valid, false otherwise.</returns>
         private bool IsValidBlockSettings()
         {
-            if ( this.ContextEntity() == null )
+            var pageContextEntityTypes = this.RockPage.GetContextEntityTypes();
+            var blockContextEntityTypes = ContextTypesRequired;
+            bool hasError = false;
+
+            nbMessage.Text = string.Empty;
+            nbMessage.Visible = false;
+
+            // Ensure the block ContextEntity is configured
+            if ( !blockContextEntityTypes.Any() )
             {
+                nbMessage.Text = "The block context entity has not been configured. Go to block settings and select the Entity Type in the 'Context' drop-down list.<br/>";
+                hasError = true;
+            }
+
+            // Ensure the page ContextEntity page parameter is configured.
+            if ( !pageContextEntityTypes.Any()
+                || !pageContextEntityTypes.Where( p => ContextTypesRequired.Contains( p ) ).Any() )
+            {
+                nbMessage.Text += "The page context entity has not been configured for this block. Go to Page Properties and click Advanced and enter a valid parameter name under 'Context Parameters'.<br/>";
+                hasError = true;
+            }
+
+            // Show the error if there is one
+            if ( hasError )
+            {
+                nbMessage.Text = nbMessage.Text.TrimEnd( "<br/>".ToCharArray() );
                 nbMessage.Visible = true;
                 pnlList.Visible = false;
                 return false;
             }
 
-            nbMessage.Visible = false;
-            pnlList.Visible = pnlAddEdit.Visible == false;
+            // If there isn't an entity at this point a new item is being created and there isn't an ID for it yet. So don't show the block.
+            if ( this.ContextEntity() == null )
+            {
+                pnlContent.Visible = false;
+                return false;
+            }
+
+            // Show the list if the Add/Edit panel is not visible
+            pnlList.Visible = !pnlAddEdit.Visible;
             return true;
         }
 
@@ -162,18 +213,20 @@ namespace RockWeb.Blocks.Crm
         /// </summary>
         private void RegisterDownloadButtonsAsPostBackControls()
         {
-            foreach ( GridViewRow row in gFileList.Rows)
+            foreach ( GridViewRow row in gFileList.Rows )
             {
-                LinkButton downloadLinkButton = ( LinkButton ) row.FindControl("lbDownload");
+                LinkButton downloadLinkButton = ( LinkButton ) row.FindControl( "lbDownload" );
                 ScriptManager.GetCurrent( this.Page ).RegisterPostBackControl( downloadLinkButton );
             }
         }
-        
+
         /// <summary>
         /// Clears the Add/Edit form.
         /// </summary>
         private void ClearForm()
         {
+            pdAuditDetails.Visible = true;
+            ddlAddEditDocumentType.Enabled = true;
             ddlAddEditDocumentType.SelectedIndex = 0;
             tbDocumentName.Text = string.Empty;
             tbDescription.Text = string.Empty;
@@ -197,7 +250,7 @@ namespace RockWeb.Blocks.Crm
             List<DocumentTypeCache> documentypesForContextEntityType = DocumentTypeCache.GetByEntity( entityTypeId, false );
 
             // Get the document types allowed from the block settings and only have those in the list of document types for the entity
-            if ( GetAttributeValue( AttributeKeys.DocumentTypes).IsNotNullOrWhiteSpace() )
+            if ( GetAttributeValue( AttributeKeys.DocumentTypes ).IsNotNullOrWhiteSpace() )
             {
                 var blockAttributeFilteredDocumentTypes = GetAttributeValue( AttributeKeys.DocumentTypes ).Split( ',' ).Select( int.Parse ).ToList();
                 documentypesForContextEntityType = documentypesForContextEntityType.Where( d => blockAttributeFilteredDocumentTypes.Contains( d.Id ) ).ToList();
@@ -207,7 +260,7 @@ namespace RockWeb.Blocks.Crm
             var accessDeniedForDocumentTypeList = new List<int>();
             var editAccessDeniedForDocumentTypeList = new List<int>();
 
-            foreach( var documentType in documentypesForContextEntityType )
+            foreach ( var documentType in documentypesForContextEntityType )
             {
                 // Check System Security on the type
                 if ( !documentType.IsAuthorized( Authorization.VIEW, this.CurrentPerson ) )
@@ -226,7 +279,7 @@ namespace RockWeb.Blocks.Crm
                 if ( documentType.EntityTypeQualifierColumn.IsNotNullOrWhiteSpace() )
                 {
                     // Check that the EntityTypeQualifierColumn is a property for this entity, if not then remove it by default
-                    if ( contextEntity.GetType().GetProperty(documentType.EntityTypeQualifierColumn) == null )
+                    if ( contextEntity.GetType().GetProperty( documentType.EntityTypeQualifierColumn ) == null )
                     {
                         accessDeniedForDocumentTypeList.Add( documentType.Id );
                         continue;
@@ -236,7 +289,7 @@ namespace RockWeb.Blocks.Crm
                     string entityPropVal = this.ContextEntity().GetPropertyValue( documentType.EntityTypeQualifierColumn ).ToString();
 
                     // If the entity property values does not match DocumentType.EntityTypeQualifierValue then it should be removed.
-                    if(entityPropVal != documentType.EntityTypeQualifierValue)
+                    if ( entityPropVal != documentType.EntityTypeQualifierValue )
                     {
                         accessDeniedForDocumentTypeList.Add( documentType.Id );
                     }
@@ -257,9 +310,10 @@ namespace RockWeb.Blocks.Crm
         /// <param name="documentTypes">The document types.</param>
         private void PopulateDdlAddEditDocumentType( List<DocumentTypeCache> documentTypes )
         {
+            ddlAddEditDocumentType.Items.Clear();
             ddlAddEditDocumentType.Items.Add( new ListItem( string.Empty, string.Empty ) );
 
-            foreach( var documentType in documentTypes )
+            foreach ( var documentType in documentTypes )
             {
                 ddlAddEditDocumentType.Items.Add( new ListItem( documentType.Name, documentType.Id.ToString() ) );
             }
@@ -273,7 +327,7 @@ namespace RockWeb.Blocks.Crm
         {
             ddlDocumentType.Items.Add( new ListItem( "All Document Types", string.Empty ) );
 
-            foreach( var documentType in documentTypes )
+            foreach ( var documentType in documentTypes )
             {
                 ddlDocumentType.Items.Add( new ListItem( documentType.Name, documentType.Id.ToString() ) );
             }
@@ -295,25 +349,24 @@ namespace RockWeb.Blocks.Crm
             bool canView = document.DocumentType.IsAuthorized( Authorization.VIEW, this.CurrentPerson ) && document.IsAuthorized( Authorization.VIEW, this.CurrentPerson );
             bool canEdit = document.DocumentType.IsAuthorized( Authorization.EDIT, this.CurrentPerson ) && document.IsAuthorized( Authorization.EDIT, this.CurrentPerson );
 
-            if (!canView)
+            if ( !canView )
             {
                 e.Row.Visible = false;
             }
 
-            if ( !canEdit )
-            {
-                // disable delete button
-                var deleteField = gFileList.ColumnsOfType<DeleteField>().FirstOrDefault();
-                var deleteFieldIndex = gFileList.Columns.IndexOf( deleteField );
-                var deleteButtonCell = ( ( DataControlFieldCell ) e.Row.Cells[deleteFieldIndex] ).Controls[0];
-                deleteButtonCell.Visible = false;
+            // disable delete button
+            var deleteField = gFileList.ColumnsOfType<DeleteField>().FirstOrDefault();
+            var deleteFieldIndex = gFileList.Columns.IndexOf( deleteField );
+            var deleteButtonCell = ( ( DataControlFieldCell ) e.Row.Cells[deleteFieldIndex] ).Controls[0];
+            deleteButtonCell.Visible = canEdit;
 
-                // disable security button
-                var securityField = gFileList.ColumnsOfType<SecurityField>().FirstOrDefault();
-                var securityFieldIndex = gFileList.Columns.IndexOf( securityField );
-                var securityButtonCell = ( ( DataControlFieldCell ) e.Row.Cells[securityFieldIndex] ).Controls[0];
-                securityButtonCell.Visible = false;
-            }
+            // disable security button
+            var showSecurityButton = GetAttributeValue( AttributeKeys.ShowSecurityButton ).AsBoolean();
+
+            var securityField = gFileList.ColumnsOfType<SecurityField>().FirstOrDefault();
+            var securityFieldIndex = gFileList.Columns.IndexOf( securityField );
+            var securityButtonCell = ( ( DataControlFieldCell ) e.Row.Cells[securityFieldIndex] ).Controls[0];
+            securityButtonCell.Visible = canEdit && showSecurityButton;
         }
 
         protected void gFileList_GridRebind( object sender, EventArgs e )
@@ -341,31 +394,32 @@ namespace RockWeb.Blocks.Crm
                     documents = documents.Where( d => d.DocumentTypeId == filterDocumentTypeId );
                 }
 
-                if ( GetAttributeValue( AttributeKeys.DocumentTypes).IsNotNullOrWhiteSpace() )
+                if ( GetAttributeValue( AttributeKeys.DocumentTypes ).IsNotNullOrWhiteSpace() )
                 {
                     var filteredDocumentTypes = GetAttributeValue( AttributeKeys.DocumentTypes ).Split( ',' ).Select( int.Parse ).ToList();
-                    documents = documents.Where( d => filteredDocumentTypes.Contains( d.Id ) );
+                    documents = documents.Where( d => filteredDocumentTypes.Contains( d.DocumentTypeId ) );
                 }
 
                 gFileList.DataSource = documents.ToList();
                 gFileList.DataBind();
             }
 
-            // register download buttons as PostBackControls since they are returning a File download
+            // Register download buttons as PostBackControls since they are returning a File download
+            // Leave this here because filter changes and grid events will rebind the grid after OnLoad
             RegisterDownloadButtonsAsPostBackControls();
         }
 
         protected void gFileList_RowSelected( object sender, RowEventArgs e )
         {
             ClearForm();
-            
+
             using ( var rockContext = new RockContext() )
             {
                 var documentService = new DocumentService( rockContext );
                 var document = documentService.Get( e.RowKeyId );
 
                 bool canEdit = document.DocumentType.IsAuthorized( Authorization.EDIT, this.CurrentPerson ) && document.IsAuthorized( Authorization.EDIT, this.CurrentPerson );
-                if( !canEdit)
+                if ( !canEdit )
                 {
                     return;
                 }
@@ -399,6 +453,7 @@ namespace RockWeb.Blocks.Crm
         protected void gFileList_Add( object sender, EventArgs e )
         {
             ClearForm();
+            pdAuditDetails.Visible = false;
             pnlAddEdit.Visible = true;
             pnlList.Visible = false;
         }
@@ -477,14 +532,16 @@ namespace RockWeb.Blocks.Crm
 
         protected void ddlAddEditDocumentType_SelectedIndexChanged( object sender, EventArgs e )
         {
+            // Get the selected DocumentType from cache and update the BinaryFileTypeGuid in the FileUploader
+            var documentTypeCache = DocumentTypeCache.Get( ddlAddEditDocumentType.SelectedValueAsInt() ?? 0 );
+            fuUploader.BinaryFileTypeGuid = new BinaryFileTypeService( new RockContext() ).GetGuid( documentTypeCache.BinaryFileTypeId ).Value;
+
             if ( tbDocumentName.Text.IsNotNullOrWhiteSpace() || ddlAddEditDocumentType.SelectedIndex == 0 )
             {
                 // If there is already a name or nothing is selected then do do anything.
                 return;
             }
 
-            // Get the selected DocumentType from cache
-            var documentTypeCache = DocumentTypeCache.Get( ddlAddEditDocumentType.SelectedValueAsInt() ?? 0 );
             string template = documentTypeCache.DefaultDocumentNameTemplate;
             if ( template.IsNotNullOrWhiteSpace() )
             {
@@ -496,6 +553,6 @@ namespace RockWeb.Blocks.Crm
 
         #endregion Add/Edit Methods
 
-        
+
     }
 }

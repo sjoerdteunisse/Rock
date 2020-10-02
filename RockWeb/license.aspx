@@ -4,7 +4,7 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head id="Head1" runat="server">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Rock - License</title>
 
     <link rel="stylesheet" href="<%= Page.ResolveUrl("~/Themes/Rock/Styles/bootstrap.css") %>"/>
@@ -63,6 +63,7 @@
                             <li><a href="http://json.codeplex.com/">JSON.Net</a> (MIT)</li>
                             <li><a href="http://nuget.codeplex.com/">Nuget</a> (Apache)</li>
                             <li><a href="http://nunit.org/index.php?p=license&r=2.6.2">Nunit</a> (Custom)</li>
+                            <li><a href="https://github.com/codebude/QRCoder">QRCoder</a> (MIT)</li>
                             <li><a href="http://quartz-scheduler.org">Quartz</a> (Apache)</li>
                             <li><a href="http://jquery.com/">jQuery</a> (MIT)</li>
                             <li><a href="https://github.com/mikesherov/jquery-idletimer">Idle Timer</a> (Custom)</li>
@@ -74,7 +75,10 @@
                             <li><a href="http://dotliquidmarkup.org/">DotLiquid</a> (Apache)</li>
                             <li><a href="https://github.com/tonyheupel/liquid.js">Liquid.js</a> (MIT)</li>
                             <li><a href="http://bootboxjs.com/">Bootbox.js</a> (MIT)</li>
-                            <li><a href="http://www.ddaysoftware.com">DDay.iCal</a> (BSD)</li>
+                            <li><a href="https://www.nuget.org/packages/DDay.iCal/">DDay.iCal</a> (BSD)</li>
+                            <li><a href="https://github.com/rianjs/ical.net">Ical.NET</a> (MIT)</li>
+                            <li><a href="https://nodatime.org/">Noda Time</a> (Apache 2.0)</li>
+                            <li><a href="https://github.com/antlr/antlrcs">ANTLR 3</a> (BSD)</li>
                             <li><a href="http://www.codeproject.com/Articles/11305/EXIFectractor-library-extract-EXIF-information">EXIFextractor</a> (Ms-RL)</li>
                             <li><a href="http://dotnetzip.codeplex.com">DotNetZip</a> (Ms-PL)</li>
                             <li><a href="http://nuget.org/packages/WebActivator">WebActivatorEx</a> (Ms-PL)</li>
@@ -140,6 +144,7 @@
                             <li><a href="https://github.com/nk-o/jarallax">Jarallax</a> (MIT)</li>
                             <li><a href="https://github.com/bevacqua/dragula">Dragula</a> (MIT)</li>
                             <li><a href="https://github.com/Modernizr/Modernizr">Modernizr</a> (MIT)</li>
+                            <li><a href="https://github.com/codex-team/editor.js">Editor.JS</a> (Apache 2)</li>
                         </ul>
                     </div>
                 </div>

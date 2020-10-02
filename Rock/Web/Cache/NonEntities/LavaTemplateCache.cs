@@ -33,6 +33,7 @@ namespace Rock.Web.Cache
         /// </summary>
         private LavaTemplateCache()
         {
+            DefaultLifespan = TimeSpan.FromMinutes( 10 );
         }
 
         #endregion
@@ -59,7 +60,7 @@ namespace Rock.Web.Cache
         /// <returns></returns>
         [RockObsolete( "1.8" )]
         [Obsolete( "No longer needed", true )]
-        public static new LavaTemplateCache GetOrAddExisting( string key, Func<LavaTemplateCache> valueFactory )
+        public static LavaTemplateCache GetOrAddExisting( string key, Func<LavaTemplateCache> valueFactory )
         {
             return ItemCache<LavaTemplateCache>.GetOrAddExisting( key, null );
         }
@@ -102,7 +103,7 @@ namespace Rock.Web.Cache
                 return Load( content );
             }
 
-            return GetOrAddExisting( key, () => Load( content ), new TimeSpan( 0, 10, 0 ) );
+            return ItemCache<LavaTemplateCache>.GetOrAddExisting( key, () => Load( content ) );
         }
 
         private static LavaTemplateCache Load( string content )

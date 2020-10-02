@@ -249,7 +249,8 @@ namespace Rock.MyWell
         }
 
         /// <summary>
-        /// Gets the paymentInfoToken that the hostedPaymentInfoControl returned (see also <seealso cref="M:Rock.Financial.IHostedGatewayComponent.GetHostedPaymentInfoControl(Rock.Model.FinancialGateway,System.String)" />)
+        /// Populates the properties of the referencePaymentInfo from this gateway's <seealso cref="M:Rock.Financial.IHostedGatewayComponent.GetHostedPaymentInfoControl(Rock.Model.FinancialGateway,System.String)" >hostedPaymentInfoControl</seealso>
+        /// This includes the ReferenceNumber, plus any other fields that the gateway wants to set
         /// </summary>
         /// <param name="financialGateway">The financial gateway.</param>
         /// <param name="hostedPaymentInfoControl">The hosted payment information control.</param>
@@ -696,6 +697,30 @@ namespace Rock.MyWell
                 var twiceMonthlyDays = new int[2] { 1, 15 };
                 billingFrequency = BillingFrequency.twice_monthly;
 
+                /* 2020-07-30 MDP
+                  - When setting up a 1st/15th schedule, MyWell will report the NextBillDate as whatever we tell it, 
+                    but it really end up posting on whatever the next 1st or 15th lands on (which is what we want to happen).
+                    For example, if we set up a 1st/15th schedule to start on July 23rd, it'll report that the NextBillDate is July 23rd,
+                    but it won't really bill until Aug 1st. From then on, the NextBillDate will get reported as whatever the next 1st and 15th is.
+                    Even though it bills on the correct days, it can be confusing when it says that the next bill date is July 23rd.
+                    To avoid that confusion, lets round the start date to the next upcoming 1st or 15th.
+                 */
+
+                var nextBillDayOfMonth = billingPlanParameters.NextBillDateUTC.Value.Day;
+
+                if ( nextBillDayOfMonth > 1 && nextBillDayOfMonth < 15 )
+                {
+                    // they specifed a start between the 1st and 15th, so round up the next 15th
+                    var nextFifteenth = new DateTime( billingPlanParameters.NextBillDateUTC.Value.Year, billingPlanParameters.NextBillDateUTC.Value.Month, 15 );
+                    billingPlanParameters.NextBillDateUTC = nextFifteenth;
+                }
+                else if ( nextBillDayOfMonth > 15 )
+                {
+                    // they specifed a start after 15th, so round up the next month's 1st
+                    var nextFirst = new DateTime( billingPlanParameters.NextBillDateUTC.Value.Year, billingPlanParameters.NextBillDateUTC.Value.Month, 1 ).AddMonths( 1 );
+                    billingPlanParameters.NextBillDateUTC = nextFirst;
+                }
+
                 // twiceMonthly Days have to be in numeric order
                 billingDays = $"{twiceMonthlyDays.OrderBy( a => a ).ToList().AsDelimited( "," )}";
             }
@@ -1045,11 +1070,13 @@ namespace Rock.MyWell
 
                 //// The gateway tells us what the CreditCardType is since it was selected using their hosted payment entry frame.
                 //// So, first see if we can determine CreditCardTypeValueId using the CardType response from the gateway
-                var creditCardTypeValue = DefinedTypeCache.Get( new Guid( Rock.SystemGuid.DefinedType.FINANCIAL_CREDIT_CARD_TYPE ) )?.GetDefinedValueFromValue( creditCardResponse.CardType );
+
+                // See if we can figure it out from the CC Type (Amex, Visa, etc)
+                var creditCardTypeValue = CreditCardPaymentInfo.GetCreditCardTypeFromName( creditCardResponse.CardType );
                 if ( creditCardTypeValue == null )
                 {
-                    // otherwise, see if we can figure it out from the MaskedCard using RegEx
-                    creditCardTypeValue = CreditCardPaymentInfo.GetCreditCardType( creditCardResponse.MaskedCard );
+                    // GetCreditCardTypeFromName should have worked, but just in case, see if we can figure it out from the MaskedCard using RegEx
+                    creditCardTypeValue = CreditCardPaymentInfo.GetCreditCardTypeFromCreditCardNumber( creditCardResponse.MaskedCard );
                 }
 
                 financialPaymentDetail.CreditCardTypeValueId = creditCardTypeValue?.Id;

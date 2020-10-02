@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 
 using Rock.Attribute;
@@ -57,9 +58,24 @@ namespace Rock.Badge.Component
                 var dataView = dataViewService.Get( dataViewAttributeGuid );
                 if ( dataView != null )
                 {
-                    var errors = new List<string>();
-                    var qry = dataView.GetQuery( null, 30, out errors );
-                    if ( qry != null && qry.Where( e => e.Id == Entity.Id ).Any() )
+                    Stopwatch stopwatch = Stopwatch.StartNew();
+                    var dataViewGetQueryArgs = new DataViewGetQueryArgs
+                    {
+                        DatabaseTimeoutSeconds = 30
+                    };
+
+                    var qry = dataView.GetQuery( dataViewGetQueryArgs );
+
+                    var isEntityFound = false;
+                    if ( qry != null )
+                    {
+                        isEntityFound = qry.Where( e => e.Id == Entity.Id ).Any();
+                        stopwatch.Stop();
+                        DataViewService.AddRunDataViewTransaction( dataView.Id,
+                                                        Convert.ToInt32( stopwatch.Elapsed.TotalMilliseconds ) );
+                    }
+
+                    if ( isEntityFound )
                     {
                         Dictionary<string, object> mergeValues = new Dictionary<string, object>();
                         mergeValues.Add( "Person", Person );

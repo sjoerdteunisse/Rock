@@ -187,7 +187,7 @@ namespace RockWeb.Blocks.Event
     This {{ RegistrationInstance.RegistrationTemplate.RegistrationTerm | Downcase  }} has a remaining balance
     of {{ currencySymbol }}{{ Registration.BalanceDue | Format:'#,##0.00' }}.
     You can complete the payment for this {{ RegistrationInstance.RegistrationTemplate.RegistrationTerm | Downcase }}
-    using our <a href='{{ externalSite }}/Registration?RegistrationId={{ Registration.Id }}&rckipid={{ Registration.PersonAlias.Person | PersonTokenCreate }}'>
+    using our <a href='{{ externalSite }}Registration?RegistrationId={{ Registration.Id }}&rckipid={{ Registration.PersonAlias.Person | PersonTokenCreate }}'>
     online registration page</a>.
 </p>
 {% endif %}
@@ -318,7 +318,7 @@ namespace RockWeb.Blocks.Event
 
 <p>
     You can complete the payment for this {{ RegistrationInstance.RegistrationTemplate.RegistrationTerm | Downcase }}
-    using our <a href='{{ externalSite }}/Registration?RegistrationId={{ Registration.Id }}&rckipid={{ Registration.PersonAlias.Person | PersonTokenCreate }}'>
+    using our <a href='{{ externalSite }}Registration?RegistrationId={{ Registration.Id }}&rckipid={{ Registration.PersonAlias.Person | PersonTokenCreate }}'>
     online registration page</a>.
 </p>
 
@@ -347,7 +347,7 @@ namespace RockWeb.Blocks.Event
 {% if AdditionalFieldsNeeded %}
     <p>
         <strong>Addition information is needed in order to process this registration. Please visit the
-        <a href='{{ externalSite }}/Registration?RegistrationId={{ Registration.Id }}&rckipid={{ Registration.PersonAlias.Person | PersonTokenCreate }}&StartAtBeginning=True'>
+        <a href='{{ externalSite }}Registration?RegistrationId={{ Registration.Id }}&rckipid={{ Registration.PersonAlias.Person | PersonTokenCreate }}&StartAtBeginning=True'>
         online registration page</a> to complete the registration.</strong>
     </p>
 {% endif %}
@@ -355,7 +355,7 @@ namespace RockWeb.Blocks.Event
 {% if Registration.BalanceDue > 0 %}
     <p>
         A balance of {{ currencySymbol }}{{ Registration.BalanceDue | Format:'#,##0.00' }} remains on this registration. You can complete the payment for this {{ RegistrationInstance.RegistrationTemplate.RegistrationTerm | Downcase }}
-        using our <a href='{{ externalSite }}/Registration?RegistrationId={{ Registration.Id }}&rckipid={{ Registration.PersonAlias.Person | PersonTokenCreate }}'>
+        using our <a href='{{ externalSite }}Registration?RegistrationId={{ Registration.Id }}&rckipid={{ Registration.PersonAlias.Person | PersonTokenCreate }}'>
         online registration page</a>.
     </p>
 {% endif %}
@@ -1363,6 +1363,7 @@ The logged-in person's information will be used to complete the registrar inform
                     fee.Order = feeUI.Order;
                     fee.IsActive = feeUI.IsActive;
                     fee.IsRequired = feeUI.IsRequired;
+                    fee.HideWhenNoneRemaining = feeUI.HideWhenNoneRemaining;
                 }
 
                 // Add/Update Registration Placements
@@ -2130,6 +2131,7 @@ The logged-in person's information will be used to complete the registrar inform
             fee.DiscountApplies = cbDiscountApplies.Checked;
             fee.IsActive = cbFeeIsActive.Checked;
             fee.IsRequired = cbFeeIsRequired.Checked;
+            fee.HideWhenNoneRemaining = cbHideWhenNoneRemaining.Checked;
 
             // set the FeeItems to what they are in the UI
             fee.FeeItems = new List<RegistrationTemplateFeeItem>();
@@ -3467,6 +3469,7 @@ The logged-in person's information will be used to complete the registrar inform
             cbDiscountApplies.Checked = fee.DiscountApplies;
             cbFeeIsActive.Checked = fee.IsActive;
             cbFeeIsRequired.Checked = fee.IsRequired;
+            cbHideWhenNoneRemaining.Checked = fee.HideWhenNoneRemaining;
 
             ShowDialog( dlgFee );
         }

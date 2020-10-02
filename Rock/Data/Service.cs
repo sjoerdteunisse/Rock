@@ -19,7 +19,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
+
 using Rock.Web.Cache;
 using Z.EntityFramework.Plus;
 
@@ -104,6 +104,36 @@ namespace Rock.Data
         public virtual IQueryable<T> Queryable()
         {
             return _objectSet;
+        }
+
+        /// <summary>
+        /// Gets an <see cref="IQueryable{T}"/> list of all models, optionally excluding those that are in the specified <see cref="EntityState"/>s within the <see cref="DbContext"/>.
+        /// Note: You can sometimes improve performance by using Queryable().AsNoTracking(), but be careful. Lazy-Loading doesn't always work with AsNoTracking  https://stackoverflow.com/a/20290275/1755417
+        /// <para>
+        /// Important: This call should only be used when expecting a small handful of <see cref="Entity{T}"/>s to be excluded, as the resulting SQL will include a 'WHERE [Entity].[Id] NOT IN(x,y,z)' clause,
+        /// which has a limitation: https://stackoverflow.com/questions/1069415/limit-on-the-where-col-in-condition
+        /// </para>
+        /// </summary>
+        /// <returns></returns>
+        public virtual IQueryable<T> Queryable( params EntityState[] statesToExclude )
+        {
+            /*
+             * 2020-06-15 - JH
+             *
+             * Find the IDs for all Entity<T>s within the Context that are in the specified EntityState(s).
+             * Keep in mind that the Context might currently be referencing Entities of a different
+             * type than the one this call is targeting, hence the implicit type cast check below.
+             */
+            IList<int> excludedIds = statesToExclude?.Any() == true
+                ? Context.ChangeTracker
+                    .Entries()
+                    .Where( a => statesToExclude.Contains( a.State ) )
+                    .Where( a => a.Entity as Entity<T> != null )
+                    .Select( a => ( ( Entity<T> ) a.Entity ).Id )
+                    .ToList()
+                : new List<int>();
+
+            return _objectSet.Where( a => !excludedIds.Contains( a.Id ) );
         }
 
         /// <summary>
@@ -359,22 +389,44 @@ namespace Rock.Data
 
         /// <summary>
         /// Gets entities from a list of ids.
+        /// Note: This could throw a SQL complexity exception if the list of ids is longer than a couple of thousand
         /// </summary>
         /// <param name="ids">The ids.</param>
         /// <returns></returns>
         public virtual IQueryable<T> GetByIds( List<int> ids )
         {
-            return Queryable().Where( t => ids.Contains( t.Id ) );
+            if ( ids.Count == 1 )
+            {
+                // if we only have 1 Id in our list, we don't have to use Contains
+                // Contains is less efficient, since Linq has to Recompile the SQL everytime. See https://docs.microsoft.com/en-us/ef/ef6/fundamentals/performance/perf-whitepaper#41-using-ienumerabletcontainstt-value
+                int id = ids[0];
+                return Queryable().Where( t => t.Id == id );
+            }
+            else
+            {
+                return Queryable().Where( t => ids.Contains( t.Id ) );
+            }
         }
 
         /// <summary>
         /// Gets entities from a list of guids
+        /// Note: This could throw a SQL complexity exception if the list of guids is longer than a couple of thousand
         /// </summary>
         /// <param name="guids">The guids.</param>
         /// <returns></returns>
         public virtual IQueryable<T> GetByGuids( List<Guid> guids )
         {
-            return Queryable().Where( t => guids.Contains( t.Guid ) );
+            if ( guids.Count == 1 )
+            {
+                // if we only have 1 Guid in our list, we don't have to use Contains
+                // Contains is less efficient, since Linq has to Recompile the SQL everytime. See https://docs.microsoft.com/en-us/ef/ef6/fundamentals/performance/perf-whitepaper#41-using-ienumerabletcontainstt-value
+                Guid guid = guids[0];
+                return Queryable().Where( t => t.Guid == guid );
+            }
+            else
+            {
+                return Queryable().Where( t => guids.Contains( t.Guid ) );
+            }
         }
 
 
@@ -516,9 +568,13 @@ namespace Rock.Data
 
                 items.RemoveAt( oldIndex );
                 if ( newIndex >= items.Count )
+                {
                     items.Add( movedItem );
+                }
                 else
+                {
                     items.Insert( newIndex, movedItem );
+                }
 
                 int order = 0;
                 foreach ( T item in items )

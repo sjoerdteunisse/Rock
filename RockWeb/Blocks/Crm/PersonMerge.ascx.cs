@@ -638,7 +638,7 @@ namespace RockWeb.Blocks.Crm
                             }
 
                             // Update Addresses.
-                            MergeAddresses( rockContext, primaryPerson, primaryFamily );
+                            MergeAddresses( rockContext, primaryFamily );
                         }
 
                         // Delete the unselected photos
@@ -819,9 +819,8 @@ namespace RockWeb.Blocks.Crm
         /// </summary>
         /// <param name="rockContext"></param>
         /// <param name="primaryPerson"></param>
-        private void MergeAddresses( RockContext rockContext, Person primaryPerson, Group primaryFamily )
+        private void MergeAddresses( RockContext rockContext, Group primaryFamily )
         {
-            // Update the addresses of the primary family.
             if ( primaryFamily == null )
             {
                 return;
@@ -885,7 +884,7 @@ namespace RockWeb.Blocks.Crm
 
                     GroupLocation currentTargetFamilyLocation = null;
 
-                    if ( primaryPersonGroupLocationValue.Value != null )
+                    if ( primaryPersonGroupLocationValue.Value.IsNotNullOrWhiteSpace() )
                     {
                         currentTargetFamilyLocation = primaryFamily.GroupLocations.FirstOrDefault( p => p.Id == primaryPersonGroupLocationValue.Value.AsInteger() );
                     }
@@ -924,7 +923,7 @@ namespace RockWeb.Blocks.Crm
                     {
                         if ( mergeSourceFamilyLocation == null )
                         {
-                            // Remove the existing address if it exists
+                            // Remove the address if it exists.
                             if ( currentTargetFamilyLocation != null )
                             {
                                 primaryFamily.GroupLocations.Remove( currentTargetFamilyLocation );
@@ -1006,10 +1005,13 @@ namespace RockWeb.Blocks.Crm
 
             Guid? newPersonAttributeMatrixGuid = null;
 
+            // Get the set of Attribute Matrix references selected for the merge and ensure they are valid.
             var selectedAttributeMatrixGuidList = GetSelectedValues( property.Key ).Select( a => a.Value ).AsGuidList();
-            if ( selectedAttributeMatrixGuidList.Count > 1 )
+
+            var selectedAttributeMatrixList = attributeMatrixService.GetByGuids( selectedAttributeMatrixGuidList ).ToList();
+
+            if ( selectedAttributeMatrixList.Count > 1 )
             {
-                var selectedAttributeMatrixList = attributeMatrixService.GetByGuids( selectedAttributeMatrixGuidList ).ToList();
                 int attributeMatrixTemplateId;
                 if ( primaryPersonAttributeMatrix != null )
                 {
@@ -1017,22 +1019,32 @@ namespace RockWeb.Blocks.Crm
                 }
                 else
                 {
-                    attributeMatrixTemplateId = selectedAttributeMatrixList.Select( a => a.AttributeMatrixTemplateId ).First();
+                    attributeMatrixTemplateId = selectedAttributeMatrixList.Select( a => a.AttributeMatrixTemplateId ).FirstOrDefault();
                 }
 
-                var newPersonAttributeMatrix = new AttributeMatrix() { AttributeMatrixTemplateId = attributeMatrixTemplateId };
-                var combinedMatrixItems = selectedAttributeMatrixList.SelectMany( a => a.AttributeMatrixItems ).ToList();
+                // If a valid Attribute Matrix exists, merge all of the values into it.
+                if ( attributeMatrixTemplateId > 0 )
+                {
+                    // Create a new Attribute Matrix instance and assign a Guid so the Attribute Values can be linked to it.
+                    // We can't use SaveChanges() to get a server-generated Guid here, because it will cause a deadlock in the merge transaction.
+                    newPersonAttributeMatrixGuid = Guid.NewGuid();
 
-                newPersonAttributeMatrix.AttributeMatrixItems = combinedMatrixItems;
-                attributeMatrixService.Add( newPersonAttributeMatrix );
+                    var newPersonAttributeMatrix = new AttributeMatrix()
+                    {
+                        AttributeMatrixTemplateId = attributeMatrixTemplateId,
+                        Guid = newPersonAttributeMatrixGuid.Value
+                    };
 
-                rockContext.SaveChanges();
+                    var combinedMatrixItems = selectedAttributeMatrixList.SelectMany( a => a.AttributeMatrixItems ).ToList();
 
-                newPersonAttributeMatrixGuid = newPersonAttributeMatrix.Guid;
+                    newPersonAttributeMatrix.AttributeMatrixItems = combinedMatrixItems;
+
+                    attributeMatrixService.Add( newPersonAttributeMatrix );
+                }
             }
-            else if ( selectedAttributeMatrixGuidList.Count == 1 )
+            else if ( selectedAttributeMatrixList.Count == 1 )
             {
-                newPersonAttributeMatrixGuid = selectedAttributeMatrixGuidList.First();
+                newPersonAttributeMatrixGuid = selectedAttributeMatrixList.First().Guid;
             }
 
             if ( primaryPersonAttributeMatrixGuid != newPersonAttributeMatrixGuid )
@@ -1708,7 +1720,7 @@ namespace RockWeb.Blocks.Crm
 
             // Only show properties that match the selected headingKeys, and have more than one distinct value.
             var visibleProperties = Properties.Where( p => ( p.HasViewPermission || _ShowSecuredProperties )
-                                                           && ( headingKeys.Contains( p.Key ) || p.Values.Select( v => v.Value ).Distinct().Count() > 1 ) )
+                                                           && ( headingKeys.Contains( p.Key ) || p.Values.Select( v => v.Value ?? string.Empty ).Distinct().Count() > 1 ) )
                                               .ToList();
 
             foreach ( var personProperty in visibleProperties )

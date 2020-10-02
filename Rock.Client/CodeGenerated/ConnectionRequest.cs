@@ -65,6 +65,9 @@ namespace Rock.Client
         public int? ConnectorPersonAliasId { get; set; }
 
         /// <summary />
+        public AnalyticsSourceDate CreatedSourceDate { get; set; }
+
+        /// <summary />
         public DateTime? FollowupDate { get; set; }
 
         /// <summary />
@@ -77,6 +80,9 @@ namespace Rock.Client
         /// If the ModifiedByPersonAliasId is being set manually and should not be overwritten with current user when saved, set this value to true
         /// </summary>
         public bool ModifiedAuditValuesAlreadyUpdated { get; set; }
+
+        /// <summary />
+        public int Order { get; set; }
 
         /// <summary />
         public int PersonAliasId { get; set; }
@@ -124,10 +130,12 @@ namespace Rock.Client
             this.ConnectionState = source.ConnectionState;
             this.ConnectionStatusId = source.ConnectionStatusId;
             this.ConnectorPersonAliasId = source.ConnectorPersonAliasId;
+            this.CreatedSourceDate = source.CreatedSourceDate;
             this.FollowupDate = source.FollowupDate;
             this.ForeignGuid = source.ForeignGuid;
             this.ForeignKey = source.ForeignKey;
             this.ModifiedAuditValuesAlreadyUpdated = source.ModifiedAuditValuesAlreadyUpdated;
+            this.Order = source.Order;
             this.PersonAliasId = source.PersonAliasId;
             this.CreatedDateTime = source.CreatedDateTime;
             this.ModifiedDateTime = source.ModifiedDateTime;
@@ -149,6 +157,9 @@ namespace Rock.Client
 
         /// <summary />
         public ConnectionStatus ConnectionStatus { get; set; }
+
+        /// <summary />
+        public int? CreatedDateKey { get; set; }
 
         /// <summary />
         public PersonAlias PersonAlias { get; set; }

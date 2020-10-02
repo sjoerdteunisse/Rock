@@ -906,7 +906,8 @@ namespace RockWeb.Blocks.Groups
 
             lvMembers.DataBind();
 
-            ppAddPerson.PersonId = Rock.Constants.None.Id;
+            // Reset the PersonPicker control selection.
+            ppAddPerson.SetValue( null );
             ppAddPerson.PersonName = string.Format( "Add New {0}", GetAttributeValue( "AddPersonAs" ) );
         }
 
@@ -1090,7 +1091,11 @@ cbDidNotMeet.ClientID );
                             var workflow = Workflow.Activate( workflowType, _group.Name );
 
                             workflow.SetAttributeValue( "StartDateTime", _occurrence.OccurrenceDate.ToString( "o" ) );
-                            workflow.SetAttributeValue( "Schedule", _group.Schedule.Guid.ToString() );
+
+                            if ( _group.Schedule != null )
+                            {
+                                workflow.SetAttributeValue( "Schedule", _group.Schedule.Guid.ToString() );
+                            }
 
                             List<string> workflowErrors;
                             new WorkflowService( rockContext ).Process( workflow, _group, out workflowErrors );

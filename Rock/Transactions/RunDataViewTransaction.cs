@@ -43,7 +43,7 @@ namespace Rock.Transactions
         /// <value>
         /// The last run date.
         /// </value>
-        public DateTime LastRunDate { get; set; }
+        public DateTime? LastRunDateTime { get; set; }
 
         /// <summary>
         /// The amount of time in milliseconds that it took to run the <see cref="DataView"/>
@@ -51,7 +51,31 @@ namespace Rock.Transactions
         /// <value>
         /// The time to run in ms.
         /// </value>
-        public int? TimeToRunMS { get; set; }
+        public int? TimeToRunDurationMilliseconds { get; set; }
+
+        /// <summary>
+        /// Gets or sets the persisted last run date.
+        /// </summary>
+        /// <value>
+        /// The persisted last run date.
+        /// </value>
+        public DateTime? PersistedLastRefreshDateTime { get; set; }
+
+        /// <summary>
+        /// Gets or sets the persisted last run duration in milliseconds.
+        /// </summary>
+        /// <value>
+        /// The persisted last run duration in milliseconds.
+        /// </value>
+        public int? PersistedLastRunDurationMilliseconds { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the run count should be incremented.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [increment run count]; otherwise, <c>false</c>.
+        /// </value>
+        public bool ShouldIncrementRunCount { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RunDataViewTransaction"/> class.
@@ -70,14 +94,47 @@ namespace Rock.Transactions
                 var dataViewService = new DataViewService( rockContext );
                 var dataView = dataViewService.Get( DataViewId );
 
-                if ( dataView != null )
+                if ( dataView == null )
                 {
-                    dataView.LastRunDateTime = LastRunDate;
-                    dataView.TimeToRunMS = TimeToRunMS;
-                    dataView.RunCount = ( dataView.RunCount ?? 0 ) + 1;
-
-                    rockContext.SaveChanges();
+                    return;
                 }
+
+                if ( LastRunDateTime != null )
+                {
+                    dataView.LastRunDateTime = LastRunDateTime;
+                    if( ShouldIncrementRunCount )
+                    {
+                        dataView.RunCount = ( dataView.RunCount ?? 0 ) + 1;
+                    }
+                }
+
+                if ( PersistedLastRefreshDateTime != null )
+                {
+                    dataView.PersistedLastRefreshDateTime = PersistedLastRefreshDateTime;
+                }
+
+                if ( PersistedLastRunDurationMilliseconds != null )
+                {
+                    dataView.PersistedLastRunDurationMilliseconds = PersistedLastRunDurationMilliseconds;
+                }
+
+                // We will only update the RunCount if we were given a TimeToRun value.
+                if ( TimeToRunDurationMilliseconds != null )
+                {
+                    dataView.TimeToRunDurationMilliseconds = TimeToRunDurationMilliseconds;
+                }
+
+                /*
+                    8/3/2020 - JH
+                    We are calling the SaveChanges( true ) overload that disables pre/post processing hooks
+                    because we only want to change the properties explicitly set above. If we don't disable
+                    these hooks, the [ModifiedDateTime] value will also be updated every time a DataView is
+                    run, which is not what we want here.
+
+                    Reason: GitHub Issue #4321
+                    https://github.com/SparkDevNetwork/Rock/issues/4321
+                */
+                rockContext.SaveChanges( true );
             }
         }
     }

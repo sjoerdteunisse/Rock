@@ -341,7 +341,7 @@ namespace Rock.Web.Cache
         /// <returns></returns>
         [RockObsolete( "1.8" )]
         [Obsolete("No longer needed", true )]
-        public new static GlobalAttributesCache GetOrAddExisting( string key, Func<GlobalAttributesCache> valueFactory )
+        public static GlobalAttributesCache GetOrAddExisting( string key, Func<GlobalAttributesCache> valueFactory )
         {
             // Note we still need the private method, we are just making the public method obsolete
             return ItemCache<GlobalAttributesCache>.GetOrAddExisting( key, Load );
@@ -630,7 +630,7 @@ namespace Rock.Web.Cache
                         if ( location == null ) return string.Empty;
 
                         appSettings[ORG_LOC_FORMATTED] = location.ToString();
-                        return location.Country;
+                        return location.ToString();
                     }
                 }
 

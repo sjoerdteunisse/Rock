@@ -7,6 +7,7 @@ using Rock.Achievement;
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
+using Rock.Tests.Shared;
 
 namespace Rock.Tests.Integration.RockTests.Model
 {
@@ -21,7 +22,7 @@ namespace Rock.Tests.Integration.RockTests.Model
 
         private static RockContext _rockContext { get; set; }
         private static StreakTypeService _streakTypeService { get; set; }
-        private static StreakTypeAchievementTypeService _achievementTypeService { get; set; }
+        private static AchievementTypeService _achievementTypeService { get; set; }
 
         private static int _streakTypeId { get; set; }
         private static int _streakId { get; set; }
@@ -44,7 +45,8 @@ namespace Rock.Tests.Integration.RockTests.Model
         /// </summary>
         private static void CreateStreakTypeData()
         {
-            var personAlias = new PersonAliasService( _rockContext ).Queryable().First( pa => pa.Person.Guid == TestPeople.TedDeckerPersonGuid );
+            var tedDeckerGuid = TestGuids.TestPeople.TedDecker.AsGuid();
+            var personAlias = new PersonAliasService( _rockContext ).Queryable().First( pa => pa.Person.Guid == tedDeckerGuid );
             _personAliasId = personAlias.Id;
             _personId = personAlias.PersonId;
 
@@ -94,20 +96,21 @@ namespace Rock.Tests.Integration.RockTests.Model
         /// </summary>
         private static void CreateAchievementTypeData()
         {
-            var achievementType = new StreakTypeAchievementType
+            var achievementType = new AchievementType
             {
                 Name = "Test Achievement",
                 IsActive = true,
-                StreakTypeId = _streakTypeId,
-                AchievementEntityTypeId = EntityTypeCache.GetId( ComponentEntityTypeName ) ?? 0,
+                ComponentEntityTypeId = EntityTypeCache.GetId( ComponentEntityTypeName ) ?? 0,
                 MaxAccomplishmentsAllowed = 2,
-                AllowOverAchievement = false
+                AllowOverAchievement = false,
+                ComponentConfigJson = "{\"StreakType\": \"" + StreakTypeGuidString + "\"}"
             };
 
             _achievementTypeService.Add( achievementType );
             _rockContext.SaveChanges( true );
 
             achievementType.LoadAttributes();
+            achievementType.SetAttributeValue( Rock.Achievement.Component.AccumulativeAchievement.AttributeKey.StreakType, StreakTypeGuidString );
             achievementType.SetAttributeValue( Rock.Achievement.Component.AccumulativeAchievement.AttributeKey.TimespanInDays, 7.ToString() );
             achievementType.SetAttributeValue( Rock.Achievement.Component.AccumulativeAchievement.AttributeKey.NumberToAccumulate, 4.ToString() );
             achievementType.SaveAttributeValues();
@@ -123,7 +126,7 @@ namespace Rock.Tests.Integration.RockTests.Model
         {
             _rockContext = new RockContext();
             _streakTypeService = new StreakTypeService( _rockContext );
-            _achievementTypeService = new StreakTypeAchievementTypeService( _rockContext );
+            _achievementTypeService = new AchievementTypeService( _rockContext );
 
             DeleteTestData();
             CreateStreakTypeData();
@@ -144,8 +147,8 @@ namespace Rock.Tests.Integration.RockTests.Model
         [TestCleanup]
         public void TestCleanup()
         {
-            var service = new StreakAchievementAttemptService( _rockContext );
-            service.DeleteRange( service.Queryable().Where( saa => saa.StreakTypeAchievementTypeId == _achievementTypeId ) );
+            var service = new AchievementAttemptService( _rockContext );
+            service.DeleteRange( service.Queryable().Where( saa => saa.AchievementTypeId == _achievementTypeId ) );
             _rockContext.SaveChanges();
         }
 
@@ -157,15 +160,15 @@ namespace Rock.Tests.Integration.RockTests.Model
         [TestMethod]
         public void AccumulativeAchievementProcess()
         {
-            var attemptsQuery = new StreakAchievementAttemptService( _rockContext ).Queryable()
+            var attemptsQuery = new AchievementAttemptService( _rockContext ).Queryable()
                 .AsNoTracking()
-                .Where( saa => saa.StreakTypeAchievementTypeId == _achievementTypeId && saa.StreakId == _streakId )
+                .Where( saa => saa.AchievementTypeId == _achievementTypeId && saa.AchieverEntityId == _personAliasId )
                 .OrderBy( saa => saa.AchievementAttemptStartDateTime );
 
             // There should be no attempts
-            Assert.AreEqual( 0, attemptsQuery.Count() );
+            Assert.That.AreEqual( 0, attemptsQuery.Count() );
 
-            var achievementTypeCache = StreakTypeAchievementTypeCache.Get( _achievementTypeId );
+            var achievementTypeCache = AchievementTypeCache.Get( _achievementTypeId );
             var streak = new StreakService( _rockContext ).Get( _streakId );
             var component = AchievementContainer.GetComponent( ComponentEntityTypeName );
 
@@ -173,38 +176,38 @@ namespace Rock.Tests.Integration.RockTests.Model
             _rockContext.SaveChanges();
 
             var attempts = attemptsQuery.ToList();
-            Assert.IsNotNull( attempts );
-            Assert.AreEqual( 5, attempts.Count );
+            Assert.That.IsNotNull( attempts );
+            Assert.That.AreEqual( 5, attempts.Count );
 
-            Assert.AreEqual( new DateTime( 2019, 1, 1 ), attempts[0].AchievementAttemptStartDateTime );
-            Assert.AreEqual( new DateTime( 2019, 1, 2 ), attempts[0].AchievementAttemptEndDateTime );
-            Assert.AreEqual( .5m, attempts[0].Progress );
-            Assert.IsTrue( attempts[0].IsClosed );
-            Assert.IsFalse( attempts[0].IsSuccessful );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 1 ), attempts[0].AchievementAttemptStartDateTime );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 2 ), attempts[0].AchievementAttemptEndDateTime );
+            Assert.That.AreEqual( .5m, attempts[0].Progress );
+            Assert.That.IsTrue( attempts[0].IsClosed );
+            Assert.That.IsFalse( attempts[0].IsSuccessful );
 
-            Assert.AreEqual( new DateTime( 2019, 1, 8 ), attempts[1].AchievementAttemptStartDateTime );
-            Assert.AreEqual( new DateTime( 2019, 1, 14 ), attempts[1].AchievementAttemptEndDateTime );
-            Assert.AreEqual( .75m, attempts[1].Progress );
-            Assert.IsTrue( attempts[1].IsClosed );
-            Assert.IsFalse( attempts[1].IsSuccessful );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 8 ), attempts[1].AchievementAttemptStartDateTime );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 14 ), attempts[1].AchievementAttemptEndDateTime );
+            Assert.That.AreEqual( .75m, attempts[1].Progress );
+            Assert.That.IsTrue( attempts[1].IsClosed );
+            Assert.That.IsFalse( attempts[1].IsSuccessful );
 
-            Assert.AreEqual( new DateTime( 2019, 1, 11 ), attempts[2].AchievementAttemptStartDateTime );
-            Assert.AreEqual( new DateTime( 2019, 1, 16 ), attempts[2].AchievementAttemptEndDateTime );
-            Assert.AreEqual( .75m, attempts[2].Progress );
-            Assert.IsTrue( attempts[2].IsClosed );
-            Assert.IsFalse( attempts[2].IsSuccessful );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 11 ), attempts[2].AchievementAttemptStartDateTime );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 16 ), attempts[2].AchievementAttemptEndDateTime );
+            Assert.That.AreEqual( .75m, attempts[2].Progress );
+            Assert.That.IsTrue( attempts[2].IsClosed );
+            Assert.That.IsFalse( attempts[2].IsSuccessful );
 
-            Assert.AreEqual( new DateTime( 2019, 1, 14 ), attempts[3].AchievementAttemptStartDateTime );
-            Assert.AreEqual( new DateTime( 2019, 1, 20 ), attempts[3].AchievementAttemptEndDateTime );
-            Assert.AreEqual( 1m, attempts[3].Progress );
-            Assert.IsTrue( attempts[3].IsClosed );
-            Assert.IsTrue( attempts[3].IsSuccessful );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 14 ), attempts[3].AchievementAttemptStartDateTime );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 20 ), attempts[3].AchievementAttemptEndDateTime );
+            Assert.That.AreEqual( 1m, attempts[3].Progress );
+            Assert.That.IsTrue( attempts[3].IsClosed );
+            Assert.That.IsTrue( attempts[3].IsSuccessful );
 
-            Assert.AreEqual( new DateTime( 2019, 1, 22 ), attempts[4].AchievementAttemptStartDateTime );
-            Assert.AreEqual( new DateTime( 2019, 1, 22 ), attempts[4].AchievementAttemptEndDateTime );
-            Assert.AreEqual( .25m, attempts[4].Progress );
-            Assert.IsTrue( attempts[4].IsClosed );
-            Assert.IsFalse( attempts[4].IsSuccessful );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 22 ), attempts[4].AchievementAttemptStartDateTime );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 22 ), attempts[4].AchievementAttemptEndDateTime );
+            Assert.That.AreEqual( .25m, attempts[4].Progress );
+            Assert.That.IsTrue( attempts[4].IsClosed );
+            Assert.That.IsFalse( attempts[4].IsSuccessful );
         }
 
         /// <summary>
@@ -213,32 +216,32 @@ namespace Rock.Tests.Integration.RockTests.Model
         [TestMethod]
         public void AccumulativeAchievementProcessWithOpenAttempt()
         {
-            var attemptsQuery = new StreakAchievementAttemptService( _rockContext ).Queryable()
+            var attemptsQuery = new AchievementAttemptService( _rockContext ).Queryable()
                 .AsNoTracking()
-                .Where( saa => saa.StreakTypeAchievementTypeId == _achievementTypeId && saa.StreakId == _streakId )
+                .Where( saa => saa.AchievementTypeId == _achievementTypeId && saa.AchieverEntityId == _personAliasId )
                 .OrderBy( saa => saa.AchievementAttemptStartDateTime );
 
             // There should be no attempts
-            Assert.AreEqual( 0, attemptsQuery.Count() );
+            Assert.That.AreEqual( 0, attemptsQuery.Count() );
 
             // This attempt should get deleted since it is wrong and after any successful attempt
-            var attempt = new StreakAchievementAttempt
+            var attempt = new AchievementAttempt
             {
                 AchievementAttemptStartDateTime = new DateTime( 2019, 3, 1 ),
                 Progress = .25m,
-                StreakId = _streakId,
-                StreakTypeAchievementTypeId = _achievementTypeId
+                AchieverEntityId = _personAliasId,
+                AchievementTypeId = _achievementTypeId
             };
-            var attemptService = new StreakAchievementAttemptService( _rockContext );
+            var attemptService = new AchievementAttemptService( _rockContext );
             attemptService.Add( attempt );
-            Assert.AreEqual( 0, attempt.Id );
+            Assert.That.AreEqual( 0, attempt.Id );
             _rockContext.SaveChanges();
 
             // There should now be one attempt
-            Assert.AreEqual( 1, attemptsQuery.Count() );
-            Assert.IsTrue( attempt.Id > 0 );
+            Assert.That.AreEqual( 1, attemptsQuery.Count() );
+            Assert.That.IsTrue( attempt.Id > 0 );
 
-            var achievementTypeCache = StreakTypeAchievementTypeCache.Get( _achievementTypeId );
+            var achievementTypeCache = AchievementTypeCache.Get( _achievementTypeId );
             var streak = new StreakService( _rockContext ).Get( _streakId );
             var component = AchievementContainer.GetComponent( ComponentEntityTypeName );
 
@@ -246,43 +249,43 @@ namespace Rock.Tests.Integration.RockTests.Model
             _rockContext.SaveChanges();
 
             var attempts = attemptsQuery.ToList();
-            Assert.IsNotNull( attempts );
-            Assert.AreEqual( 5, attempts.Count );
+            Assert.That.IsNotNull( attempts );
+            Assert.That.AreEqual( 5, attempts.Count );
 
-            Assert.AreNotEqual( attempt.Id, attempts[0].Id );
-            Assert.AreEqual( new DateTime( 2019, 1, 1 ), attempts[0].AchievementAttemptStartDateTime );
-            Assert.AreEqual( new DateTime( 2019, 1, 2 ), attempts[0].AchievementAttemptEndDateTime );
-            Assert.AreEqual( .5m, attempts[0].Progress );
-            Assert.IsTrue( attempts[0].IsClosed );
-            Assert.IsFalse( attempts[0].IsSuccessful );
+            Assert.That.AreNotEqual( attempt.Id, attempts[0].Id );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 1 ), attempts[0].AchievementAttemptStartDateTime );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 2 ), attempts[0].AchievementAttemptEndDateTime );
+            Assert.That.AreEqual( .5m, attempts[0].Progress );
+            Assert.That.IsTrue( attempts[0].IsClosed );
+            Assert.That.IsFalse( attempts[0].IsSuccessful );
 
-            Assert.AreNotEqual( attempt.Id, attempts[1].Id );
-            Assert.AreEqual( new DateTime( 2019, 1, 8 ), attempts[1].AchievementAttemptStartDateTime );
-            Assert.AreEqual( new DateTime( 2019, 1, 14 ), attempts[1].AchievementAttemptEndDateTime );
-            Assert.AreEqual( .75m, attempts[1].Progress );
-            Assert.IsTrue( attempts[1].IsClosed );
-            Assert.IsFalse( attempts[1].IsSuccessful );
+            Assert.That.AreNotEqual( attempt.Id, attempts[1].Id );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 8 ), attempts[1].AchievementAttemptStartDateTime );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 14 ), attempts[1].AchievementAttemptEndDateTime );
+            Assert.That.AreEqual( .75m, attempts[1].Progress );
+            Assert.That.IsTrue( attempts[1].IsClosed );
+            Assert.That.IsFalse( attempts[1].IsSuccessful );
 
-            Assert.AreNotEqual( attempt.Id, attempts[2].Id );
-            Assert.AreEqual( new DateTime( 2019, 1, 11 ), attempts[2].AchievementAttemptStartDateTime );
-            Assert.AreEqual( new DateTime( 2019, 1, 16 ), attempts[2].AchievementAttemptEndDateTime );
-            Assert.AreEqual( .75m, attempts[2].Progress );
-            Assert.IsTrue( attempts[2].IsClosed );
-            Assert.IsFalse( attempts[2].IsSuccessful );
+            Assert.That.AreNotEqual( attempt.Id, attempts[2].Id );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 11 ), attempts[2].AchievementAttemptStartDateTime );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 16 ), attempts[2].AchievementAttemptEndDateTime );
+            Assert.That.AreEqual( .75m, attempts[2].Progress );
+            Assert.That.IsTrue( attempts[2].IsClosed );
+            Assert.That.IsFalse( attempts[2].IsSuccessful );
 
-            Assert.AreNotEqual( attempt.Id, attempts[3].Id );
-            Assert.AreEqual( new DateTime( 2019, 1, 14 ), attempts[3].AchievementAttemptStartDateTime );
-            Assert.AreEqual( new DateTime( 2019, 1, 20 ), attempts[3].AchievementAttemptEndDateTime );
-            Assert.AreEqual( 1m, attempts[3].Progress );
-            Assert.IsTrue( attempts[3].IsClosed );
-            Assert.IsTrue( attempts[3].IsSuccessful );
+            Assert.That.AreNotEqual( attempt.Id, attempts[3].Id );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 14 ), attempts[3].AchievementAttemptStartDateTime );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 20 ), attempts[3].AchievementAttemptEndDateTime );
+            Assert.That.AreEqual( 1m, attempts[3].Progress );
+            Assert.That.IsTrue( attempts[3].IsClosed );
+            Assert.That.IsTrue( attempts[3].IsSuccessful );
 
-            Assert.AreNotEqual( attempt.Id, attempts[4].Id );
-            Assert.AreEqual( new DateTime( 2019, 1, 22 ), attempts[4].AchievementAttemptStartDateTime );
-            Assert.AreEqual( new DateTime( 2019, 1, 22 ), attempts[4].AchievementAttemptEndDateTime );
-            Assert.AreEqual( .25m, attempts[4].Progress );
-            Assert.IsTrue( attempts[4].IsClosed );
-            Assert.IsFalse( attempts[4].IsSuccessful );
+            Assert.That.AreNotEqual( attempt.Id, attempts[4].Id );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 22 ), attempts[4].AchievementAttemptStartDateTime );
+            Assert.That.AreEqual( new DateTime( 2019, 1, 22 ), attempts[4].AchievementAttemptEndDateTime );
+            Assert.That.AreEqual( .25m, attempts[4].Progress );
+            Assert.That.IsTrue( attempts[4].IsClosed );
+            Assert.That.IsFalse( attempts[4].IsSuccessful );
         }
 
         /// <summary>
@@ -292,49 +295,49 @@ namespace Rock.Tests.Integration.RockTests.Model
         [TestMethod]
         public void AccumulativeAchievementProcessWithSuccessfulAttempt()
         {
-            var attemptsQuery = new StreakAchievementAttemptService( _rockContext ).Queryable()
+            var attemptsQuery = new AchievementAttemptService( _rockContext ).Queryable()
                 .AsNoTracking()
-                .Where( saa => saa.StreakTypeAchievementTypeId == _achievementTypeId && saa.StreakId == _streakId )
+                .Where( saa => saa.AchievementTypeId == _achievementTypeId && saa.AchieverEntityId == _personAliasId )
                 .OrderBy( saa => saa.AchievementAttemptStartDateTime );
 
             // There should be no attempts
-            Assert.AreEqual( 0, attemptsQuery.Count() );
+            Assert.That.AreEqual( 0, attemptsQuery.Count() );
 
-            var attempt1 = new StreakAchievementAttempt
+            var attempt1 = new AchievementAttempt
             {
                 AchievementAttemptStartDateTime = new DateTime( 2019, 3, 1 ),
                 Progress = .25m,
-                StreakId = _streakId,
-                StreakTypeAchievementTypeId = _achievementTypeId
+                AchieverEntityId = _personAliasId,
+                AchievementTypeId = _achievementTypeId
             };
 
-            var attempt2 = new StreakAchievementAttempt
+            var attempt2 = new AchievementAttempt
             {
                 AchievementAttemptStartDateTime = new DateTime( 2019, 4, 1 ),
                 AchievementAttemptEndDateTime = new DateTime( 2019, 4, 5 ),
                 Progress = 1m,
-                StreakId = _streakId,
-                StreakTypeAchievementTypeId = _achievementTypeId,
+                AchieverEntityId = _personAliasId,
+                AchievementTypeId = _achievementTypeId,
                 IsClosed = true,
                 IsSuccessful = true
             };
 
-            var attemptService = new StreakAchievementAttemptService( _rockContext );
+            var attemptService = new AchievementAttemptService( _rockContext );
             attemptService.Add( attempt1 );
             attemptService.Add( attempt2 );
-            Assert.AreEqual( 0, attempt1.Id );
-            Assert.AreEqual( 0, attempt2.Id );
+            Assert.That.AreEqual( 0, attempt1.Id );
+            Assert.That.AreEqual( 0, attempt2.Id );
             _rockContext.SaveChanges();
 
             // There should now be two attempts
-            Assert.AreEqual( 2, attemptsQuery.Count() );
-            Assert.IsTrue( attempt1.Id > 0 );
-            Assert.IsTrue( attempt2.Id > 0 );
+            Assert.That.AreEqual( 2, attemptsQuery.Count() );
+            Assert.That.IsTrue( attempt1.Id > 0 );
+            Assert.That.IsTrue( attempt2.Id > 0 );
 
             var originalId1 = attempt1.Id;
             var originalId2 = attempt2.Id;
 
-            var achievementTypeCache = StreakTypeAchievementTypeCache.Get( _achievementTypeId );
+            var achievementTypeCache = AchievementTypeCache.Get( _achievementTypeId );
             var streak = new StreakService( _rockContext ).Get( _streakId );
             var component = AchievementContainer.GetComponent( ComponentEntityTypeName );
 
@@ -342,24 +345,24 @@ namespace Rock.Tests.Integration.RockTests.Model
             _rockContext.SaveChanges();
 
             var attempts = attemptsQuery.ToList();
-            Assert.IsNotNull( attempts );
-            Assert.AreEqual( 2, attempts.Count );
+            Assert.That.IsNotNull( attempts );
+            Assert.That.AreEqual( 2, attempts.Count );
 
-            Assert.AreEqual( attempt1.Id, attempts[0].Id );
-            Assert.AreEqual( originalId1, attempts[0].Id );
-            Assert.AreEqual( new DateTime( 2019, 3, 1 ), attempts[0].AchievementAttemptStartDateTime );
-            Assert.IsNull( attempts[0].AchievementAttemptEndDateTime );
-            Assert.AreEqual( .25m, attempts[0].Progress );
-            Assert.IsFalse( attempts[0].IsClosed );
-            Assert.IsFalse( attempts[0].IsSuccessful );
+            Assert.That.AreEqual( attempt1.Id, attempts[0].Id );
+            Assert.That.AreEqual( originalId1, attempts[0].Id );
+            Assert.That.AreEqual( new DateTime( 2019, 3, 1 ), attempts[0].AchievementAttemptStartDateTime );
+            Assert.That.IsNull( attempts[0].AchievementAttemptEndDateTime );
+            Assert.That.AreEqual( .25m, attempts[0].Progress );
+            Assert.That.IsFalse( attempts[0].IsClosed );
+            Assert.That.IsFalse( attempts[0].IsSuccessful );
 
-            Assert.AreEqual( attempt2.Id, attempts[1].Id );
-            Assert.AreEqual( originalId2, attempts[1].Id );
-            Assert.AreEqual( new DateTime( 2019, 4, 1 ), attempts[1].AchievementAttemptStartDateTime );
-            Assert.AreEqual( new DateTime( 2019, 4, 5 ), attempts[1].AchievementAttemptEndDateTime );
-            Assert.AreEqual( 1m, attempts[1].Progress );
-            Assert.IsTrue( attempts[1].IsClosed );
-            Assert.IsTrue( attempts[1].IsSuccessful );
+            Assert.That.AreEqual( attempt2.Id, attempts[1].Id );
+            Assert.That.AreEqual( originalId2, attempts[1].Id );
+            Assert.That.AreEqual( new DateTime( 2019, 4, 1 ), attempts[1].AchievementAttemptStartDateTime );
+            Assert.That.AreEqual( new DateTime( 2019, 4, 5 ), attempts[1].AchievementAttemptEndDateTime );
+            Assert.That.AreEqual( 1m, attempts[1].Progress );
+            Assert.That.IsTrue( attempts[1].IsClosed );
+            Assert.That.IsTrue( attempts[1].IsSuccessful );
         }
     }
 }

@@ -161,7 +161,7 @@ namespace Rock.Model
         /// <returns></returns>
         public IQueryable<Group> GetGeofencedFamilies( List<DbGeography> geofences )
         {
-            var rockContext = (RockContext)this.Context;
+            var rockContext = ( RockContext ) this.Context;
             var groupLocationService = new GroupLocationService( rockContext );
 
             var familyGroupTypeId = GroupTypeCache.Get( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ).Id;
@@ -181,7 +181,7 @@ namespace Rock.Model
         /// <returns></returns>
         public IQueryable<Group> GetGeofencingGroups( int personId, int groupTypeId )
         {
-            var rockContext = (RockContext)this.Context;
+            var rockContext = ( RockContext ) this.Context;
             var personService = new PersonService( rockContext );
             var personGeopoints = personService.GetGeopoints( personId );
             return GetGeofencingGroups( personGeopoints, groupTypeId );
@@ -195,12 +195,12 @@ namespace Rock.Model
         /// <returns></returns>
         public IQueryable<Group> GetGeofencingGroups( int personId, Guid groupTypeGuid )
         {
-            var rockContext = (RockContext)this.Context;
+            var rockContext = ( RockContext ) this.Context;
             var personService = new PersonService( rockContext );
             var personGeopoints = personService.GetGeopoints( personId );
             return GetGeofencingGroups( personGeopoints, groupTypeGuid );
         }
-        
+
         /// <summary>
         /// Gets the groups of a selected type that have a geofence location that surrounds any of the
         /// selected points
@@ -249,7 +249,7 @@ namespace Rock.Model
         /// <returns></returns>
         public Group GetNearestGroup( int personId, int groupTypeId )
         {
-            var rockContext = (RockContext)this.Context;
+            var rockContext = ( RockContext ) this.Context;
             var personService = new PersonService( rockContext );
             var personGeopoint = personService.GetGeopoints( personId ).FirstOrDefault();
             if ( personGeopoint != null )
@@ -358,7 +358,7 @@ namespace Rock.Model
         /// <param name="includeNoCampus">if campus set and set to <c>true</c> [include groups with no campus].</param>
         /// <param name="limitToPublic">if set to <c>true</c> [limit to public groups].</param>
         /// <returns></returns>
-        public IQueryable<Group> GetChildren( int id, int rootGroupId, bool limitToSecurityRoleGroups, List<int> groupTypeIncludedIds, List<int> groupTypeExcludedIds, bool includeInactiveGroups, bool limitToShowInNavigation, int campusId, bool includeNoCampus, bool limitToPublic = false)
+        public IQueryable<Group> GetChildren( int id, int rootGroupId, bool limitToSecurityRoleGroups, List<int> groupTypeIncludedIds, List<int> groupTypeExcludedIds, bool includeInactiveGroups, bool limitToShowInNavigation, int campusId, bool includeNoCampus, bool limitToPublic = false )
         {
             var qry = Queryable();
 
@@ -425,14 +425,14 @@ namespace Rock.Model
         }
 
         /// <summary>
-        /// Gets the group descendents Common Table Expression.
+        /// Gets the group descendants Common Table Expression.
         /// </summary>
         /// <param name="parentGroupId">The parent group identifier.</param>
         /// <param name="includeInactiveChildGroups">if set to <c>true</c> [include inactive child groups].</param>
         /// <returns></returns>
         private string GetGroupDescendentsCTESql( int parentGroupId, bool includeInactiveChildGroups )
         {
-            StringBuilder cteBuilder = new StringBuilder( "with CTE as");
+            StringBuilder cteBuilder = new StringBuilder( "with CTE as" );
             cteBuilder.AppendLine( "(" );
             cteBuilder.AppendLine( $"select * from [Group] where [ParentGroupId]={parentGroupId} and [IsArchived] = 0" );
             if ( !includeInactiveChildGroups )
@@ -442,7 +442,7 @@ namespace Rock.Model
             cteBuilder.AppendLine( "union all" );
             cteBuilder.AppendLine( "select a.* from [Group] [a]" );
 
-            
+
 
             cteBuilder.AppendLine( "inner join CTE pcte on pcte.Id = [a].[ParentGroupId] where [a].[IsArchived] = 0" );
             if ( !includeInactiveChildGroups )
@@ -479,7 +479,7 @@ namespace Rock.Model
         /// </returns>
         public List<Group> GetAllDescendentGroups( int parentGroupId, bool includeInactiveChildGroups )
         {
-            var cte = GetGroupDescendentsCTESql( parentGroupId , includeInactiveChildGroups );
+            var cte = GetGroupDescendentsCTESql( parentGroupId, includeInactiveChildGroups );
 
             var sql = $@"
                 {cte}
@@ -506,6 +506,23 @@ namespace Rock.Model
         }
 
         /// <summary>
+        /// Determines if the specified group has descendants at all or active descendants (based on param).
+        /// </summary>
+        /// <param name="parentGroupId">The parent group identifier.</param>
+        /// <param name="includeInactiveChildGroups">if set to <c>true</c> [include inactive child groups].</param>
+        /// <returns></returns>
+        public bool HasDescendantGroups( int parentGroupId, bool includeInactiveChildGroups )
+        {
+            var cte = GetGroupDescendentsCTESql( parentGroupId, includeInactiveChildGroups );
+
+            var sql = $@"
+                {cte}
+                SELECT 1 WHERE EXISTS( SELECT [Id] from CTE );";
+
+            return ( Context as RockContext ).Database.SqlQuery<int>( sql ).Any();
+        }
+
+        /// <summary>
         /// Returns a List of <see cref="GroupTypeCache">Group Types</see> of the groups that are descendents of the specified parentGroupId
         /// </summary>
         /// <param name="parentGroupId">The parent group identifier.</param>
@@ -520,7 +537,7 @@ namespace Rock.Model
                 select distinct GroupTypeId from CTE";
 
             var groupTypeIds = ( this.Context as RockContext ).Database.SqlQuery<int>( sql );
-                
+
 
             return groupTypeIds.Select( a => GroupTypeCache.Get( a ) ).ToList();
         }
@@ -546,7 +563,67 @@ namespace Rock.Model
                 ", childGroupId );
 
             // already ordered within the sql, so do a dummy order by to get IOrderedEnumerable
-            return result.OrderBy(a => 0);
+            return result.OrderBy( a => 0 );
+        }
+
+        /// <summary>
+        /// Get all the group ids that have RSVP enabled,including all ancenstorsOfThoseGroups.
+        /// Use this to detect if a group has RSVP enabled, or a group has a child group with RSVP enabled
+        /// </summary>
+        /// <returns></returns>
+        public List<int> GetGroupIdsWithRSVPEnabledWithAncestors()
+        {
+            var rsvpEnabledGroupTypeIds = GroupTypeCache.All().Where( a => a.EnableRSVP ).Select( a => a.Id ).ToList();
+
+            if ( !rsvpEnabledGroupTypeIds.Any() )
+            {
+                return new List<int>();
+            }
+
+            var sql = $@" ;with CTE as (
+                select g1.*
+                    from [Group] g1
+                    where g1.GroupTypeId in ({rsvpEnabledGroupTypeIds.AsDelimited( "," )})
+                    and g1.[IsArchived] = 0
+                union all
+                select [a].* from [Group] [a]
+                inner join CTE pcte on pcte.ParentGroupId = [a].[Id]  and a.[IsArchived] = 0
+                )
+                select distinct Id from CTE";
+
+            var groupsWithRSVPEnabled = this.Context.Database.SqlQuery<int>( sql ).ToList();
+
+            return groupsWithRSVPEnabled;
+        }
+
+        /// <summary>
+        /// Get all the group ids that have scheduling enabled,including all ancenstorsOfThoseGroups.
+        /// Use this to detect if a group has scheduling enabled, or a group has a child group with scheduling enabled
+        /// </summary>
+        /// <returns></returns>
+        public List<int> GetGroupIdsWithSchedulingEnabledWithAncestors()
+        {
+            var schedulingEnabledGroupTypeIds = GroupTypeCache.All().Where( a => a.IsSchedulingEnabled ).Select( a => a.Id ).ToList();
+
+            if ( !schedulingEnabledGroupTypeIds.Any() )
+            {
+                return new List<int>();
+            }
+
+            var sql = $@" ;with CTE as (
+                select g1.*
+                    from [Group] g1 
+                    where g1.GroupTypeId in ({schedulingEnabledGroupTypeIds.AsDelimited( "," )})
+                    and g1.DisableScheduling != 1  and [IsArchived] = 0
+                union all
+                select [a].* from [Group] [a]
+                inner join CTE pcte on pcte.ParentGroupId = [a].[Id]  and a.[IsArchived] = 0
+                )
+                select distinct Id from CTE";
+
+            var groupsWithSchedulingEnabled = this.Context.Database.SqlQuery<int>( sql ).ToList();
+
+            return groupsWithSchedulingEnabled;
         }
 
         /// <summary>
@@ -584,15 +661,15 @@ namespace Rock.Model
         /// <param name="groupGuid">The group unique identifier.</param>
         /// <param name="personId">The person identifier.</param>
         /// <returns></returns>
-        public bool GroupHasMember(Guid groupGuid, int? personId )
+        public bool GroupHasMember( Guid groupGuid, int? personId )
         {
-            if (personId == null)
+            if ( personId == null )
             {
                 return false;
             }
 
             Group group = this.GetByGuid( groupGuid );
-            if (group ==  null)
+            if ( group == null )
             {
                 return false;
             }
@@ -610,7 +687,7 @@ namespace Rock.Model
         public Dictionary<GroupMember, Dictionary<PersonGroupRequirementStatus, DateTime>> GroupMembersNotMeetingRequirements( Group group, bool includeWarnings, bool includeInactive = false )
         {
             Dictionary<GroupMember, Dictionary<PersonGroupRequirementStatus, DateTime>> results = new Dictionary<GroupMember, Dictionary<PersonGroupRequirementStatus, DateTime>>();
-            
+
             var rockContext = this.Context as RockContext;
             var groupRequirementService = new GroupRequirementService( rockContext );
             var groupMemberService = new GroupMemberService( rockContext );
@@ -639,13 +716,13 @@ namespace Rock.Model
                 qryGroupMembers = qryGroupMembers.Where( a => a.GroupMemberStatus == GroupMemberStatus.Active );
             }
 
-            var groupMemberList = qryGroupMembers.Include(a => a.GroupMemberRequirements).ToList();
+            var groupMemberList = qryGroupMembers.Include( a => a.GroupMemberRequirements ).ToList();
 
             // get a list of group member ids that don't meet all the requirements
             List<int> groupMemberIdsThatLackGroupRequirementsList = groupMemberList
                 .Where( a =>
                     !qryGroupRequirements
-                        .Where( r => 
+                        .Where( r =>
                             !r.GroupRoleId.HasValue ||
                             r.GroupRoleId.Value == a.GroupRoleId )
                         .Select( x => x.Id )
@@ -684,10 +761,10 @@ namespace Rock.Model
 
             var currentDateTime = RockDateTime.Now;
 
-            foreach (var groupMemberWithIssues in groupMemberWithIssuesList )
+            foreach ( var groupMemberWithIssues in groupMemberWithIssuesList )
             {
                 Dictionary<PersonGroupRequirementStatus, DateTime> statuses = new Dictionary<PersonGroupRequirementStatus, DateTime>();
-                
+
                 // populate where the status is known
                 foreach ( var requirementStatus in groupMemberWithIssues.GroupRequirementStatuses )
                 {
@@ -697,12 +774,12 @@ namespace Rock.Model
 
                     DateTime occurrenceDate = new DateTime();
 
-                    if ( requirementStatus.RequirementMetDateTime == null)
+                    if ( requirementStatus.RequirementMetDateTime == null )
                     {
                         status.MeetsGroupRequirement = MeetsGroupRequirement.NotMet;
-                        occurrenceDate = requirementStatus.RequirementFailDateTime ?? currentDateTime; 
+                        occurrenceDate = requirementStatus.RequirementFailDateTime ?? currentDateTime;
                     }
-                    else if (requirementStatus.RequirementWarningDateTime.HasValue)
+                    else if ( requirementStatus.RequirementWarningDateTime.HasValue )
                     {
                         status.MeetsGroupRequirement = MeetsGroupRequirement.MeetsWithWarning;
                         occurrenceDate = requirementStatus.RequirementWarningDateTime.Value;
@@ -712,14 +789,14 @@ namespace Rock.Model
                         status.MeetsGroupRequirement = MeetsGroupRequirement.Meets;
                         occurrenceDate = requirementStatus.RequirementMetDateTime.Value;
                     }
-                    
+
                     statuses.Add( status, occurrenceDate );
                 }
 
                 // also add any groupRequirements that they don't have statuses for (and therefore haven't met)
-                foreach (var groupRequirement in qryGroupRequirements)
+                foreach ( var groupRequirement in qryGroupRequirements )
                 {
-                    if ( !statuses.Any( x => x.Key.GroupRequirement.Id == groupRequirement.Id) )
+                    if ( !statuses.Any( x => x.Key.GroupRequirement.Id == groupRequirement.Id ) )
                     {
                         PersonGroupRequirementStatus status = new PersonGroupRequirementStatus();
                         status.GroupRequirement = groupRequirement;
@@ -817,7 +894,7 @@ namespace Rock.Model
                         groupMember.Group = group;
                     }
 
-                    if ( !groupMember.IsValidGroupMember(rockContext) )
+                    if ( !groupMember.IsValidGroupMember( rockContext ) )
                     {
                         throw new GroupMemberValidationException( groupMember.ValidationResults.Select( a => a.ErrorMessage ).ToList().AsDelimited( "<br />" ) );
                     }
@@ -987,7 +1064,7 @@ namespace Rock.Model
         /// <param name="modifiedBy">The modified by.</param>
         /// <param name="isMailingLocation">Sets the Is Mailing option on the new address.</param>
         /// <param name="isMappedLocation">Sets the Is Mapped option on the new address.</param>
-        public static void AddNewGroupAddress( RockContext rockContext, Group group, string locationTypeGuid, 
+        public static void AddNewGroupAddress( RockContext rockContext, Group group, string locationTypeGuid,
             int? locationId, bool moveExistingToPrevious, string modifiedBy, bool isMailingLocation, bool isMappedLocation )
         {
             if ( locationId.HasValue )
@@ -1200,7 +1277,7 @@ namespace Rock.Model
         /// <param name="group">The group.</param>
         /// <param name="currentPersonAliasId">The current person alias identifier.</param>
         /// <param name="removeFromAuthTables">if set to <c>true</c> remove from auth if this group is a security role.</param>
-        public void Archive( Group group, int? currentPersonAliasId, bool removeFromAuthTables)
+        public void Archive( Group group, int? currentPersonAliasId, bool removeFromAuthTables )
         {
             group.IsArchived = true;
             group.ArchivedByPersonAliasId = currentPersonAliasId;
@@ -1210,7 +1287,7 @@ namespace Rock.Model
             if ( removeFromAuthTables && isSecurityRoleGroup )
             {
                 AuthService authService = new AuthService( this.Context as RockContext );
-                
+
                 foreach ( var auth in authService.Queryable().Where( a => a.GroupId == group.Id ).ToList() )
                 {
                     authService.Delete( auth );
@@ -1290,13 +1367,14 @@ namespace Rock.Model
         }
     }
 
+    #region Extension Methods
     /// <summary>
     /// 
     /// </summary>
     public static class GroupServiceExtensions
     {
         /// <summary>
-        /// Given an IQueryable of Groups, returns just the heads of households for those groups
+        /// Given an IQueryable of Groups, returns a queryable of just the heads of households for those groups
         /// </summary>
         /// <param name="groups">The groups.</param>
         /// <returns></returns>
@@ -1362,5 +1440,106 @@ namespace Rock.Model
         {
             return group.Members.Where( m => m.GroupMemberStatus == GroupMemberStatus.Active );
         }
+
+        /// <summary>
+        /// Returns a queryable of Groups that have active leaders.
+        /// </summary>
+        /// <param name="groupQuery">The group query.</param>
+        /// <returns></returns>
+        public static IQueryable<Group> HasActiveLeader( this IQueryable<Group> groupQuery )
+        {
+            return groupQuery
+                    .Where( g => g.Members.Any( m =>
+                                    m.GroupMemberStatus == GroupMemberStatus.Active &&
+                                    m.GroupRole.IsLeader ) );
+        }
+
+        /// <summary>
+        /// Returns a queryable of Groups with the specified Group Type Id.
+        /// </summary>
+        /// <param name="groupQuery">The group query.</param>
+        /// <param name="groupTypeId">The group type identifier.</param>
+        /// <returns></returns>
+        public static IQueryable<Group> IsGroupType( this IQueryable<Group> groupQuery, int groupTypeId )
+        {
+            return groupQuery
+                    .Where( g => g.GroupTypeId == groupTypeId );
+        }
+
+        /// <summary>
+        /// Returns a queryable of Groups that are active.
+        /// </summary>
+        /// <param name="groupQuery">The group query.</param>
+        /// <returns></returns>
+        public static IQueryable<Group> IsActive( this IQueryable<Group> groupQuery )
+        {
+            return groupQuery
+                    .Where( g => g.IsActive );
+        }
+
+        /// <summary>
+        /// Returns a queryable of Groups that have a Schedule Id.
+        /// </summary>
+        /// <param name="groupQuery">The group query.</param>
+        /// <returns></returns>
+        public static IQueryable<Group> HasSchedule( this IQueryable<Group> groupQuery )
+        {
+            return groupQuery
+                    .Where( g => g.ScheduleId != null );
+        }
+
+        /// <summary>
+        /// Returns a queryable of Groups have that Group Scheduling Enabled
+        /// </summary>
+        /// <param name="groupQuery">The group query.</param>
+        /// <returns></returns>
+        public static IQueryable<Group> HasSchedulingEnabled( this IQueryable<Group> groupQuery )
+        {
+            return groupQuery
+                    .Where( g => g.GroupType.IsSchedulingEnabled && g.DisableScheduling == false );
+        }
+
+        /// <summary>
+        /// Returns a queryable of group scheduling <see cref="Schedule">Schedules</see> associated with group scheduling for the specified groupQuery.
+        /// Only schedules for groups that have group scheduling enabled, and have active group locations will be returned.
+        /// </summary>
+        /// <param name="groupQuery">The group query.</param>
+        /// <returns></returns>
+        public static IQueryable<Schedule> GetGroupSchedulingSchedules( this IQueryable<Group> groupQuery )
+        {
+            var groupsWithSchedulingEnabledQuery = groupQuery.HasSchedulingEnabled();
+
+            var groupLocationsQuery = groupsWithSchedulingEnabledQuery.SelectMany( a => a.GroupLocations );
+
+            var schedulesQuery = groupLocationsQuery
+                .Where( gl => gl.Location.IsActive )
+                .SelectMany( gl => gl.Schedules )
+                .Distinct()
+                .Where( s => s.IsActive );
+
+            return schedulesQuery;
+        }
+
+        /// <summary>
+        /// Returns a queryable of group scheduling <see cref="GroupLocation">group locations</see> associated with group scheduling for the specified groupQuery.
+        /// Only group locations for groups that have group scheduling enabled, and have active group locations will be returned.
+        /// </summary>
+        /// <param name="groupQuery">The group query.</param>
+        /// <returns></returns>
+        public static IQueryable<GroupLocation> GetGroupSchedulingGroupLocations( this IQueryable<Group> groupQuery )
+        {
+            var groupsWithSchedulingEnabledQuery = groupQuery.HasSchedulingEnabled();
+            var groupLocationsQuery = groupsWithSchedulingEnabledQuery.SelectMany( a => a.GroupLocations );
+
+            groupLocationsQuery = groupLocationsQuery
+                .Where( a => groupQuery.Any( x => x.Id == a.GroupId ) )
+                .Where( a => a.Group.GroupType.IsSchedulingEnabled == true && a.Group.DisableScheduling == false )
+                .Where( gl => gl.Location.IsActive )
+                .Distinct();
+
+            return groupLocationsQuery;
+        }
     }
+
+    #endregion
 }

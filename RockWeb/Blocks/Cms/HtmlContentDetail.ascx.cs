@@ -214,7 +214,26 @@ namespace RockWeb.Blocks.Cms
         {
             base.OnLoad( e );
 
-            if ( !this.IsPostBack )
+            /*
+             * 2020-06-10 - JH
+             *
+             * In some areas of Rock, we force a full postback (page reload), as opposed to the default
+             * partial postback that occurs from within an UpdatePanel. See the 'Cms/EmailForm' Block
+             * for an example of forcing a full postback, by way of the 'PostBackTrigger' control:
+             *
+             * https://github.com/SparkDevNetwork/Rock/blob/b0239d87882d6986afb32bc5a5353dcbfc3edee3/RockWeb/Blocks/Cms/EmailForm.ascx#L87
+             * 
+             * When this happens, any 'HtmlContentDetail' Blocks on the page lose their content,
+             * because the 'this.IsPostBack' check below only returns true for partial postbacks.
+             * The fix is to detect if the current postback represents a full postback, and reload
+             * the HTML content in this case.
+             * 
+             * '!ScriptManager.GetCurrent( this.Page ).IsInAsyncPostBack'
+             * 
+             * Reason: Issue #4237
+             * https://github.com/SparkDevNetwork/Rock/issues/4237
+             */
+            if ( !this.IsPostBack || !ScriptManager.GetCurrent( this.Page ).IsInAsyncPostBack )
             {
                 ShowView();
             }
@@ -252,7 +271,7 @@ namespace RockWeb.Blocks.Cms
         {
             bool supportsVersioning = GetAttributeValue( AttributeKey.SupportVersions ).AsBoolean();
             bool requireApproval = GetAttributeValue( AttributeKey.RequireApproval ).AsBoolean();
-            if ( requireApproval && ! supportsVersioning )
+            if ( requireApproval && !supportsVersioning )
             {
                 SetAttributeValue( AttributeKey.SupportVersions, "true" );
                 SaveAttributeValues();
@@ -323,13 +342,13 @@ namespace RockWeb.Blocks.Cms
             ////   - the content was changed, versioning is enabled, and OverwriteVersion is not checked
 
             // if the existing content changed, and the overwrite option was not checked, create a new version
-            if (htmlContent != null)
+            if ( htmlContent != null )
             {
                 // Editing existing content. Check if content has changed
-                if (htmlContent.Content != newContent)
+                if ( htmlContent.Content != newContent )
                 {
                     // The content has changed (different than database). Check if versioning is enabled
-                    if (supportVersioning && !cbOverwriteVersion.Checked)
+                    if ( supportVersioning && !cbOverwriteVersion.Checked )
                     {
                         //// versioning is enabled, and they didn't choose to overwrite
                         //// set to null so that we'll create a new record
@@ -483,55 +502,55 @@ namespace RockWeb.Blocks.Cms
 
         #region Methods
 
-// Disable QuickEdit for v7
-//        private void RegisterScript()
-//        {
-//            if ( UserCanEdit )
-//            {
-//                string script = "";
-//                if ( GetAttributeValue( "QuickEdit" ) == "DBLCLICK" )
-//                {
-//                    script = string.Format( @"
-//    Sys.Application.add_load( function () {{
-//        $('#{0} > div.html-content-view').dblclick(function (e) {{
-//            {1};
-//        }});
-//    }});
-//", upnlHtmlContent.ClientID, this.Page.ClientScript.GetPostBackEventReference( lbQuickEdit, "" ) );
-//                }
+        // Disable QuickEdit for v7
+        //        private void RegisterScript()
+        //        {
+        //            if ( UserCanEdit )
+        //            {
+        //                string script = "";
+        //                if ( GetAttributeValue( "QuickEdit" ) == "DBLCLICK" )
+        //                {
+        //                    script = string.Format( @"
+        //    Sys.Application.add_load( function () {{
+        //        $('#{0} > div.html-content-view').dblclick(function (e) {{
+        //            {1};
+        //        }});
+        //    }});
+        //", upnlHtmlContent.ClientID, this.Page.ClientScript.GetPostBackEventReference( lbQuickEdit, "" ) );
+        //                }
 
-//                if ( GetAttributeValue( "QuickEdit" ) == "AIREDIT" )
-//                {
-//                    RockPage.AddScriptLink( Page, "~/Scripts/summernote/summernote.min.js", true );
+        //                if ( GetAttributeValue( "QuickEdit" ) == "AIREDIT" )
+        //                {
+        //                    RockPage.AddScriptLink( Page, "~/Scripts/summernote/summernote.min.js", true );
 
-//                    script = string.Format( @"
-//    Sys.Application.add_load( function () {{
-//        $('#{0} > div.html-content-view').summernote( {{
-//            airMode: true,
-//            callbacks: {{
-//                onChange: function( contents, $editable ) {{
-//                    var htmlContents = {{
-//                        EntityValue: $('#{2}').val(),
-//                        Content: contents
-//                    }};
-//                    $.post( Rock.settings.get('baseUrl') + 'api/HtmlContents/UpdateContents/{1}', htmlContents, null, 'application/json' );
-//                }}
-//            }}
-//        }});
-//    }});
-//", upnlHtmlContent.ClientID, this.BlockId, hfEntityValue.ClientID );
-//                }
+        //                    script = string.Format( @"
+        //    Sys.Application.add_load( function () {{
+        //        $('#{0} > div.html-content-view').summernote( {{
+        //            airMode: true,
+        //            callbacks: {{
+        //                onChange: function( contents, $editable ) {{
+        //                    var htmlContents = {{
+        //                        EntityValue: $('#{2}').val(),
+        //                        Content: contents
+        //                    }};
+        //                    $.post( Rock.settings.get('baseUrl') + 'api/HtmlContents/UpdateContents/{1}', htmlContents, null, 'application/json' );
+        //                }}
+        //            }}
+        //        }});
+        //    }});
+        //", upnlHtmlContent.ClientID, this.BlockId, hfEntityValue.ClientID );
+        //                }
 
-//                if ( !string.IsNullOrWhiteSpace( script ) )
-//                {
-//                    ScriptManager.RegisterStartupScript( lbQuickEdit, lbQuickEdit.GetType(), string.Format( "html-content-block-{0}", this.BlockId ), script, true );
-//                }
-//            }
-//        }
+        //                if ( !string.IsNullOrWhiteSpace( script ) )
+        //                {
+        //                    ScriptManager.RegisterStartupScript( lbQuickEdit, lbQuickEdit.GetType(), string.Format( "html-content-block-{0}", this.BlockId ), script, true );
+        //                }
+        //            }
+        //        }
 
-/// <summary>
-/// Binds the grid.
-/// </summary>
+        /// <summary>
+        /// Binds the grid.
+        /// </summary>
         private void BindGrid()
         {
             var htmlContentService = new HtmlContentService( new RockContext() );
@@ -730,7 +749,7 @@ namespace RockWeb.Blocks.Cms
             string entityValue = this.EntityValue();
             int? maxVersion = new HtmlContentService( new RockContext() ).Queryable()
                 .Where( c => c.BlockId == this.BlockId && c.EntityValue == entityValue )
-                .Select( c => (int?)c.Version ).Max();
+                .Select( c => ( int? ) c.Version ).Max();
             return maxVersion;
         }
 
@@ -750,6 +769,14 @@ namespace RockWeb.Blocks.Cms
 
             pnlEdit.Visible = false;
             pnlVersionGrid.Visible = false;
+
+            // If we are rendering in configuration-only mode, hide the block runtime content.
+            if ( this.ConfigurationRenderModeIsEnabled )
+            {
+                upnlHtmlContentView.Visible = false;
+                return;
+            }
+
             string entityValue = EntityValue();
             string html = string.Empty;
 
@@ -769,11 +796,11 @@ namespace RockWeb.Blocks.Cms
                 using ( var rockContext = new RockContext() )
                 {
                     var htmlContentService = new HtmlContentService( rockContext );
-                    HtmlContent content = htmlContentService.GetActiveContent( this.BlockId, entityValue );
+                    var contentHtml = htmlContentService.GetActiveContentHtml( this.BlockId, entityValue );
 
-                    if ( content != null )
+                    if ( contentHtml != null )
                     {
-                        if ( content.Content.HasMergeFields() )
+                        if ( contentHtml.HasMergeFields() )
                         {
                             var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( this.RockPage, this.CurrentPerson );
                             mergeFields.Add( "CurrentPage", this.PageCache );
@@ -790,11 +817,11 @@ namespace RockWeb.Blocks.Cms
                             mergeFields.Add( "CurrentPersonCanEdit", IsUserAuthorized( Authorization.EDIT ) );
                             mergeFields.Add( "CurrentPersonCanAdministrate", IsUserAuthorized( Authorization.ADMINISTRATE ) );
 
-                            html = content.Content.ResolveMergeFields( mergeFields, GetAttributeValue( AttributeKey.EnabledLavaCommands ) );
-                         }
+                            html = contentHtml.ResolveMergeFields( mergeFields, GetAttributeValue( AttributeKey.EnabledLavaCommands ) );
+                        }
                         else
                         {
-                            html = content.Content;
+                            html = contentHtml;
                         }
                     }
                     else
@@ -834,7 +861,23 @@ namespace RockWeb.Blocks.Cms
             string contextParameter = GetAttributeValue( AttributeKey.ContextParameter );
             if ( !string.IsNullOrEmpty( contextParameter ) )
             {
-                entityValue = string.Format( "{0}={1}", contextParameter, PageParameter( contextParameter ) ?? string.Empty );
+                /*
+                    6/15/2020 - JME
+                    Updated the logic to get the Context Parameter. Before this would simply use the
+                    query string. Updated it to also consider the context variable if one exists and
+                    the query string did not contain the configured context paramater. This was added
+                    to allow having different content for each context object. The specific use case
+                    is when used in conjection with the campus context switcher. This change will allow
+                    having separate content per campus (without any Lava case statements).  
+                */
+                var entityId = PageParameter( contextParameter );
+
+                // If no page parameter then check for context value
+                if ( entityId.IsNullOrWhiteSpace() && this.ContextEntity() != null )
+                {
+                    entityId = this.ContextEntity().Id.ToString();
+                }
+                entityValue = string.Format( "{0}={1}", contextParameter, entityId ?? string.Empty );
             }
 
             string contextName = GetAttributeValue( AttributeKey.ContextName );

@@ -23,18 +23,11 @@ namespace Rock.SystemGuid
     /// </summary>
     public static class Page
     {
-
         /// <summary>
         /// Gets the Ability Levels page guid
         /// ParentPage: Check-in
         /// </summary>
         public const string ABILITY_LEVELS = "9DD78A23-BE4B-474E-BCBC-F06AAABB67FA";
-
-        /// <summary>
-        /// Gets the Ability Select page guid
-        /// ParentPage: Check-in
-        /// </summary>
-        public const string ABILITY_SELECT = "A1CBDAA4-94DD-4156-8260-5A3781E39FD0";
 
         /// <summary>
         /// Gets the Account page guid
@@ -55,16 +48,16 @@ namespace Rock.SystemGuid
         public const string ACCOUNTS = "2B630A3B-E081-4204-A3E4-17BB3A5F063D";
 
         /// <summary>
+        /// Gets the Achievement Type page guid
+        /// ParentPage: <see cref="ENGAGEMENT"/>
+        /// </summary>
+        public const string ACHIEVEMENT_TYPES = "FCE0D006-F854-4107-9298-667563FA8D77";
+
+        /// <summary>
         /// Gets the Add Transaction page guid
         /// ParentPage: Contributions
         /// </summary>
         public const string ADD_TRANSACTION = "B1CA86DC-9890-4D26-8EBD-488044E1B3DD";
-
-        /// <summary>
-        /// Gets the Admin page guid
-        /// ParentPage: Check-in
-        /// </summary>
-        public const string ADMIN_CHECK_IN = "7B7207D0-B905-4836-800E-A24DDC6FE445";
 
         /// <summary>
         /// Gets the Admin Tools page guid
@@ -230,12 +223,6 @@ namespace Rock.SystemGuid
 
         /// <summary>
         /// Gets the Check-in page guid
-        /// ParentPage: 
-        /// </summary>
-        public const string CHECK_IN_ROOT = "CDF2C599-D341-42FD-B7DC-CD402EA96050";
-
-        /// <summary>
-        /// Gets the Check-in page guid
         /// ParentPage: Rock Settings
         /// </summary>
         public const string CHECK_IN_ROCK_SETTINGS = "66C5DD58-094C-4FF9-9AFB-44801FCFCC2D";
@@ -269,6 +256,212 @@ namespace Rock.SystemGuid
         /// ParentPage: 
         /// </summary>
         public const string CHECK_IN_TYPE = "62C70118-0A6F-432A-9D84-A5296655CB9E";
+
+        #region Check-In Pages
+
+        /// <summary>
+        /// Gets the Admin page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        [RockObsolete( "1.11" )]
+        [Obsolete( "Use CHECKIN_ADMIN instead" )]
+        public const string ADMIN_CHECK_IN = "7B7207D0-B905-4836-800E-A24DDC6FE445";
+
+        /// <summary>
+        /// Gets the Check-in Welcome page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        [RockObsolete( "1.11" )]
+        [Obsolete( "Use CHECKIN_WELCOME instead" )]
+        public const string WELCOME = "432B615A-75FF-4B14-9C99-3E769F866950";
+
+        /// <summary>
+        /// Gets the Search page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        [RockObsolete( "1.11" )]
+        [Obsolete( "Use CHECKIN_SEARCH instead" )]
+        public const string SEARCH = "D47858C0-0E6E-46DC-AE99-8EC84BA5F45F";
+
+        /// <summary>
+        /// Gets the Family Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        [RockObsolete( "1.11" )]
+        [Obsolete( "Use CHECKIN_FAMILY_SELECT instead" )]
+        public const string FAMILY_SELECT = "10C97379-F719-4ACB-B8C6-651957B660A4";
+
+        /// <summary>
+        /// Gets the Person Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        [RockObsolete( "1.11" )]
+        [Obsolete( "Use CHECKIN_PERSON_SELECT instead" )]
+        public const string PERSON_SELECT = "BB8CF87F-680F-48F9-9147-F4951E033D17";
+
+        /// <summary>
+        /// Gets the Group Type Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        [RockObsolete( "1.11" )]
+        [Obsolete( "Use CHECKIN_GROUP_TYPE_SELECT instead" )]
+        public const string GROUP_TYPE_SELECT = "60E3EA1F-FD6B-4F0E-9C72-A9960E13427C";
+
+        /// <summary>
+        /// Gets the Ability Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        [RockObsolete( "1.11" )]
+        [Obsolete( "Use CHECKIN_ABILITY_SELECT instead" )]
+        public const string ABILITY_SELECT = "A1CBDAA4-94DD-4156-8260-5A3781E39FD0";
+
+        /// <summary>
+        /// Gets the Group Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        [RockObsolete( "1.11" )]
+        [Obsolete( "Use CHECKIN_GROUP_SELECT instead" )]
+        public const string GROUP_SELECT = "6F0CB22B-E05B-42F1-A329-9219E81F6C34";
+
+        /// <summary>
+        /// Gets the Location Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        [RockObsolete( "1.11" )]
+        [Obsolete( "Use CHECKIN_LOCATION_SELECT instead" )]
+        public const string LOCATION_SELECT = "043BB717-5799-446F-B8DA-30E575110B0C";
+
+        /// <summary>
+        /// Gets the Time Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        [RockObsolete( "1.11" )]
+        [Obsolete( "Use CHECKIN_TIME_SELECT instead" )]
+        public const string TIME_SELECT = "C0AFA081-B64E-4006-BFFC-A350A51AE4CC";
+
+        /// <summary>
+        /// Gets the Success page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        [RockObsolete("1.11")]
+        [Obsolete( "Use CHECKIN_SUCCESS instead" )]
+        public const string SUCCESS = "E08230B8-35A4-40D6-A0BB-521418314DA9";
+
+        /// <summary>
+        /// Gets the Check-in page guid
+        /// ParentPage: 
+        /// </summary>
+        public const string CHECK_IN_ROOT = "CDF2C599-D341-42FD-B7DC-CD402EA96050";
+
+        /// <summary>
+        /// Gets the Admin page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_ADMIN = "7B7207D0-B905-4836-800E-A24DDC6FE445";
+
+        /// <summary>
+        /// Gets the Welcome page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_WELCOME = "432B615A-75FF-4B14-9C99-3E769F866950";
+
+        /// <summary>
+        /// Gets the Search page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_SEARCH = "D47858C0-0E6E-46DC-AE99-8EC84BA5F45F";
+
+        /// <summary>
+        /// Gets the Family Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_FAMILY_SELECT = "10C97379-F719-4ACB-B8C6-651957B660A4";
+
+        /// <summary>
+        /// Gets the Person Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_PERSON_SELECT = "BB8CF87F-680F-48F9-9147-F4951E033D17";
+
+        /// <summary>
+        /// Gets the Ability Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_ABILITY_SELECT = "A1CBDAA4-94DD-4156-8260-5A3781E39FD0";
+
+        /// <summary>
+        /// Gets the Group Type Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_GROUP_TYPE_SELECT = "60E3EA1F-FD6B-4F0E-9C72-A9960E13427C";
+
+        /// <summary>
+        /// Gets the Group Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_GROUP_SELECT = "6F0CB22B-E05B-42F1-A329-9219E81F6C34";
+
+        /// <summary>
+        /// Gets the Location Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_LOCATION_SELECT = "043BB717-5799-446F-B8DA-30E575110B0C";
+
+        /// <summary>
+        /// Gets the Time Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_TIME_SELECT = "C0AFA081-B64E-4006-BFFC-A350A51AE4CC";
+
+        /// <summary>
+        /// Gets the Success page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_SUCCESS = "E08230B8-35A4-40D6-A0BB-521418314DA9";
+
+        /// <summary>
+        /// Gets the Scheduled Locations page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_SCHEDULED_LOCATIONS = "4E210ABB-65B3-4816-BD77-D2C876FC0FD5";
+
+        /// <summary>
+        /// Gets the Person Select (Family Check-in) page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_PERSON_SELECT_FAMILY_CHECK_IN = "D14154BA-2F2C-41C3-B380-F833252CBB13";
+
+        /// <summary>
+        /// Gets the Time Select (Family Check-in) page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_TIME_SELECT_FAMILY_CHECK_IN = "67BD09B0-0C6E-44E7-A8EB-0E71551F3E6B";
+
+        /// <summary>
+        /// Gets the Save Attendance (Family Check-in) page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_SAVE_ATTENDANCE_FAMILY_CHECK_IN = "4AF7A0E1-E991-4AE5-A2B5-C440F67A2E6A";
+
+        /// <summary>
+        /// Gets the Action Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_ACTION_SELECT = "0586648B-9490-43C6-B18D-7F403458C080";
+
+        /// <summary>
+        /// Gets the Check Out Person Select page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_CHECK_OUT_PERSON_SELECT = "D54FC289-DF7D-48C5-91BE-38BCFDEBC6AF";
+
+        /// <summary>
+        /// Gets the Check Out Success page guid
+        /// ParentPage: Check-in
+        /// </summary>
+        public const string CHECKIN_CHECK_OUT_SUCCESS = "21A855BA-6D68-4504-97B4-D787452CEC29";
+
+        #endregion Check-In Pages
 
         /// <summary>
         /// Gets the ChildPages page guid
@@ -360,8 +553,21 @@ namespace Rock.SystemGuid
         public const string CONFIRM = "D73F83B4-E20E-4F95-9A2C-511FB669F44C";
 
         /// <summary>
-        /// Gets the Connections page guid
-        /// ParentPage: Manage
+        /// Gets the Connections board page guid.
+        /// ParentPage: Connections opportunity select
+        /// </summary>
+        public const string CONNECTIONS_BOARD = "4FBCEB52-8892-4035-BDEA-112A494BE81F";
+
+        /// <summary>
+        /// Gets the Connections opportunity select page guid.
+        /// ParentPage: Engagement
+        /// </summary>
+        public const string CONNECTION_OPPORTUNITY_SELECT = "2A0C135A-8421-4125-A484-83C8B4FB3D34";
+
+        /// <summary>
+        /// Gets the Connections page guid. This was the original connections root page that was replaced by
+        /// the connection opportunity select.
+        /// ParentPage: Connections opportunity select
         /// </summary>
         public const string CONNECTIONS = "530860ED-BC73-4A43-8E7C-69533EF2B6AD";
 
@@ -369,6 +575,12 @@ namespace Rock.SystemGuid
         /// The connection request detail page guid
         /// </summary>
         public const string CONNECTION_REQUEST_DETAIL = "50f04e77-8d3b-4268-80ab-bc15dd6cb262";
+
+        /// <summary>
+        /// Connection Type Config Page
+        /// ParentPage: Connections
+        /// </summary>
+        public const string CONNECTION_TYPES = "9CC19684-7AD2-4D4E-A7C4-10DAE56E7FA6";
 
         /// <summary>
         /// Gets the Contact Us page guid
@@ -713,12 +925,6 @@ namespace Rock.SystemGuid
         public const string EXTERNAL_HOMEPAGE = "85F25819-E948-4960-9DDF-00F54D32444E";
 
         /// <summary>
-        /// Gets the Family Select page guid
-        /// ParentPage: Check-in
-        /// </summary>
-        public const string FAMILY_SELECT = "10C97379-F719-4ACB-B8C6-651957B660A4";
-
-        /// <summary>
         /// Gets the File Storage Providers page guid
         /// ParentPage: System Settings
         /// </summary>
@@ -897,12 +1103,6 @@ namespace Rock.SystemGuid
         public const string GROUP_SEARCH_RESULTS = "9C9CAD94-095E-4CC9-BC29-24BDE30492B2";
 
         /// <summary>
-        /// Gets the Group Select page guid
-        /// ParentPage: Check-in
-        /// </summary>
-        public const string GROUP_SELECT = "6F0CB22B-E05B-42F1-A329-9219E81F6C34";
-
-        /// <summary>
         /// Gets the Group Toolbox page guid
         /// ParentPage: My Account
         /// </summary>
@@ -913,12 +1113,6 @@ namespace Rock.SystemGuid
         /// ParentPage: Group Types
         /// </summary>
         public const string GROUP_TYPE_DETAIL = "5CD8E024-710B-4EDE-8C8C-4C9E15E6AFAB";
-
-        /// <summary>
-        /// Gets the Group Type Select page guid
-        /// ParentPage: Check-in
-        /// </summary>
-        public const string GROUP_TYPE_SELECT = "60E3EA1F-FD6B-4F0E-9C72-A9960E13427C";
 
         /// <summary>
         /// Gets the Group Types page guid
@@ -1011,16 +1205,16 @@ namespace Rock.SystemGuid
         public const string LOCATION_EDITOR = "47BFA50A-68D8-4841-849B-75AB3E5BCD6D";
 
         /// <summary>
-        /// Gets the Location Select page guid
-        /// ParentPage: Check-in
-        /// </summary>
-        public const string LOCATION_SELECT = "043BB717-5799-446F-B8DA-30E575110B0C";
-
-        /// <summary>
         /// Gets the Location Services page guid
         /// ParentPage: System Settings
         /// </summary>
         public const string LOCATION_SERVICES = "1FD5698F-7279-463F-9637-9A80DB86BB86";
+
+        /// <summary>
+        /// The login viewer
+        /// ParentPage: System Settings
+        /// </summary>
+        public const string LOG_VIEWER = "82EC7718-6549-4531-A0AB-7957919AE71C";
 
         /// <summary>
         /// Gets the Login page guid
@@ -1179,6 +1373,12 @@ namespace Rock.SystemGuid
         public const string PAGE_ROUTE_DETAIL = "649A2B1E-7A15-4DA8-AF67-17874B6FE98F";
 
         /// <summary>
+        /// Gets the Page Map page guid
+        /// ParentPage: CMS Configuration
+        /// </summary>
+        public const string PAGE_VIEWS = "E556D6C5-E2DB-4041-81AB-4F582008155C";
+
+        /// <summary>
         /// Gets the People page guid
         /// ParentPage: Internal Homepage
         /// </summary>
@@ -1231,12 +1431,6 @@ namespace Rock.SystemGuid
         /// ParentPage: Support Pages
         /// </summary>
         public const string PERSON_SEARCH = "5E036ADE-C2A4-4988-B393-DAC58230F02E";
-
-        /// <summary>
-        /// Gets the Person Select page guid
-        /// ParentPage: Check-in
-        /// </summary>
-        public const string PERSON_SELECT = "BB8CF87F-680F-48F9-9147-F4951E033D17";
 
         /// <summary>
         /// Gets the Person Viewed Detail page guid
@@ -1418,6 +1612,11 @@ namespace Rock.SystemGuid
         public const string SCHEDULE_BUILDER = "A286D16B-FDDF-4D89-B98F-D51188B611E6";
 
         /// <summary>
+        /// The schedule confirmation page guid
+        /// </summary>
+        public const string SCHEDULE_CONFIRMATION = "EA14B522-E2A6-4CA7-8AF0-9CDF0B84C8CF";
+
+        /// <summary>
         /// Gets the Scheduled Job Detail page guid
         /// ParentPage: Jobs Administration
         /// </summary>
@@ -1448,12 +1647,6 @@ namespace Rock.SystemGuid
         public const string SCHEDULES_GENERAL_SETTINGS = "F5D6D7DD-FD5F-494C-83DC-E2AF63C705D1";
 
         /// <summary>
-        /// Gets the Search page guid
-        /// ParentPage: Check-in
-        /// </summary>
-        public const string SEARCH = "D47858C0-0E6E-46DC-AE99-8EC84BA5F45F";
-
-        /// <summary>
         /// Gets the Search Services page guid
         /// ParentPage: System Settings
         /// </summary>
@@ -1461,8 +1654,9 @@ namespace Rock.SystemGuid
 
         /// <summary>
         /// Gets the Search Type page guid
-        /// ParentPage: Check-in
         /// </summary>
+        [Obsolete]
+        [RockObsolete("1.11")]
         public const string SEARCH_TYPE = "3E0327B1-EE0E-41DC-87DB-C4C14922A7CA";
 
         /// <summary>
@@ -1506,6 +1700,12 @@ namespace Rock.SystemGuid
         /// ParentPage: Communications
         /// </summary>
         public const string SEND_PHOTO_REQUESTS = "B64D0429-488C-430E-8C32-5C7F32589F73";
+
+        /// <summary>
+        /// Gets the short link page GUID
+        /// ParentPage: System Dialogs
+        /// </summary>
+        public const string SHORT_LINK = "A9188D7A-80D9-4865-9C77-9F90E992B65C";
 
         /// <summary>
         /// Gets the Sites page guid
@@ -1564,17 +1764,10 @@ namespace Rock.SystemGuid
         public const string STREAK_TYPE_EXCLUSION_DETAIL = "68EF459F-5D23-4930-8EA8-80CDF986BB94";
 
         /// <summary>
-        /// Gets the Success page guid
-        /// ParentPage: Check-in
-        /// </summary>
-        public const string SUCCESS = "E08230B8-35A4-40D6-A0BB-521418314DA9";
-
-        /// <summary>
         /// Gets the Support Pages page guid (internal site)
         /// ParentPage: Internal Homepage
         /// </summary>
         public const string SUPPORT_PAGES_INTERNAL_HOMEPAGE = "936C90C4-29CF-4665-A489-7C687217F7B8";
-
 
         /// <summary>
         /// Gets the Support Pages page guid (external site)
@@ -1676,12 +1869,6 @@ namespace Rock.SystemGuid
         public const string TEXT_TO_GIVE_SETUP = "B7FE949A-B4B0-4AA7-B9E9-8818E7352CD1";
 
         /// <summary>
-        /// Gets the Time Select page guid
-        /// ParentPage: Check-in
-        /// </summary>
-        public const string TIME_SELECT = "C0AFA081-B64E-4006-BFFC-A350A51AE4CC";
-
-        /// <summary>
         /// Gets the Tools page guid
         /// ParentPage: Internal Homepage
         /// </summary>
@@ -1728,12 +1915,6 @@ namespace Rock.SystemGuid
         /// ParentPage: Tools
         /// </summary>
         public const string WEBSITE = "F7105BFE-B28C-41B6-9CE6-F1018D77DD8F";
-
-        /// <summary>
-        /// Gets the Check-in Welcome page guid
-        /// ParentPage: Check-in
-        /// </summary>
-        public const string WELCOME = "432B615A-75FF-4B14-9C99-3E769F866950";
 
         /// <summary>
         /// Gets the Workflow page guid
@@ -1789,6 +1970,39 @@ namespace Rock.SystemGuid
         /// </summary>
         public const string ZONEBLOCKS = "9F36531F-C1B5-4E23-8FA3-18B6DAFF1B0B";
 
-        
+        /// <summary>
+        /// The phone number lookup page.
+        /// </summary>
+        public const string PHONE_NUMBER_LOOKUP = "9F8D906F-ADB6-42AC-9777-D9712A5D097F";
+
+        /// <summary>
+        /// The oidc scopes page.
+        /// </summary>
+        public const string OIDC_SCOPE_LIST = "06FA872A-18B0-431A-917E-6F7B2EA8ED95";
+
+        /// <summary>
+        /// The oidc clients page.
+        /// </summary>
+        public const string OIDC_CLIENT_LIST = "0A18B520-915E-429B-AC49-7A7F73B19BAA";
+
+        /// <summary>
+        /// The oidc give permission page.
+        /// </summary>
+        public const string OIDC_GIVE_PERMISSION = "73941D90-4CA1-46F8-A5D1-5B4BD2E53B3D";
+
+        /// <summary>
+        /// The oidc logout page.
+        /// </summary>
+        public const string OIDC_LOGOUT = "FC20F56F-A7FB-4B89-9C66-98BC43816C8F";
+
+        /// <summary>
+        /// The oidc scope detail page.
+        /// </summary>
+        public const string OIDC_SCOPE_DETAIL = "55E70873-B882-4864-8B97-66F8ED3588C7";
+
+        /// <summary>
+        /// The oidc client detail page.
+        /// </summary>
+        public const string OIDC_CLIENT_DETAIL = "41E6A833-1697-4463-9962-01DFD123D4C9";
     }
 }

@@ -64,7 +64,11 @@ namespace Rock.Model
         /// <value>
         /// An <see cref="System.Int32"/> representing the schedule that was checked in to.
         /// </value>
+        /// <remarks>
+        /// [IgnoreCanDelete] since there is a ON DELETE SET NULL cascade on this
+        /// </remarks>
         [DataMember]
+        [IgnoreCanDelete]
         public int? ScheduleId { get; set; }
 
         /// <summary>
@@ -191,6 +195,19 @@ namespace Rock.Model
         [DataMember]
         public string Name { get; set; }
 
+        /// <summary>
+        /// Gets the occurrence date key.
+        /// </summary>
+        /// <value>
+        /// The occurrence date key.
+        /// </value>
+        [DataMember]
+        [FieldType( Rock.SystemGuid.FieldType.DATE )]
+        public int OccurrenceDateKey
+        {
+            get => OccurrenceDate.ToString( "yyyyMMdd" ).AsInteger();
+            private set { }
+        }
         #endregion
 
         #region Virtual Properties
@@ -290,6 +307,8 @@ namespace Rock.Model
         /// The percent members attended is the number of attendance records marked as did attend
         /// divided by the total number of members in the group.
         /// </value>
+        [RockObsolete( "1.10" )]
+        [System.Obsolete( "Use Attendance Rate instead." )]
         public double PercentMembersAttended
         {
             get
@@ -315,6 +334,14 @@ namespace Rock.Model
         [DataMember]
         public virtual StepType StepType { get; set; }
 
+        /// <summary>
+        /// Gets or sets the occurrence source date.
+        /// </summary>
+        /// <value>
+        /// The occurrence source date.
+        /// </value>
+        [DataMember]
+        public AnalyticsSourceDate OccurrenceSourceDate { get; set; }
         #endregion
 
         #region Public Methods
@@ -370,7 +397,7 @@ namespace Rock.Model
         /// </returns>
         public override string ToString()
         {
-            return $"Occurrence for {Schedule} {Group} at {Location} on { OccurrenceDate }";
+            return $"Occurrence for {Schedule} {Group} at {Location} on { OccurrenceDate.ToShortDateString() }";
         }
 
         #endregion
@@ -391,8 +418,14 @@ namespace Rock.Model
         {
             this.HasOptional( a => a.Group ).WithMany().HasForeignKey( p => p.GroupId ).WillCascadeOnDelete( true );
             this.HasOptional( a => a.Location ).WithMany().HasForeignKey( p => p.LocationId ).WillCascadeOnDelete( true );
-            this.HasOptional( a => a.Schedule ).WithMany().HasForeignKey( p => p.ScheduleId ).WillCascadeOnDelete( true );
+
+            // A Migration will manually add a ON DELETE SET NULL for ScheduleId.
+            this.HasOptional( a => a.Schedule ).WithMany().HasForeignKey( p => p.ScheduleId ).WillCascadeOnDelete( false );
             this.HasOptional( a => a.StepType ).WithMany().HasForeignKey( p => p.StepTypeId ).WillCascadeOnDelete( true );
+
+            // NOTE: When creating a migration for this, don't create the actual FK's in the database for this just in case there are outlier OccurrenceDates that aren't in the AnalyticsSourceDate table
+            // and so that the AnalyticsSourceDate can be rebuilt from scratch as needed
+            this.HasRequired( r => r.OccurrenceSourceDate ).WithMany().HasForeignKey( r => r.OccurrenceDateKey ).WillCascadeOnDelete( false );
         }
     }
 

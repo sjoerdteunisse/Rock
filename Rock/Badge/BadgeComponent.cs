@@ -16,6 +16,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Web;
 using System.Web.UI;
 using Rock.Data;
 using Rock.Model;
@@ -84,18 +85,42 @@ namespace Rock.Badge
             }
         }
 
-
         /// <summary>
         /// Gets or sets the parent context block.
         /// </summary>
         public ContextEntityBlock ParentContextEntityBlock
         {
-            get => _parentContextEntityBlock;
-            set => _parentContextEntityBlock = value;
+            get
+            {
+                if ( HttpContext.Current != null )
+                {
+                    return HttpContext.Current.Items[$"{this.GetType().FullName}:ParentContextEntityBlock"] as ContextEntityBlock;
+                }
+
+                return _nonHttpContextParentContextEntityBlock;
+            }
+
+            set
+            {
+                if ( HttpContext.Current != null )
+                {
+                    HttpContext.Current.Items[$"{this.GetType().FullName}:ParentContextEntityBlock"] = value;
+                }
+                else
+                {
+                    _nonHttpContextParentContextEntityBlock = value;
+                }
+            }
         }
 
+        /// <summary>
+        /// The parent context entity block when HttpContext.Current is null
+        /// NOTE: ThreadStatic is per thread, but ASP.NET threads are ThreadPool threads, so they will be used again.
+        /// see https://www.hanselman.com/blog/ATaleOfTwoTechniquesTheThreadStaticAttributeAndSystemWebHttpContextCurrentItems.aspx
+        /// So be careful and only use the [ThreadStatic] trick if absolutely necessary
+        /// </summary>
         [ThreadStatic]
-        private static ContextEntityBlock _parentContextEntityBlock;
+        private static ContextEntityBlock _nonHttpContextParentContextEntityBlock;
 
         /// <summary>
         /// Gets or sets the parent person block.
@@ -108,19 +133,44 @@ namespace Rock.Badge
         }
 
         /// <summary>
-        /// Gets or sets the entity.
+        /// Optional: The Entity that should be used when determining which PropertyFields and Attributes to show (instead of just basing it off of EntityType)
         /// </summary>
         /// <value>
-        /// The person.
+        /// The entity.
         /// </value>
-        public virtual IEntity Entity
+        public IEntity Entity
         {
-            get => _entity;
-            set => _entity = value;
+            get
+            {
+                if ( HttpContext.Current != null )
+                {
+                    return HttpContext.Current.Items[$"{this.GetType().FullName}:Entity"] as IEntity;
+                }
+
+                return _nonHttpContextEntity;
+            }
+
+            set
+            {
+                if ( HttpContext.Current != null )
+                {
+                    HttpContext.Current.Items[$"{this.GetType().FullName}:Entity"] = value;
+                }
+                else
+                {
+                    _nonHttpContextEntity = value;
+                }
+            }
         }
 
+        /// <summary>
+        /// Thread safe storage of Entity property when HttpContext.Current is null
+        /// NOTE: ThreadStatic is per thread, but ASP.NET threads are ThreadPool threads, so they will be used again.
+        /// see https://www.hanselman.com/blog/ATaleOfTwoTechniquesTheThreadStaticAttributeAndSystemWebHttpContextCurrentItems.aspx
+        /// So be careful and only use the [ThreadStatic] trick if absolutely necessary, and only if it can't be stored in HttpContext.Current
+        /// </summary>
         [ThreadStatic]
-        private static IEntity _entity;
+        private static IEntity _nonHttpContextEntity;
 
         /// <summary>
         /// Gets or sets the entity as a person.
@@ -195,6 +245,56 @@ namespace Rock.Badge
         /// <param name="badge">The badge.</param>
         /// <param name="writer">The writer.</param>
         public virtual void Render( BadgeCache badge, HtmlTextWriter writer ) { }
+
+        /// <summary>
+        /// Gets the java script.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual string GetJavaScript( BadgeCache badge )
+        {
+            return null;
+
+            /*
+             * BJW 2020-09-18
+             * When working on the connections board, I discovered that the badges with <script> tags in the 
+             * Render method were not working correctly when added dynamically to the page. It turns out that
+             * some DOM manipulation methods such as .innerHtml do not allow <script> tags to be evaluated by 
+             * the browser. The postback must be using one of these methods. The solution was to register the 
+             * scripts using the ScriptManager.RegisterClientScriptBlock which ensures that the script is 
+             * evaluated even when added after the initial page load. This is happening in the BadgeControl.
+             */
+        }
+
+        /// <summary>
+        /// Adds the java script within a standardized function wrapper. This can be overridden when a
+        /// different wrapper function is needed.
+        /// </summary>
+        /// <returns></returns>
+        public virtual string GetWrappedJavaScript( BadgeCache badge )
+        {
+            var script = GetJavaScript( badge );
+
+            if ( script.IsNullOrWhiteSpace() )
+            {
+                return null;
+            }
+
+            return
+$@"(function () {{
+    {script}
+}})();";
+        }
+
+        /// <summary>
+        /// Generates a key unique to this instance of the badge/entity combination. This
+        /// is suitable for use as an HTML id.
+        /// </summary>
+        /// <returns></returns>
+        public virtual string GenerateBadgeKey( BadgeCache badge )
+        {
+            var entityKey = Entity != null ? Entity.Guid.ToString() : "no-entity";
+            return $"{GetType().Name}-{badge.Guid}-{entityKey}";
+        }
 
         /// <summary>
         /// Renders the specified writer.

@@ -45,7 +45,7 @@ namespace Rock
         }
 
         /// <summary>
-        /// Converts CR (carriage return) LF (line feed) to non-encoded html breaks (br).
+        /// Converts line endings ( CRLF or just LF ) to non-encoded html breaks &lt;br&gt;
         /// </summary>
         /// <param name="str">a string that contains CR LF</param>
         /// <returns>a string with CRLF replaced with html <code>br</code></returns>
@@ -56,7 +56,10 @@ namespace Rock
                 return string.Empty;
             }
 
-            return str.Replace( Environment.NewLine, "<br/>" ).Replace( "\x0A", "<br/>" );
+            // normalize line breaks so this works with either CRLF or LF lind endings
+            var result = str.Replace( "\r\n", "\n" );
+
+            return result.Replace( "\n", "<br>" );
         }
 
         /// <summary>
@@ -176,6 +179,31 @@ namespace Rock
         }
 
         /// <summary>
+        /// Removes all lava markup from the string including short codes.
+        /// </summary>
+        /// <param name="lava">The lava.</param>
+        /// <returns></returns>
+        public static string SanitizeLava( this string lava )
+        {
+            // Don't choke on nulls
+            if ( string.IsNullOrWhiteSpace( lava ) )
+            {
+                return string.Empty;
+            }
+
+            var doubleBracesRegex = new Regex( @"\{\{([^\}]+)\}\}" );
+            lava = doubleBracesRegex.Replace( lava, string.Empty );
+
+            var bracePercentRegex = new Regex( @"\{%([^\}]+)%\}" );
+            lava = bracePercentRegex.Replace( lava, string.Empty );
+
+            var bracBracketRegex = new Regex( @"\{\[([^\}]+)\]\}" );
+            lava = bracBracketRegex.Replace( lava, string.Empty );
+
+            return lava;
+        }
+
+        /// <summary>
         /// Scrubs any html from the string but converts carriage returns into html &lt;br/&gt; suitable for web display.
         /// </summary>
         /// <param name="str">a string that may contain unsanitized html and carriage returns</param>
@@ -193,8 +221,8 @@ namespace Rock
             // pass through the Sanitizer.
             str = str.Replace( Environment.NewLine, "\u00A7" ).Replace( "\x0A", "\u00A7" );
 
-            // Now we pass it to sanitizer and then convert those section-symbols to <br/>
-            return str.SanitizeHtml().Replace( "\u00A7", "<br/>" );
+            // Now we pass it to sanitizer and then convert those section-symbols to <br>
+            return str.SanitizeHtml().Replace( "\u00A7", "<br>" );
         }
 
         /// <summary>
@@ -204,18 +232,18 @@ namespace Rock
         /// <returns></returns>
         public static string ScrubHtmlForGridDisplay( this string str )
         {
-            if ( string.IsNullOrWhiteSpace(str) )
+            if ( string.IsNullOrWhiteSpace( str ) )
             {
                 return string.Empty;
             }
 
             // Note: \u00A7 is the section symbol, \u00A6 is the broken bar symbol
             // First convert HTML breaks to a character that can pass through the Sanitizer.
-            str = str.Replace( "<br/>", "\u00A7" ).Replace( "<br />", "\u00A7" );
+            str = str.Replace( "<br/>", "\u00A7" ).Replace( "<br />", "\u00A7" ).Replace( "<br>", "\u00A7" );
             str = str.Replace( "</p>", "\u00A6" );
 
             // Now sanitize and convert the symbols to breaks
-            str = str.SanitizeHtml().Replace( "\u00A7", "<br/>" ).Replace( "\u00A6", "<br/><br/>" ).Replace( "\r\n", "<br/>" );
+            str = str.SanitizeHtml().Replace( "\u00A7", "<br>" ).Replace( "\u00A6", "<br><br>" ).Replace( "\r\n", "<br>" );
             return str;
         }
 
@@ -261,7 +289,16 @@ namespace Rock
             var settings = CommonMark.CommonMarkSettings.Default.Clone();
             settings.RenderSoftLineBreaksAsLineBreaks = renderSoftLineBreaksAsLineBreaks;
 
-            return CommonMark.CommonMarkConverter.Convert( markdown, settings );
+            /*
+	            6/9/2020 - JME 
+	            Added the .Trim() to the return below. Without it CommonMark was converting strings
+                like 'Test' to '<p>Test</p>/r/n/r/n'. The adding of two line breaks was causing issues
+                when other filters were being applied in Lava to make line breaks '<br>'.
+
+                Reason: Notes Lava was having extra <br>'s at the end.
+            */
+            
+            return CommonMark.CommonMarkConverter.Convert( markdown, settings ).Trim();
         }
 
         /// <summary>

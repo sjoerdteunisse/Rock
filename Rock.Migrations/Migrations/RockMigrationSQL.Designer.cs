@@ -2051,5 +2051,133 @@ namespace Rock.Migrations.Migrations {
                         "nAttendees_down", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to UPDATE [LavaShortcode] SET [Description]=N&apos;Adding dynamic charts to a page can be difficult, even for an experienced Javascript developer. The chart shortcode allows anyone to create charts with just a few lines of Lava.&apos;, [Documentation]=N&apos;&lt;p&gt;
+        ///    Adding dynamic charts to a page can be difficult, even for an experienced Javascript developer. The 
+        ///    chart shortcode allows anyone to create charts with just a few lines of Lava. There are two modes for 
+        ///    creating a chart. The first ‘simple’ mode create [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string _202003311924098_Rollup_0331_FixChartYAxisShortcode {
+            get {
+                return ResourceManager.GetString("_202003311924098_Rollup_0331_FixChartYAxisShortcode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to /*
+        ///&lt;doc&gt;
+        ///	&lt;summary&gt;
+        /// 		This admin helper function returns the person name (and Id) for the given person alias.
+        ///	&lt;/summary&gt;
+        ///
+        ///	&lt;returns&gt;
+        ///		The name and person Id of the given person alias id.
+        ///	&lt;/returns&gt;
+        ///
+        ///	&lt;remarks&gt;
+        /// 		NOTE: This is NOT FOR USE in Rock code. Only use for troubleshooting.
+        ///	&lt;/remarks&gt;
+        ///	&lt;code&gt;
+        ///		SELECT [dbo].[ufnUtility_GetPersonName](3)
+        ///		SELECT Content, [dbo].[ufnUtility_GetPersonName(ModifiedByPersonAliasId) FROM [HtmlContent]
+        ///	&lt;/code&gt;
+        ///&lt;/doc&gt;
+        ///*/
+        ///
+        ///CREATE FUNCTION [dbo].[ufn [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string _202005281058275_AddGetPersonNameFunction__ufnUtility_GetPersonName {
+            get {
+                return ResourceManager.GetString("_202005281058275_AddGetPersonNameFunction__ufnUtility_GetPersonName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to /*
+        ///&lt;doc&gt;
+        ///	&lt;summary&gt;
+        /// 		This stored procedure returns a data set used by the Rock eRA job to add/remove
+        ///		people from being an eRA. It should not be modified as it will be updated in the
+        ///		future to meet additional requirements.
+        ///
+        ///		The goal of the query is to return both those that meet the eRA requirements as well
+        ///		as those that are marked as already being an eRA and the criteria to ensure that
+        ///		they still should be an era.
+        ///	&lt;/summary&gt;
+        ///	
+        ///	&lt;remarks&gt;	
+        ///		For eRA we only consider adults for the c [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string _202006081726186_ImprovePerformanceOfFamilyAnalyticsEraDataset_spCrm_FamilyAnalyticsEraDataset {
+            get {
+                return ResourceManager.GetString("_202006081726186_ImprovePerformanceOfFamilyAnalyticsEraDataset_spCrm_FamilyAnalyt" +
+                        "icsEraDataset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to /*
+        ///&lt;doc&gt;
+        ///	&lt;summary&gt;
+        /// 		This stored procedure returns a data set used by the Rock eRA job to add/remove
+        ///		people from being an eRA. It should not be modified as it will be updated in the
+        ///		future to meet additional requirements.
+        ///
+        ///		The goal of the query is to return both those that meet the eRA requirements as well
+        ///		as those that are marked as already being an eRA and the criteria to ensure that
+        ///		they still should be an era.
+        ///	&lt;/summary&gt;
+        ///	
+        ///	&lt;remarks&gt;	
+        ///		For eRA we only consider adults for the c [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string _202006081726186_ImprovePerformanceOfFamilyAnalyticsEraDataset_spCrm_FamilyAnalyticsEraDataset_down {
+            get {
+                return ResourceManager.GetString("_202006081726186_ImprovePerformanceOfFamilyAnalyticsEraDataset_spCrm_FamilyAnalyt" +
+                        "icsEraDataset_down", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to /*
+        ///&lt;doc&gt;
+        ///	&lt;summary&gt;
+        /// 		This function rebuilds the database indexes.
+        ///	&lt;/summary&gt;
+        ///
+        ///	&lt;returns&gt;
+        ///	&lt;/returns&gt;
+        ///	&lt;param name=&apos;PageCountLimit&apos; datatype=&apos;int&apos;&gt;The number of page counts the index must have in order to be considered for re-indexing (default 100).&lt;/param&gt;
+        ///	&lt;param name=&apos;MinFragmentation&apos; datatype=&apos;int&apos;&gt;The minimum amount of fragmentation a index must have to be considered for re-indexing (default 10).&lt;/param&gt;
+        ///	&lt;param name=&apos;MinFragmentationRebuild&apos; datatype=&apos;int&apos;&gt;The minimum amount of fragmentat [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string _202006091841047_Rollup_0609_spDbaRebuildIndexes {
+            get {
+                return ResourceManager.GetString("_202006091841047_Rollup_0609_spDbaRebuildIndexes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to /*
+        ///&lt;doc&gt;
+        ///	&lt;summary&gt;
+        ///		This procedure merges the data from the non-primary person to the primary person.  It
+        ///		is used when merging people in Rock and should never be used outside of that process. 
+        ///	&lt;/summary&gt;
+        ///
+        ///	&lt;returns&gt;
+        ///	&lt;/returns&gt;
+        ///	&lt;param name=&quot;Old Id&quot; datatype=&quot;int&quot;&gt;The person id of the non-primary Person being merged&lt;/param&gt;
+        ///	&lt;param name=&quot;New Id&quot; datatype=&quot;int&quot;&gt;The person id of the primary Person being merged&lt;/param&gt;
+        ///	&lt;remarks&gt;	
+        ///		Uses the following constants:
+        ///			* Group Type - Family: 790E [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string _202008272036178_AddDocumentsToPersonMerge_spCrm_PersonMerge {
+            get {
+                return ResourceManager.GetString("_202008272036178_AddDocumentsToPersonMerge_spCrm_PersonMerge", resourceCulture);
+            }
+        }
     }
 }

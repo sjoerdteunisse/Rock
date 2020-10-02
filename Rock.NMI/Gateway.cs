@@ -53,8 +53,7 @@ namespace Rock.NMI
         Key = AttributeKey.SecurityKey,
         Description = "The API key",
         IsRequired = true,
-        Order = 0
-        )]
+        Order = 0 )]
 
     [TextField(
         "Admin Username",
@@ -328,7 +327,7 @@ namespace Rock.NMI
                     return null;
                 }
 
-                if ( threeStepResponse.Result != "1" )
+                if ( threeStepResponse.IsError() )
                 {
                     errorMessage = FriendlyMessageHelper.GetFriendlyMessage( threeStepResponse.ResultText );
                     return null;
@@ -362,24 +361,26 @@ namespace Rock.NMI
 
             try
             {
-                if ( resultQueryString.IsNullOrWhiteSpace() )
+                if ( resultQueryString.IsNullOrWhiteSpace() || resultQueryString.Length <= 10 )
                 {
                     errorMessage = "invalid resultQueryString";
+                    ExceptionLogService.LogException( new NMIGatewayException( $"Unable to process Step 3 Charge in NMI gateway.  Invalid Query String." ) );
                     return null;
                 }
 
                 var rootElement = CreateThreeStepRootDoc( financialGateway, "complete-action" );
-                rootElement.Add( new XElement( "token-id", resultQueryString.Substring( 10 ) ) );
+                rootElement.Add( new XElement( "token-id", resultQueryString.SubstringSafe( 10 ) ) );
                 XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
                 var threeStepChangeStep3Response = PostToGatewayThreeStepAPI<ThreeStepChargeStep3Response>( financialGateway, xdoc );
 
                 if ( threeStepChangeStep3Response == null )
                 {
                     errorMessage = "Invalid Response from NMI";
+                    ExceptionLogService.LogException( new NMIGatewayException( $"An invalid response was received from the NMI gateway at step 3.  This could potentially result in a customer charge that is not recorded in Rock.  The token-id was: {resultQueryString.SubstringSafe( 10 )}" ) );
                     return null;
                 }
 
-                if ( threeStepChangeStep3Response.Result != "1" )
+                if ( threeStepChangeStep3Response.IsError() )
                 {
                     errorMessage = FriendlyMessageHelper.GetFriendlyMessage( threeStepChangeStep3Response.ResultText );
 
@@ -390,7 +391,7 @@ namespace Rock.NMI
                     }
 
                     // write result error as an exception
-                    ExceptionLogService.LogException( new Exception( $@"Error processing NMI transaction.
+                    ExceptionLogService.LogException( new NMIGatewayException( $@"Error processing NMI transaction.
 Result Code:  {threeStepChangeStep3Response.ResultCode} ({resultCodeMessage}).
 Result text: {threeStepChangeStep3Response.ResultText}.
 Amount: {threeStepChangeStep3Response.Amount}.
@@ -413,7 +414,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                     var curType = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD );
                     transaction.FinancialPaymentDetail.NameOnCardEncrypted = Encryption.EncryptString( $"{threeStepChangeStep3Response.Billing?.FirstName} {threeStepChangeStep3Response.Billing?.LastName}" );
                     transaction.FinancialPaymentDetail.CurrencyTypeValueId = curType != null ? curType.Id : ( int? ) null;
-                    transaction.FinancialPaymentDetail.CreditCardTypeValueId = CreditCardPaymentInfo.GetCreditCardType( ccNumber.Replace( '*', '1' ).AsNumeric() )?.Id;
+                    transaction.FinancialPaymentDetail.CreditCardTypeValueId = CreditCardPaymentInfo.GetCreditCardTypeFromCreditCardNumber( ccNumber.Replace( '*', '1' ).AsNumeric() )?.Id;
                     transaction.FinancialPaymentDetail.AccountNumberMasked = ccNumber.Masked( true );
 
                     string mmyy = threeStepChangeStep3Response.Billing?.CcExp;
@@ -439,11 +440,19 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             {
                 string message = GetResponseMessage( webException.Response.GetResponseStream() );
                 errorMessage = webException.Message + " - " + message;
+
+                string logMessage = webException.ToString();
+                ExceptionLogService.LogException( new NMIGatewayException( $"A WebException occurred while attempting to process an NMI transaction at step 3.  This could potentially result in a customer charge that is not recorded in Rock.  The error was: {logMessage}", webException ) );
+
                 return null;
             }
             catch ( Exception ex )
             {
                 errorMessage = ex.Message;
+
+                string logMessage = ex.ToString();
+                ExceptionLogService.LogException( new NMIGatewayException( $"An internal error occurred while attempting to process an NMI transaction at step 3.  This could potentially result in a customer charge that is not recorded in Rock.  The error was: {logMessage}", ex ) );
+
                 return null;
             }
         }
@@ -477,6 +486,17 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             var queryParameters = new Dictionary<string, string>();
             queryParameters.Add( "type", "refund" );
             queryParameters.Add( "transactionid", origTransaction.TransactionCode );
+
+            // see https://secure.tnbcigateway.com/merchants/resources/integration/integration_portal.php?#transaction_variables
+            // and search for 'payment***' or 'The type of payment'
+            var currencyTypeIdACH = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_ACH.AsGuid() );
+            if ( origTransaction?.FinancialPaymentDetail?.CurrencyTypeValueId == currencyTypeIdACH )
+            {
+                // if the original transaction was ACH, we need to specify the 'payment' parameter
+                // otherwise, it defaults to 'creditcard'
+                queryParameters.Add( "payment", NMIThreeStepPaymentType.check.ConvertToString( false ) );
+            }
+
             queryParameters.Add( "amount", amount.ToString( "0.00" ) );
 
             var refundResponse = PostToGatewayDirectPostAPI<RefundResponse>( financialGateway, queryParameters );
@@ -487,7 +507,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 return null;
             }
 
-            if ( refundResponse.ResponseCode != "1" )
+            if ( refundResponse.IsError() )
             {
                 errorMessage = FriendlyMessageHelper.GetFriendlyMessage( refundResponse.ResponseText );
                 return null;
@@ -563,7 +583,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                     return null;
                 }
 
-                if ( threeStepResponse.Result != "1" )
+                if ( threeStepResponse.IsError() )
                 {
                     errorMessage = FriendlyMessageHelper.GetFriendlyMessage( threeStepResponse.ResultText );
                     return null;
@@ -599,7 +619,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             try
             {
                 var rootElement = CreateThreeStepRootDoc( financialGateway, "complete-action" );
-                rootElement.Add( new XElement( "token-id", resultQueryString.Substring( 10 ) ) );
+                rootElement.Add( new XElement( "token-id", resultQueryString.SubstringSafe( 10 ) ) );
                 XDocument xdoc = new XDocument( new XDeclaration( "1.0", "UTF-8", "yes" ), rootElement );
                 var threeStepSubscriptionStep3Response = PostToGatewayThreeStepAPI<ThreeStepSubscriptionStep3Response>( financialGateway, xdoc );
 
@@ -609,7 +629,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                     return null;
                 }
 
-                if ( threeStepSubscriptionStep3Response.Result != "1" )
+                if ( threeStepSubscriptionStep3Response.IsError() )
                 {
                     errorMessage = FriendlyMessageHelper.GetFriendlyMessage( threeStepSubscriptionStep3Response.ResultText );
                     return null;
@@ -638,7 +658,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                     // cc payment
                     var curType = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD );
                     scheduledTransaction.FinancialPaymentDetail.CurrencyTypeValueId = curType != null ? curType.Id : ( int? ) null;
-                    scheduledTransaction.FinancialPaymentDetail.CreditCardTypeValueId = CreditCardPaymentInfo.GetCreditCardType( ccNumber.Replace( '*', '1' ).AsNumeric() )?.Id;
+                    scheduledTransaction.FinancialPaymentDetail.CreditCardTypeValueId = CreditCardPaymentInfo.GetCreditCardTypeFromCreditCardNumber( ccNumber.Replace( '*', '1' ).AsNumeric() )?.Id;
                     scheduledTransaction.FinancialPaymentDetail.AccountNumberMasked = ccNumber.Masked( true );
 
                     string mmyy = threeStepSubscriptionStep3Response.Billing?.CcExp;
@@ -741,7 +761,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                     }
                     catch ( Exception ex )
                     {
-                        ExceptionLogService.LogException( ex );
+                        ExceptionLogService.LogException( new NMIGatewayException( "Unexpected PaymentStatus response from NMI Gateway", ex ) );
                         subscription = null;
                     }
 
@@ -818,7 +838,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 }
                 catch ( Exception ex )
                 {
-                    ExceptionLogService.LogException( ex );
+                    ExceptionLogService.LogException( new NMIGatewayException( "Unexpected GetPayments Response from NMI Gateway", ex ) );
                     queryTransactionsResponse = null;
                 }
 
@@ -911,7 +931,9 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             catch ( WebException webException )
             {
                 string message = GetResponseMessage( webException.Response.GetResponseStream() );
-                throw new Exception( webException.Message + " - " + message );
+                var nmiGatewayException = new NMIGatewayException( webException.Message + " - " + message, webException );
+                ExceptionLogService.LogException( nmiGatewayException );
+                throw nmiGatewayException;
             }
 
             return paymentList;
@@ -1098,7 +1120,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                     }
                     catch ( Exception ex )
                     {
-                        ExceptionLogService.LogException( ex );
+                        ExceptionLogService.LogException( new NMIGatewayException( "Unexpected ThreeStep Response from NMI Gateway", ex ) );
                         postResult = null;
                     }
                 }
@@ -1108,7 +1130,9 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             catch ( WebException webException )
             {
                 string message = GetResponseMessage( webException.Response.GetResponseStream() );
-                throw new Exception( webException.Message + " - " + message );
+                var nmiGatewayException = new NMIGatewayException( webException.Message + " - " + message, webException );
+                ExceptionLogService.LogException( nmiGatewayException );
+                throw nmiGatewayException;
             }
             catch ( Exception ex )
             {
@@ -1245,7 +1269,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                     }
                     catch ( Exception ex )
                     {
-                        ExceptionLogService.LogException( ex );
+                        ExceptionLogService.LogException( new NMIGatewayException( "Unexpected DirectPost Response from NMI Gateway", ex ) );
                         postResult = null;
                     }
                 }
@@ -1255,7 +1279,10 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             catch ( WebException webException )
             {
                 string message = GetResponseMessage( webException.Response.GetResponseStream() );
-                throw new Exception( webException.Message + " - " + message );
+
+                var nmiGatewayException = new NMIGatewayException( webException.Message + " - " + message, webException );
+                ExceptionLogService.LogException( nmiGatewayException );
+                throw nmiGatewayException;
             }
             catch ( Exception ex )
             {
@@ -1330,7 +1357,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             var chargeResponse = PostToGatewayDirectPostAPI<ChargeResponse>( financialGateway, queryParameters );
 
             // NOTE: When debugging, you might get a Duplicate Transaction error if using the same CustomerVaultId and Amount within a short window ( maybe around 20 minutes? ) 
-            if ( chargeResponse.Response != "1" )
+            if ( chargeResponse.IsError() )
             {
                 errorMessage = FriendlyMessageHelper.GetFriendlyMessage( chargeResponse.ResponseText );
 
@@ -1341,7 +1368,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 }
 
                 // write result error as an exception
-                var exception = new Exception( $"Error processing NMI transaction. Result Code:  {chargeResponse.ResponseCode} ({resultCodeMessage}). Result text: {chargeResponse.ResponseText} " );
+                var exception = new NMIGatewayException( $"Error processing NMI transaction. Result Code:  {chargeResponse.ResponseCode} ({resultCodeMessage}). Result text: {chargeResponse.ResponseText} " );
                 ExceptionLogService.LogException( exception );
 
                 return null;
@@ -1352,7 +1379,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             transaction.ForeignKey = chargeResponse.CustomerVaultId;
 
             Customer customerInfo = this.GetCustomerVaultQueryResponse( financialGateway, customerId )?.CustomerVault.Customer;
-            transaction.FinancialPaymentDetail = PopulatePaymentInfo( customerInfo );
+            transaction.FinancialPaymentDetail = CreatePaymentPaymentDetail( customerInfo );
 
             transaction.AdditionalLavaFields = GetAdditionalLavaFields( chargeResponse );
 
@@ -1364,9 +1391,20 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
         /// </summary>
         /// <param name="customerInfo">The customer information.</param>
         /// <returns></returns>
-        private FinancialPaymentDetail PopulatePaymentInfo( Customer customerInfo )
+        private FinancialPaymentDetail CreatePaymentPaymentDetail( Customer customerInfo )
         {
             var financialPaymentDetail = new FinancialPaymentDetail();
+            UpdateFinancialPaymentDetail( customerInfo, financialPaymentDetail );
+            return financialPaymentDetail;
+        }
+
+        /// <summary>
+        /// Updates the financial payment detail fields from the information in customerInfo
+        /// </summary>
+        /// <param name="customerInfo">The customer information.</param>
+        /// <param name="financialPaymentDetail">The financial payment detail.</param>
+        private void UpdateFinancialPaymentDetail( Customer customerInfo, FinancialPaymentDetail financialPaymentDetail )
+        {
             financialPaymentDetail.GatewayPersonIdentifier = customerInfo.CustomerVaultId;
 
             string ccNumber = customerInfo.CcNumber;
@@ -1376,7 +1414,19 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 var curType = DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD );
                 financialPaymentDetail.NameOnCardEncrypted = Encryption.EncryptString( $"{customerInfo.FirstName} {customerInfo.LastName}" );
                 financialPaymentDetail.CurrencyTypeValueId = curType != null ? curType.Id : ( int? ) null;
-                financialPaymentDetail.CreditCardTypeValueId = CreditCardPaymentInfo.GetCreditCardType( ccNumber.Replace( '*', '1' ).AsNumeric() )?.Id;
+
+                //// The gateway tells us what the CreditCardType is since it was selected using their hosted payment entry frame.
+                //// So, first see if we can determine CreditCardTypeValueId using the CardType response from the gateway
+
+                // See if we can figure it out from the CC Type (Amex, Visa, etc)
+                var creditCardTypeValue = CreditCardPaymentInfo.GetCreditCardTypeFromName( customerInfo.CcType );
+                if ( creditCardTypeValue == null )
+                {
+                    // GetCreditCardTypeFromName should have worked, but just in case, see if we can figure it out from the MaskedCard using RegEx
+                    creditCardTypeValue = CreditCardPaymentInfo.GetCreditCardTypeFromCreditCardNumber( customerInfo.CcNumber );
+                }
+
+                financialPaymentDetail.CreditCardTypeValueId = creditCardTypeValue?.Id;
                 financialPaymentDetail.AccountNumberMasked = ccNumber.Masked( true );
 
                 string mmyy = customerInfo.CcExp;
@@ -1393,8 +1443,6 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 financialPaymentDetail.CurrencyTypeValueId = curType != null ? curType.Id : ( int? ) null;
                 financialPaymentDetail.AccountNumberMasked = customerInfo.CheckAccount;
             }
-
-            return financialPaymentDetail;
         }
 
         /// <summary>
@@ -1482,7 +1530,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
 
                 var addSubscriptionResponse = PostToGatewayDirectPostAPI<SubscriptionResponse>( financialGateway, queryParameters );
 
-                if ( addSubscriptionResponse.Response != "1" )
+                if ( addSubscriptionResponse.IsError() )
                 {
                     errorMessage = FriendlyMessageHelper.GetFriendlyMessage( addSubscriptionResponse.ResponseText );
 
@@ -1493,7 +1541,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                     }
 
                     // write result error as an exception
-                    var exception = new Exception( $"Error processing NMI subscription. Result Code:  {addSubscriptionResponse.ResponseCode} ({resultCodeMessage}). Result text: {addSubscriptionResponse.ResponseText} " );
+                    var exception = new NMIGatewayException( $"Error processing NMI subscription. Result Code:  {addSubscriptionResponse.ResponseCode} ({resultCodeMessage}). Result text: {addSubscriptionResponse.ResponseText} " );
                     ExceptionLogService.LogException( exception );
 
                     return null;
@@ -1512,14 +1560,14 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 }
                 catch ( Exception ex )
                 {
-                    throw new Exception( $"Exception getting Customer Information for Scheduled Payment.", ex );
+                    throw new NMIGatewayException( $"Exception getting Customer Information for Scheduled Payment.", ex );
                 }
 
                 var scheduledTransaction = new FinancialScheduledTransaction();
                 scheduledTransaction.IsActive = true;
                 scheduledTransaction.GatewayScheduleId = addSubscriptionResponse.TransactionId;
                 scheduledTransaction.FinancialGatewayId = financialGateway.Id;
-                scheduledTransaction.FinancialPaymentDetail = PopulatePaymentInfo( customerInfo );
+                scheduledTransaction.FinancialPaymentDetail = CreatePaymentPaymentDetail( customerInfo );
                 scheduledTransaction.TransactionCode = addSubscriptionResponse.TransactionId;
 
                 errorMessage = string.Empty;
@@ -1530,7 +1578,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 }
                 catch ( Exception ex )
                 {
-                    throw new Exception( $"Exception getting Scheduled Payment Status. {errorMessage}", ex );
+                    throw new NMIGatewayException( $"Exception getting Scheduled Payment Status. {errorMessage}", ex );
                 }
 
                 return scheduledTransaction;
@@ -1638,7 +1686,17 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
 
                 scheduledTransaction.IsActive = true;
                 scheduledTransaction.FinancialGatewayId = financialGateway.Id;
-                scheduledTransaction.FinancialPaymentDetail.SetFromPaymentInfo( paymentInfo, this, new RockContext() );
+
+                try
+                {
+                    // update FinancialPaymentDetail with any changes in payment information
+                    Customer customerInfo = this.GetCustomerVaultQueryResponse( financialGateway, referencedPaymentInfo.GatewayPersonIdentifier )?.CustomerVault.Customer;
+                    UpdateFinancialPaymentDetail( customerInfo, scheduledTransaction.FinancialPaymentDetail );
+                }
+                catch ( Exception ex )
+                {
+                    throw new NMIGatewayException( $"Exception getting Customer Information for Scheduled Payment.", ex );
+                }
 
                 errorMessage = string.Empty;
 
@@ -1648,7 +1706,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 }
                 catch ( Exception ex )
                 {
-                    throw new Exception( $"Exception getting Scheduled Payment Status. {errorMessage}", ex );
+                    throw new NMIGatewayException( $"Exception getting Scheduled Payment Status. {errorMessage}", ex );
                 }
 
                 return true;
@@ -1723,7 +1781,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             }
             catch ( Exception ex )
             {
-                ExceptionLogService.LogException( ex );
+                ExceptionLogService.LogException( new NMIGatewayException( "Unexpected QuerySubscriptions Response from NMI Gateway", ex ) );
                 querySubscriptionsResponse = null;
             }
 
@@ -1759,7 +1817,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             }
             catch ( Exception ex )
             {
-                ExceptionLogService.LogException( ex );
+                ExceptionLogService.LogException( new NMIGatewayException( "Unexpected CustomerVault response from NMI Gateway", ex ) );
                 customerVaultQueryResponse = null;
             }
 
@@ -1781,21 +1839,6 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             /// </summary>
             public ReferencePaymentInfoRequired()
                 : base( "NMI gateway requires a token or customer reference" )
-            {
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <seealso cref="System.ArgumentNullException" />
-        public class NullFinancialGatewayException : ArgumentNullException
-        {
-            /// <summary>
-            /// Initializes a new instance of the <see cref="NullFinancialGatewayException"/> class.
-            /// </summary>
-            public NullFinancialGatewayException()
-                : base( "Unable to determine financial gateway" )
             {
             }
         }
@@ -1886,7 +1929,8 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
         }
 
         /// <summary>
-        /// Gets the paymentInfoToken that the hostedPaymentInfoControl returned (see also <seealso cref="M:Rock.Financial.IHostedGatewayComponent.GetHostedPaymentInfoControl(Rock.Model.FinancialGateway,System.String)" />)
+        /// Populates the properties of the referencePaymentInfo from this gateway's <seealso cref="M:Rock.Financial.IHostedGatewayComponent.GetHostedPaymentInfoControl(Rock.Model.FinancialGateway,System.String)" >hostedPaymentInfoControl</seealso>
+        /// This includes the ReferenceNumber, plus any other fields that the gateway wants to set
         /// </summary>
         /// <param name="financialGateway">The financial gateway.</param>
         /// <param name="hostedPaymentInfoControl">The hosted payment information control.</param>
@@ -1901,9 +1945,9 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
             {
                 tokenResponse = nmiHostedPaymentControl.PaymentInfoTokenRaw.FromJsonOrThrow<TokenizerResponse>();
             }
-            catch (Exception ex)
+            catch ( Exception ex )
             {
-                ExceptionLogService.LogException( ex );
+                ExceptionLogService.LogException( new NMIGatewayException( "Unexpected Token Response from NMI Gateway", ex ) );
                 tokenResponse = null;
             }
 
@@ -1985,7 +2029,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
 
             var createCustomerResponse = PostToGatewayDirectPostAPI<CreateCustomerResponse>( financialGateway, queryParameters );
 
-            if ( createCustomerResponse.Response != "1" )
+            if ( createCustomerResponse.IsError() )
             {
                 errorMessage = FriendlyMessageHelper.GetFriendlyMessage( createCustomerResponse.ResponseText );
 
@@ -1996,7 +2040,7 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
                 }
 
                 // write result error as an exception
-                var exception = new Exception( $"Error creating NMI customer. Result Code:  {createCustomerResponse.ResponseCode} ({resultCodeMessage}). Result text: {createCustomerResponse.ResponseText} " );
+                var exception = new NMIGatewayException( $"Error creating NMI customer. Result Code:  {createCustomerResponse.ResponseCode} ({resultCodeMessage}). Result text: {createCustomerResponse.ResponseText} " );
                 ExceptionLogService.LogException( exception );
 
                 return null;
@@ -2041,5 +2085,21 @@ Transaction id: {threeStepChangeStep3Response.TransactionId}.
         }
 
         #endregion IHostedGatewayComponent
+
+        #region NMI Specific
+
+        /// <summary>
+        /// Gets the three step javascript which will validate the inputs and submit payment details to NMI gateway
+        /// </summary>
+        /// <param name="validationGroup">The validation group.</param>
+        /// <param name="postbackControlReference">The postback control reference.</param>
+        /// <returns></returns>
+        public static string GetThreeStepJavascript( string validationGroup, string postbackControlReference )
+        {
+            var script = Scripts.threeStepScript.Replace( "{{validationGroup}}", validationGroup ).Replace( "{{postbackControlReference}}", postbackControlReference );
+            return script;
+        }
+
+        #endregion
     }
 }

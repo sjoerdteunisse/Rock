@@ -99,11 +99,11 @@
 
   .upload-progress {
     position: absolute;
-    top: 30px;
-    left: 35px;
+    top: 26px;
+    left: 28px;
     z-index: 2;
-    opacity: .3;
     text-align: center;
+    opacity: .3;
   }
 }
 
@@ -117,6 +117,7 @@
     position: absolute;
     right: 0;
     bottom: 0;
+    z-index: 50;
 
     a {
       display: block;
@@ -206,7 +207,8 @@
     position: absolute;
     top: 8px;
     left: 35px;
-    z-index: 2;
+    z-index: 15;
+    font-size: 12px;
     opacity: .3;
   }
 
@@ -223,12 +225,15 @@
   position: relative;
 
   .file-link {
+    position: relative;
+    z-index: 10;
     display: block;
     width: 100px;
     height: 50px;
     padding-top: 2px;
     overflow: hidden;
     font-size: 10px;
+    line-height: 1;
     color: @input-color;
     text-align: center;
     text-overflow: ellipsis;
@@ -238,21 +243,19 @@
 
     &::after {
       position: absolute;
-      left: 0;
-      width: 100%;
       top: 50%;
-      transform: perspective(1px) translateY(-50%);
+      left: 0;
+      z-index: -1;
+      width: 100%;
       font-family: @fa-font-face;
       font-size: 28px;
       font-weight: @fa-theme-weight;
+      line-height: 0;
       color: darken(@input-group-addon-bg, 15%);
       content: @fa-var-files-o;
-      line-height: 1;
     }
 
     &.file-exists::after {
-      margin-top: -10px;
-      color: darken(@input-group-addon-bg, 15%);
       content: @fa-var-file-alt;
     }
   }
@@ -287,14 +290,13 @@
   .file-link-default {
     &::after {
       display: block;
-      margin-top: -21px;
-      margin-left: -15.75px;
       content: @fa-var-folder-open;
     }
   }
 
   .picker-select-none {
     position: absolute;
+    z-index: 50;
     right: 4px;
     bottom: 35px;
     display: block;
@@ -325,6 +327,7 @@
     right: 0;
     bottom: 0;
     left: 0;
+    z-index: 25;
     display: -ms-flexbox;
     display: flex;
     -ms-flex-align: end;
@@ -351,10 +354,6 @@
         display: none;
       }
     }
-  }
-
-  .fileupload-remove {
-    z-index: 50;
   }
 
   .fileupload-thumbnail .file-link {

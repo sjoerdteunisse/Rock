@@ -20,6 +20,7 @@
                     <asp:Literal ID="lTitle" runat="server" />
                 </h1>
                 <div class="panel-labels">
+                    <asp:Literal ID="lCategories" runat="server" />
                     <Rock:HighlightLabel ID="hlContentChannel" runat="server" LabelType="Type" />
                 </div>
             </div>
@@ -51,6 +52,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <Rock:RockDropDownList ID="ddlChannelType" runat="server" Label="Type" Required="true" AutoPostBack="true" OnSelectedIndexChanged="ddlChannelType_SelectedIndexChanged" />
+                            <Rock:CategoryPicker ID="cpCategories" runat="server" Label="Categories" AllowMultiSelect="true" EntityTypeName="Rock.Model.ContentChannel"/>
                             <Rock:RockControlWrapper ID="rcContentChannels" runat="server" Label="Child Content Channels"
                                 Help="The types of content channel items that can be added as children to items of this type. This is used to define the item hierarchy. To allow an unlimited hierarchy add this type as an allowed child content channel type.">
                                 <div class="grid">
@@ -85,7 +87,8 @@
                             <Rock:RockCheckBox ID="cbEnableRss" runat="server" Label="Enable RSS" Text="Yes" CssClass="js-content-channel-enable-rss" />
                             <div id="divRss" runat="server" class="js-content-channel-rss">
                                 <Rock:DataTextBox ID="tbChannelUrl" runat="server" Label="Channel URL" SourceTypeName="Rock.Model.ContentChannel, Rock" PropertyName="ChannelUrl" />
-                                <Rock:DataTextBox ID="tbItemUrl" runat="server" Label="Item URL" SourceTypeName="Rock.Model.ContentChannel, Rock" PropertyName="ItemUrl" />
+                                <Rock:NotificationBox ID="nbRssMessage" runat="server" NotificationBoxType="Info" Dismissable="false"
+                                    Text="The Content Channel Item Publishing Point will be used for the Item URL in the RSS feed." />
                                 <Rock:NumberBox ID="nbTimetoLive" runat="server" Label="Time to Live (TTL)" NumberType="Integer" MinimumValue="0"
                                     Help="The number of minutes a feed can stay cached before it is refreshed from the source."/>
                             </div>
@@ -120,6 +123,8 @@
                 </div>
 
                 <fieldset id="fieldsetViewSummary" runat="server" >
+                    <Rock:NotificationBox ID="nbRoleMessage" runat="server" NotificationBoxType="Warning" />
+
                     <p class="description">
                         <asp:Literal ID="lGroupDescription" runat="server"></asp:Literal>
                     </p>

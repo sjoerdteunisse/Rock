@@ -1041,7 +1041,7 @@ namespace Rock.Model
                 .ToDictionary( k => k.PersonId, v => v.Location );
 
             var globalAttributes = GlobalAttributesCache.Get();
-            string publicAppRoot = globalAttributes.GetValue( "PublicApplicationRoot" ).EnsureTrailingForwardslash();
+            string publicAppRoot = globalAttributes.GetValue( "PublicApplicationRoot" );
 
             peopleExport.Persons = personList.Select( p => new PersonExport( p, personIdHomeLocationsLookup, publicAppRoot ) ).ToList();
 
@@ -1804,26 +1804,52 @@ namespace Rock.Model
 
         /// <summary>
         /// Returns a collection of <see cref="Rock.Model.GroupMember" /> entities containing the family members of the provided person sorted by the Person's GroupOrder (GroupMember.GroupOrder)
+        /// Does not included deceased members.
         /// </summary>
         /// <param name="personId">The person identifier.</param>
         /// <param name="includeSelf">if set to <c>true</c> [include self].</param>
-        /// <returns>
-        /// An enumerable collection of <see cref="Rock.Model.GroupMember" /> entities containing the family members of the provided person.
-        /// </returns>
+        /// <returns></returns>
         public IQueryable<GroupMember> GetFamilyMembers( int personId, bool includeSelf = false )
         {
-            int groupTypeFamilyId = GroupTypeCache.Get( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ).Id;
-            return GetGroupMembers( groupTypeFamilyId, personId, includeSelf );
+            return GetFamilyMembers( personId, includeSelf, false );
         }
 
         /// <summary>
-        /// Gets the group members 
+        /// Returns a collection of <see cref="Rock.Model.GroupMember" /> entities containing the family members of the provided person sorted by the Person's GroupOrder (GroupMember.GroupOrder)
+        /// </summary>
+        /// <param name="personId">The person identifier.</param>
+        /// <param name="includeSelf">if set to <c>true</c> [include self].</param>
+        /// <param name="includeDeceased">if set to <c>true</c> [include deceased].</param>
+        /// <returns>
+        /// An enumerable collection of <see cref="Rock.Model.GroupMember" /> entities containing the family members of the provided person.
+        /// </returns>
+        public IQueryable<GroupMember> GetFamilyMembers( int personId, bool includeSelf, bool includeDeceased )
+        {
+            int groupTypeFamilyId = GroupTypeCache.Get( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY ).Id;
+            return GetGroupMembers( groupTypeFamilyId, personId, includeSelf, includeDeceased );
+        }
+
+        /// <summary>
+        /// Gets the group members. Does not include deceased members.
         /// </summary>
         /// <param name="groupTypeId">The group type identifier.</param>
         /// <param name="personId">The person identifier.</param>
         /// <param name="includeSelf">if set to <c>true</c> [include self].</param>
         /// <returns></returns>
         public IQueryable<GroupMember> GetGroupMembers( int groupTypeId, int personId, bool includeSelf = false )
+        {
+            return GetGroupMembers( groupTypeId, personId, includeSelf, false );
+        }
+
+        /// <summary>
+        /// Gets the group members
+        /// </summary>
+        /// <param name="groupTypeId">The group type identifier.</param>
+        /// <param name="personId">The person identifier.</param>
+        /// <param name="includeSelf">if set to <c>true</c> [include self].</param>
+        /// <param name="includeDeceased">if set to <c>true</c> [include deceased].</param>
+        /// <returns></returns>
+        public IQueryable<GroupMember> GetGroupMembers( int groupTypeId, int personId, bool includeSelf, bool includeDeceased )
         {
             var groupMemberService = new GroupMemberService( ( RockContext ) this.Context );
 
@@ -1843,9 +1869,22 @@ namespace Rock.Model
                 .SelectMany( x => x.SortedMembers )
                 .OrderBy( a => a.PersonGroupOrder ?? int.MaxValue )
                 .Select( a => a.GroupMember )
-                .Where( m => includeSelf || ( m.PersonId != personId && !m.Person.IsDeceased ) );
+                .Where( m => includeDeceased || !m.Person.IsDeceased )
+                .Where( m => includeSelf || m.PersonId != personId );
 
             return groupMembers.Include( a => a.Person ).Include( a => a.GroupRole );
+        }
+
+        /// <summary>
+        /// Gets the family members.
+        /// </summary>
+        /// <param name="family">The family.</param>
+        /// <param name="personId">The person identifier.</param>
+        /// <param name="includeSelf">if set to <c>true</c> [include self].</param>
+        /// <returns></returns>
+        public IQueryable<GroupMember> GetFamilyMembers( Group family, int personId, bool includeSelf = false )
+        {
+            return GetFamilyMembers( family, personId, includeSelf, false );
         }
 
         /// <summary>
@@ -1854,15 +1893,16 @@ namespace Rock.Model
         /// <param name="family">The family.</param>
         /// <param name="personId">The person identifier.</param>
         /// <param name="includeSelf">if set to <c>true</c> [include self].</param>
+        /// <param name="includeDeceased">if set to <c>true</c> [include deceased].</param>
         /// <returns>
         /// An enumerable collection of <see cref="Rock.Model.GroupMember" /> entities containing the family members of the provided person.
         /// </returns>
-        public IQueryable<GroupMember> GetFamilyMembers( Group family, int personId, bool includeSelf = false )
+        public IQueryable<GroupMember> GetFamilyMembers( Group family, int personId, bool includeSelf, bool includeDeceased )
         {
             return new GroupMemberService( ( RockContext ) this.Context ).Queryable( "GroupRole, Person", true )
-                .Where( m =>
-                    m.GroupId == family.Id &&
-                    ( includeSelf || ( m.PersonId != personId && !m.Person.IsDeceased ) ) )
+                .Where( m => m.GroupId == family.Id )
+                .Where( m => includeDeceased || !m.Person.IsDeceased )
+                .Where( m => includeSelf || m.PersonId != personId )
                 .OrderBy( m => m.GroupRole.Order )
                 .ThenBy( m => m.Person.BirthDate ?? DateTime.MinValue )
                 .ThenByDescending( m => m.Person.Gender )
@@ -2245,22 +2285,14 @@ namespace Rock.Model
             var recordTypeValueIdNameless = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_NAMELESS.AsGuid() );
 
             int numberTypeMobileValueId = DefinedValueCache.Get( SystemGuid.DefinedValue.PERSON_PHONE_TYPE_MOBILE ).Id;
-
+           
             // cleanup phone
             phoneNumber = PhoneNumber.CleanNumber( phoneNumber );
 
-            // Just in case PhoneNUmber.CountryCode is NULL, also check if there is a matching phone number that doesn't have a country code
-            string fromPhoneNoCountryCode = phoneNumber;
-            if ( phoneNumber.Length > 10 )
-            {
-                fromPhoneNoCountryCode = phoneNumber.Right( 10 );
-            }
-
             // order so that non-nameless person with an SMS number with messaging enabled are listed first
             // then sort by the oldest person record in case there are multiple people with the same number
-
             var person = new PhoneNumberService( this.Context as RockContext ).Queryable()
-                .Where( pn => ( pn.CountryCode + pn.Number ) == phoneNumber || pn.Number == fromPhoneNoCountryCode )
+                .Where( pn => pn.FullNumber == phoneNumber )
                 .OrderByDescending( pn => pn.IsMessagingEnabled )
                 .ThenByDescending( pn => pn.NumberTypeValueId == numberTypeMobileValueId )
                 .ThenByDescending( p => p.Person.RecordTypeValueId != recordTypeValueIdNameless )
@@ -2855,7 +2887,7 @@ namespace Rock.Model
         /// <param name="reasonNote">The reason note.</param>
         /// <returns></returns>
         [RockObsolete( "1.8" )]
-        [Obsolete( "", true ) ]
+        [Obsolete( "", true )]
         public List<string> InactivatePerson( Person person, Web.Cache.DefinedValueCache reason, string reasonNote )
         {
             History.HistoryChangeList historyChangeList;
@@ -3982,13 +4014,18 @@ namespace Rock.Model
             using ( var rockContext = new Rock.Data.RockContext() )
             {
                 foreach ( var attributeValue in new Model.AttributeValueService( rockContext ).Queryable()
-                    .Where( v =>
+                    .Where( v => v.Attribute.EntityTypeId.HasValue && v.EntityId.HasValue &&
                         v.Attribute.EntityTypeId == personEntityTypeId &&
                         ( v.Attribute.EntityTypeQualifierColumn == null || v.Attribute.EntityTypeQualifierColumn == string.Empty ) &&
                         ( v.Attribute.EntityTypeQualifierValue == null || v.Attribute.EntityTypeQualifierValue == string.Empty ) &&
-                        v.EntityId == person.Id ) )
+                        v.EntityId.Value == person.Id )
+                    .Select( a => new { a.AttributeId, a.Value } ) )
                 {
-                    values.AddOrReplace( attributeValue.Attribute.Key, attributeValue.Value );
+                    var attributeKey = AttributeCache.Get( attributeValue.AttributeId )?.Key;
+                    if ( attributeKey.IsNotNullOrWhiteSpace() )
+                    {
+                        values.AddOrReplace( attributeKey, attributeValue.Value );
+                    }
                 }
             }
 
@@ -4329,12 +4366,16 @@ FROM (
         {
             using ( var anonymousGiverPersonRockContext = new RockContext() )
             {
+
+                var connectionStatusValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.PERSON_CONNECTION_STATUS_PARTICIPANT.AsGuid() );
+                var recordStatusValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.PERSON_RECORD_STATUS_ACTIVE.AsGuid() );
+                var recordTypeValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.PERSON_RECORD_TYPE_PERSON.AsGuid() );
                 var anonymousGiver = new Person()
                 {
-                    IsSystem = false,
-                    RecordTypeValueId = 1,
-                    RecordStatusValueId = 3,
-                    ConnectionStatusValueId = 203,
+                    IsSystem = true,
+                    RecordTypeValueId = recordTypeValueId,
+                    RecordStatusValueId = recordStatusValueId,
+                    ConnectionStatusValueId = connectionStatusValueId,
                     IsDeceased = false,
                     FirstName = "Giver",
                     NickName = "Giver",

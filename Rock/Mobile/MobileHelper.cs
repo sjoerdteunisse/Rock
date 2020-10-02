@@ -69,7 +69,7 @@ namespace Rock.Mobile
             //
             if ( validateApiKey )
             {
-                var appApiKey = System.Web.HttpContext.Current?.Request?.Headers?["X-Rock-Mobile-Api-Key"];
+                var requestApiKey = System.Web.HttpContext.Current?.Request?.Headers?["X-Rock-Mobile-Api-Key"];
                 var additionalSettings = site.AdditionalSettings.FromJsonOrNull<AdditionalSiteSettings>();
 
                 //
@@ -81,9 +81,11 @@ namespace Rock.Mobile
                 }
 
                 rockContext = rockContext ?? new Data.RockContext();
-                var userLogin = new UserLoginService( rockContext ).GetByApiKey( appApiKey ).FirstOrDefault();
 
-                if ( userLogin != null && userLogin.Id == additionalSettings.ApiKeyId )
+                // Get user login for the app and verify that it matches the request's key
+                var appUserLogin = new UserLoginService( rockContext ).Get( additionalSettings.ApiKeyId.Value );
+
+                if ( appUserLogin != null && appUserLogin.ApiKey == requestApiKey )
                 {
                     return site;
                 }
@@ -231,7 +233,21 @@ namespace Rock.Mobile
         /// <param name="applicationId">The application identifier.</param>
         /// <param name="deviceType">The type of device to build for.</param>
         /// <returns>An update package for the specified application and device type.</returns>
+        /// <remarks>This is a backwards compatible method that can be removed at any time, this method shouldn't be used by any plugins.</remarks>
+        [RockObsolete( "1.12" )]
         public static UpdatePackage BuildMobilePackage( int applicationId, DeviceType deviceType )
+        {
+            return BuildMobilePackage( applicationId, deviceType, ( int ) ( RockDateTime.Now.ToJavascriptMilliseconds() / 1000 ) );
+        }
+
+        /// <summary>
+        /// Builds the mobile package that can be archived for deployment.
+        /// </summary>
+        /// <param name="applicationId">The application identifier.</param>
+        /// <param name="deviceType">The type of device to build for.</param>
+        /// <param name="versionId">The version identifier to use on this package.</param>
+        /// <returns>An update package for the specified application and device type.</returns>
+        public static UpdatePackage BuildMobilePackage( int applicationId, DeviceType deviceType, int versionId )
         {
             var site = SiteCache.Get( applicationId );
             string applicationRoot = GlobalAttributesCache.Value( "PublicApplicationRoot" );
@@ -256,6 +272,29 @@ namespace Rock.Mobile
                 .ToList();
 
             //
+            // Get all the defined values.
+            //
+            var definedTypeGuids = new[]
+            {
+                SystemGuid.DefinedType.LOCATION_COUNTRIES,
+                SystemGuid.DefinedType.LOCATION_ADDRESS_STATE
+            };
+            var definedValues = new List<MobileDefinedValue>();
+            foreach ( var definedTypeGuid in definedTypeGuids )
+            {
+                var definedType = DefinedTypeCache.Get( definedTypeGuid );
+                definedValues.AddRange( definedType.DefinedValues
+                    .Select( a => new MobileDefinedValue
+                    {
+                        Guid = a.Guid,
+                        DefinedTypeGuid = a.DefinedType.Guid,
+                        Value = a.Value,
+                        Description = a.Description,
+                        Attributes = GetMobileAttributeValues( a, a.Attributes.Select( b => b.Value ) )
+                    } ) );
+            }
+
+            //
             // Build CSS Styles
             //
             var settings = additionalSettings.DownhillSettings;
@@ -268,17 +307,21 @@ namespace Rock.Mobile
                 cssStyles += CssUtilities.ParseCss( additionalSettings.CssStyle, settings );
             }
 
+            // Run Lava on CSS to enable color utilities
+            cssStyles += cssStyles.ResolveMergeFields(Lava.LavaHelper.GetCommonMergeFields(null, null, new Lava.CommonMergeFieldsOptions { GetLegacyGlobalMergeFields = false }));
+
             //
             // Initialize the base update package settings.
             //
             var package = new UpdatePackage
             {
                 ApplicationType = additionalSettings.ShellType ?? ShellType.Blank,
-                ApplicationVersionId = ( int ) ( RockDateTime.Now.ToJavascriptMilliseconds() / 1000 ),
+                ApplicationVersionId = versionId,
                 CssStyles = cssStyles,
                 LoginPageGuid = site.LoginPageId.HasValue ? PageCache.Get( site.LoginPageId.Value )?.Guid : null,
                 ProfileDetailsPageGuid = additionalSettings.ProfilePageId.HasValue ? PageCache.Get( additionalSettings.ProfilePageId.Value )?.Guid : null,
                 PhoneFormats = phoneFormats,
+                DefinedValues = definedValues,
                 TabsOnBottomOnAndroid = additionalSettings.TabLocation == TabLocation.Bottom
             };
 
@@ -291,6 +334,13 @@ namespace Rock.Mobile
             package.AppearanceSettings.FlyoutXaml = additionalSettings.FlyoutXaml;
             package.AppearanceSettings.LockedPhoneOrientation = additionalSettings.LockedPhoneOrientation;
             package.AppearanceSettings.LockedTabletOrientation = additionalSettings.LockedTabletOrientation;
+            package.AppearanceSettings.PaletteColors.Add( "app-primary", additionalSettings.DownhillSettings.ApplicationColors.Primary );
+            package.AppearanceSettings.PaletteColors.Add( "app-secondary", additionalSettings.DownhillSettings.ApplicationColors.Secondary );
+            package.AppearanceSettings.PaletteColors.Add( "app-success", additionalSettings.DownhillSettings.ApplicationColors.Success );
+            package.AppearanceSettings.PaletteColors.Add( "app-danger", additionalSettings.DownhillSettings.ApplicationColors.Danger );
+            package.AppearanceSettings.PaletteColors.Add( "app-warning", additionalSettings.DownhillSettings.ApplicationColors.Warning );
+            package.AppearanceSettings.PaletteColors.Add( "app-light", additionalSettings.DownhillSettings.ApplicationColors.Light );
+            package.AppearanceSettings.PaletteColors.Add( "app-dark", additionalSettings.DownhillSettings.ApplicationColors.Dark );
 
             if ( site.FavIconBinaryFileId.HasValue )
             {
@@ -425,6 +475,7 @@ namespace Rock.Mobile
                     IconUrl = page.IconBinaryFileId.HasValue ? $"{ applicationRoot }GetImage.ashx?Id={ page.IconBinaryFileId.Value }" : null,
                     LavaEventHandler = additionalPageSettings.LavaEventHandler,
                     DepthLevel = depth,
+                    CssClasses = page.BodyCssClass,
                     CssStyles = additionalPageSettings.CssStyles,
                     AuthorizationRules = string.Join( ",", GetOrderedExplicitAuthorizationRules( page ) )
                 };
@@ -539,7 +590,7 @@ namespace Rock.Mobile
 
             if ( includeHeader )
             {
-                sb.AppendLine( "<Label Text=\"Attributes\" StyleClass=\"heading1\" />" );
+                sb.AppendLine( "<Label Text=\"Attributes\" StyleClass=\"h1\" />" );
                 sb.AppendLine( "<BoxView Color=\"#888\" HeightRequest=\"1\" Margin=\"0 0 12 0\" />" );
             }
 
@@ -609,9 +660,10 @@ namespace Rock.Mobile
         /// </summary>
         /// <param name="fieldXaml">The field.</param>
         /// <param name="wrapped">if set to <c>true</c> the SingleField wraps the field in a border.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage( "Style", "IDE0060:Remove unused parameter", Justification = "Public API, and it may come back to be used later. -dsh" )]
         public static string GetSingleFieldXaml( string fieldXaml, bool wrapped = true )
         {
-            return $"<Rock:SingleField Wrapped=\"{wrapped}\">{fieldXaml}</Rock:SingleField>";
+            return $"<Rock:FieldContainer>{fieldXaml}</Rock:FieldContainer>";
         }
 
         /// <summary>
@@ -623,7 +675,7 @@ namespace Rock.Mobile
         {
             text = text ?? string.Empty;
 
-            return GetSingleFieldXaml( $"<Rock:Literal Label=\"{label.EncodeXml( true )}\" Text=\"{text.EncodeXml( true )}\" />", false );
+            return GetSingleFieldXaml( $"<Rock:Literal Label=\"{label.EncodeXml( true )}\" Text=\"{text.EncodeXml( true )}\" />" );
         }
 
         /// <summary>

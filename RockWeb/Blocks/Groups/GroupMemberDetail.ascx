@@ -59,6 +59,7 @@
                         <div class="col-md-6">
                             <Rock:RockRadioButtonList ID="rblStatus" runat="server" Label="Status" RepeatDirection="Horizontal" />
                             <Rock:RockRadioButtonList ID="rblCommunicationPreference" runat="server" RepeatDirection="Horizontal" Label="Communication Preference">
+                                <asp:ListItem Text="No Preference" Value="0" />
                                 <asp:ListItem Text="Email" Value="1" />
                                 <asp:ListItem Text="SMS" Value="2" />
                             </Rock:RockRadioButtonList>
@@ -152,6 +153,7 @@
                         <Rock:GroupPicker ID="gpMoveGroupMember" runat="server" Required="true" Label="Destination Group" ValidationGroup="vgMoveGroupMember" OnSelectItem="gpMoveGroupMember_SelectItem" />
                         <Rock:GroupRolePicker ID="grpMoveGroupMember" runat="server" Label="Role" ValidationGroup="vgMoveGroupMember" GroupTypeId="0" />   
                         <Rock:RockCheckBox ID="cbMoveGroupMemberMoveNotes" runat="server" ValidationGroup="vgMoveGroupMember" Label="Move Notes" Help="If this group member has notes, move these notes with them to their new group." />
+                        <Rock:RockCheckBox ID="cbMoveGroupMemberFundraisingTransactions" runat="server" ValidationGroup="vgMoveGroupMember" Label="Move Fundraising Financial Transactions" Help="If enabled the related fundraising financial transactions will be re-linked to the new fundraising group. If the new group has different financial accounts configured adjustment financial transactions may be created to move the dollars from one account to another.  This will only occur if the batches for the original accounts are closed. The new transactions will be placed in a new batch." />
                         <Rock:NotificationBox ID="nbMoveGroupMemberWarning" runat="server" NotificationBoxType="Warning" Visible="false" />
                     </div>
                 </div>

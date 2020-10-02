@@ -1,6 +1,22 @@
-﻿using System;
+﻿// <copyright>
+// Copyright by the Spark Development Network
+//
+// Licensed under the Rock Community License (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.rockrms.com/license
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// </copyright>
+//
+using System;
 using System.Collections.Generic;
-
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Rock.Utility;
@@ -351,7 +367,7 @@ namespace Rock.NMI
         public string Phone { get; set; }
 
         /// <summary>
-        /// Gets or sets the cc number.
+        /// Gets or sets the cc number (Masked)
         /// </summary>
         /// <value>
         /// The cc number.
@@ -538,6 +554,14 @@ namespace Rock.NMI
         public string Response { get; set; }
 
         /// <summary>
+        /// Determines whether response indicates an error
+        /// </summary>
+        /// <returns>
+        ///   <c>true</c> if this instance is error; otherwise, <c>false</c>.
+        /// </returns>
+        public bool IsError() => Response != "1";
+
+        /// <summary>
         /// Gets or sets the response text.
         /// </summary>
         /// <value>
@@ -641,6 +665,14 @@ namespace Rock.NMI
         /// </value>
         [JsonProperty( "response" )]
         public string Response { get; set; }
+
+        /// <summary>
+        /// Determines whether response indicates an error
+        /// </summary>
+        /// <returns>
+        ///   <c>true</c> if this instance is error; otherwise, <c>false</c>.
+        /// </returns>
+        public bool IsError() => Response != "1";
 
         /// <summary>
         /// Gets or sets the response text.
@@ -773,6 +805,7 @@ namespace Rock.NMI
         /// The subscription list.
         /// </value>
         [JsonProperty( "subscription" )]
+        [JsonConverter( typeof( SingleOrArrayJsonConverter<Subscription> ) )]
         public Subscription[] SubscriptionList { get; set; }
     }
 
@@ -1210,6 +1243,7 @@ namespace Rock.NMI
         /// The transaction list.
         /// </value>
         [JsonProperty( "transaction" )]
+        [JsonConverter( typeof( SingleOrArrayJsonConverter<Transaction> ) )]
         public Transaction[] TransactionList { get; set; }
 
         /// <summary>
@@ -2117,10 +2151,40 @@ namespace Rock.NMI
 
     #region ThreeStepClasses
 
+    /// <summary>
+    /// 
+    /// </summary>
+    [JsonConverter( typeof( StringEnumConverter ) )]
+    public enum NMIThreeStepPaymentType
+    {
+        /// <summary>
+        /// credit card (default)
+        /// </summary>
+        creditcard,
+
+        /// <summary>
+        /// check (ACH)
+        /// </summary>
+        check,
+
+        /// <summary>
+        /// cash (unused by Rock)
+        /// </summary>
+        cash
+    }
+
     internal class ThreeStepResponse : BaseResponse
     {
         [JsonProperty( "result" )]
         public string Result { get; set; }
+
+        /// <summary>
+        /// Determines whether response indicates an error
+        /// </summary>
+        /// <returns>
+        ///   <c>true</c> if this instance is error; otherwise, <c>false</c>.
+        /// </returns>
+        public bool IsError() => Result != "1";
 
         [JsonProperty( "result-text" )]
         public string ResultText { get; set; }
@@ -2202,7 +2266,7 @@ namespace Rock.NMI
         public string SubscriptionId { get; set; }
     }
 
-    internal class ThreeStepBilling: BaseResponse
+    internal class ThreeStepBilling : BaseResponse
     {
         [JsonProperty( "billing-id" )]
         public string BillingId { get; set; }
@@ -2331,10 +2395,16 @@ namespace Rock.NMI
 
             if ( friendlyMessage.IsNullOrWhiteSpace() )
             {
-                // This can happen if using the same card number and amount within a short window ( maybe around 20 minutes? )
                 if ( apiMessage.StartsWith( "Duplicate transaction REFID:" ) )
                 {
-                    friendlyMessage = "Duplicate transaction detected";
+                    // This can happen if using the same card number and amount within a short window ( maybe around 20 minutes? )
+                    return "Duplicate transaction detected";
+                }
+
+                var friendlyMessagePartial = FriendlyMessageMap.Where( k => apiMessage.StartsWith( k.Key ) ).Select( a => a.Value ).FirstOrDefault();
+                if ( friendlyMessagePartial != null )
+                {
+                    return friendlyMessagePartial;
                 }
             }
 
@@ -2519,8 +2589,11 @@ namespace Rock.NMI
             { "ccnumber is empty", "Invalid Credit Card Number" },
             { "Expiration date must be a present or future month and year", "Invalid Expiration Date" },
             { "ccexp is empty", "Invalid Expiration Date" },
-            { "CVV must be 3 or 4 digits", "Invalid CVV" },
             { "cvv is empty", "Invalid CVV" },
+
+            // Partial matches on CreditCard error
+            { "Required Field cc_number is Missing or Empty", "Invalid Credit Card Number" },
+            { "CVV must be 3 or 4 digits", "Invalid CVV" },
 
             // ACH Related
             { "Routing number must be 6 or 9 digits and a recognizable format", "Invalid Routing Number" },
@@ -2532,9 +2605,65 @@ namespace Rock.NMI
             // This seems to happen if entering an invalid ACH Account number ??
             { "Connection to tokenization service failed", "Invalid Account Number" },
 
+            // Partial Matches on ACH errors
+            { "Check Account number must contain only digits", "Invalid Check Account Number" },
+            { "ABA number must contain only digits", "Invalid Routing Number" },
+
             // Declined
             { "FAILED", "Declined" },
             { "DECLINE", "Declined" }
         };
     }
+
+    #region NMI.Gateway Exceptions
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <seealso cref="System.Exception" />
+    public class NMIGatewayException : Exception
+    {
+        string _stackTrace;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NMIGatewayException"/> class.
+        /// </summary>
+        /// <param name="errorMessage">The error message.</param>
+        public NMIGatewayException( string errorMessage ) : this( errorMessage, null )
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NMIGatewayException"/> class.
+        /// </summary>
+        /// <param name="errorMessage">The error message.</param>
+        /// <param name="innerException">The inner exception.</param>
+        public NMIGatewayException( string errorMessage, Exception innerException ) : base( errorMessage, innerException )
+        {
+            // lets set the stacktrace manually to ensure we have one. Otherwise, it would usually be blank.
+            _stackTrace = new System.Diagnostics.StackTrace( true ).ToString();
+        }
+
+        /// <summary>
+        /// Gets a string representation of the immediate frames on the call stack.
+        /// </summary>
+        public override string StackTrace => this._stackTrace ?? base.StackTrace;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <seealso cref="System.ArgumentNullException" />
+    public class NullFinancialGatewayException : ArgumentNullException
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NullFinancialGatewayException"/> class.
+        /// </summary>
+        public NullFinancialGatewayException()
+            : base( "Unable to determine financial gateway" )
+        {
+        }
+    }
+
+    #endregion NMI.Gateway Exceptions
 }

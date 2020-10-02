@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data.Entity;
 using System.Linq;
 using System.Text;
@@ -33,9 +34,12 @@ namespace Rock.Jobs
     /// <summary>
     /// Automate Steps From Dataviews
     /// </summary>
+    [DisplayName( "Steps Automation" )]
+    [Description( "Creates steps for people within a dataview." )]
+
     [IntegerField(
         "Duplicate Prevention Day Range",
-        description: "If duplicates are enabled above, this setting will keep steps from being added if a previous step was within the number of days provided.",
+        description: "This setting will keep additional step records from being added if a step was already added within the number of days provided.",
         required: false,
         defaultValue: 7,
         order: 1,
@@ -145,11 +149,20 @@ namespace Rock.Jobs
             }
 
             // We can use the dataview to get the person alias id query
-            var dataviewQuery = dataview.GetQuery( null, rockContext, null, out var dataviewQueryErrors );
-
-            if ( dataviewQueryErrors != null && dataviewQueryErrors.Any() )
+            var dataViewGetQueryArgs = new DataViewGetQueryArgs
             {
-                errorMessages.AddRange( dataviewQueryErrors );
+                DbContext = rockContext
+            };
+
+            IQueryable<IEntity> dataviewQuery;
+            try
+            {
+                dataviewQuery = dataview.GetQuery( dataViewGetQueryArgs );
+            }
+            catch ( Exception ex )
+            {
+                errorMessages.Add( ex.Message );
+                ExceptionLogService.LogException( ex );
                 return 0;
             }
 

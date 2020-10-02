@@ -11,6 +11,7 @@
                     <asp:Literal ID="lReadOnlyTitle" runat="server" />
                 </h1>
             </div>
+            <Rock:PanelDrawer ID="pdAuditDetails" runat="server"></Rock:PanelDrawer>
             <div class="panel-body">
                 <Rock:NotificationBox ID="nbEditModeMessage" runat="server" NotificationBoxType="Info" />
                 <asp:ValidationSummary ID="valDocumentTypeDetail" runat="server" HeaderText="Please correct the following:" CssClass="alert alert-validation" />
@@ -46,7 +47,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-6">
-                            <Rock:RockCheckBox ID="rcbManuallySelectable" runat="server" Label="Manually Selectable" />
+                            <Rock:RockCheckBox ID="rcbManuallySelectable" runat="server" Label="Manually Selectable" Help="Checking this box will allow this Document Type as an option when manually adding/editing documents for the entity." />
                         </div>
                         <div class="col-md-6">
                             <Rock:RockTextBox ID="rtbIconCssClass" runat="server" Label="Icon CSS Class" />

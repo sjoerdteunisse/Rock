@@ -36,6 +36,20 @@ namespace Rock.Model
     [DataContract]
     public partial class Interaction : Model<Interaction>
     {
+        /* Custom Indexes:
+         *
+         * InteractionComponentId, InteractionDateTime
+         *      Includes InteractionTimeToServe, Operation, InteractionSessionId
+         *      This was added for <see cref="Rock.Jobs.RockCleanup.UpdateMedianPageLoadTimes"/>
+         *          and CleanupOldInteractions
+         *
+         *  InteractionDateTime
+         *      Includes InteractionComponentId, PersonAliasId
+         *
+         *  PersonAliasId, InteractionSessionId
+         *      Includes InteractionDateTime, InteractionComponentId
+         *      This was added for RockWeb.Blocks.Reporting.InteractionSessionList
+         */
 
         #region Entity Properties
 
@@ -187,19 +201,23 @@ namespace Rock.Model
         public string ChannelCustomIndexed1 { get; set; }
 
         /// <summary>
-        /// Gets or sets the interaction length.
+        /// Gets or sets the length of time (or percent of time) of the interaction.
+        /// The units on this depend on the InteractionChannel, which might have this be a Percent, Days, Seconds, Minutes, etc
+        /// For example, if this interaction type is watching a video, this might be what percent of the video they watched
         /// </summary>
         /// <value>
-        /// The interaction length.
+        /// The length of the interaction.
         /// </value>
         [DataMember]
         public double? InteractionLength { get; set; }
 
         /// <summary>
-        /// Gets or sets the time to serve the interaction in seconds.
+        /// Gets or sets the interaction time to serve.
+        /// The units on this depend on the InteractionChannel, which might have this be a Percent, Days, Seconds, Minutes, etc.
+        /// For example, if this is a page view, this would be how long (in seconds) it took for Rock to generate a response.
         /// </summary>
         /// <value>
-        /// The time to serve the interaction in seconds.
+        /// The interaction time to serve.
         /// </value>
         [DataMember]
         public double? InteractionTimeToServe { get; set; }
@@ -257,6 +275,20 @@ namespace Rock.Model
         [DataMember]
         [MaxLength( 50 )]
         public string Term { get; set; }
+
+        /// <summary>
+        /// Gets the interaction date key.
+        /// </summary>
+        /// <value>
+        /// The interaction date key.
+        /// </value>
+        [DataMember]
+        [FieldType( Rock.SystemGuid.FieldType.DATE )]
+        public int InteractionDateKey
+        {
+            get => InteractionDateTime.ToString( "yyyyMMdd" ).AsInteger();
+            private set { }
+        }
 
         #endregion
 
@@ -333,6 +365,15 @@ namespace Rock.Model
             this.InteractionData = interactionData.IsNotNullOrWhiteSpace() ? PersonToken.ObfuscateRockMagicToken( interactionData ) : string.Empty;
         }
 
+        /// <summary>
+        /// Gets or sets the interaction source date.
+        /// </summary>
+        /// <value>
+        /// The interaction source date.
+        /// </value>
+        [DataMember]
+        public AnalyticsSourceDate InteractionSourceDate { get; set; }
+
         #endregion Virtual Properties
 
         #region Public Methods
@@ -381,10 +422,14 @@ namespace Rock.Model
         public InteractionConfiguration()
         {
             this.HasOptional( r => r.PersonAlias ).WithMany().HasForeignKey( r => r.PersonAliasId ).WillCascadeOnDelete( false );
-            this.HasRequired( r => r.InteractionComponent ).WithMany().HasForeignKey( r => r.InteractionComponentId ).WillCascadeOnDelete( false );
+            this.HasRequired( r => r.InteractionComponent ).WithMany().HasForeignKey( r => r.InteractionComponentId ).WillCascadeOnDelete( true );
             this.HasOptional( r => r.InteractionSession ).WithMany( r => r.Interactions ).HasForeignKey( r => r.InteractionSessionId ).WillCascadeOnDelete( false );
             this.HasOptional( r => r.PersonalDevice ).WithMany().HasForeignKey( r => r.PersonalDeviceId ).WillCascadeOnDelete( false );
             this.HasOptional( r => r.RelatedEntityType ).WithMany().HasForeignKey( r => r.RelatedEntityTypeId ).WillCascadeOnDelete( false );
+
+            // NOTE: When creating a migration for this, don't create the actual FK's in the database for this just in case there are outlier OccurrenceDates that aren't in the AnalyticsSourceDate table
+            // and so that the AnalyticsSourceDate can be rebuilt from scratch as needed
+            this.HasRequired( r => r.InteractionSourceDate ).WithMany().HasForeignKey( r => r.InteractionDateKey ).WillCascadeOnDelete( false );
         }
     }
 

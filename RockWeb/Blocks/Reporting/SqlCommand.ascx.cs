@@ -15,17 +15,10 @@
 // </copyright>
 //
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Data.SqlClient;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.Xml.Linq;
 
 using Rock;
 using Rock.Attribute;
@@ -39,9 +32,9 @@ namespace RockWeb.Blocks.Reporting
     /// <summary>
     /// Block to execute a sql command and display the result (if any).
     /// </summary>
-    [DisplayName( "Sql Command" )]
+    [DisplayName( "SQL Command" )]
     [Category( "Reporting" )]
-    [Description( "Block to execute a sql command and display the result (if any)." )]
+    [Description( "Block to execute a SQL command and display the result (if any)." )]
     [IntegerField( "Database Timeout", "The number of seconds to wait before reporting a database timeout.", false, 180, order: 1 )]
     public partial class SqlCommand : RockBlock
     {
@@ -57,7 +50,7 @@ namespace RockWeb.Blocks.Reporting
 
             gReport.GridRebind += gReport_GridRebind;
 
-            if ( ! Page.IsPostBack )
+            if ( !Page.IsPostBack )
             {
                 tbQuery.Text = @"
 SELECT
@@ -183,7 +176,7 @@ FROM
                         object dateObj = dataTable.Rows[i][dataTableColumn];
                         if ( dateObj is DateTime )
                         {
-                            DateTime dateTime = (DateTime)dateObj;
+                            DateTime dateTime = ( DateTime ) dateObj;
                             if ( dateTime.TimeOfDay.Seconds != 0 )
                             {
                                 bf = new DateTimeField();

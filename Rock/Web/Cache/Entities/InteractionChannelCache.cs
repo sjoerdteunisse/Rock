@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Runtime.Serialization;
 
@@ -36,7 +37,9 @@ namespace Rock.Web.Cache
 
         #region Static Fields
 
-        private static ConcurrentDictionary<string, int> _interactionChannelLookup = new ConcurrentDictionary<string, int>();
+        private static ConcurrentDictionary<string, int> _interactionChannelLookupFromChannelIdByEntityId = new ConcurrentDictionary<string, int>();
+
+        private static ConcurrentDictionary<string, int> _interactionChannelIdLookupFromForeignKey = new ConcurrentDictionary<string, int>();
 
         #endregion
 
@@ -180,7 +183,10 @@ namespace Rock.Web.Cache
 
                 InitComponentIds();
 
-                if ( InteractionComponentIds == null ) return components;
+                if ( InteractionComponentIds == null )
+                {
+                    return components;
+                }
 
                 foreach ( var id in InteractionComponentIds.Keys )
                 {
@@ -264,7 +270,10 @@ namespace Rock.Web.Cache
             base.SetFromEntity( entity );
 
             var interactionChannel = entity as InteractionChannel;
-            if ( interactionChannel == null ) return;
+            if ( interactionChannel == null )
+            {
+                return;
+            }
 
             Name = interactionChannel.Name;
             ChannelEntityId = interactionChannel.ChannelEntityId;
@@ -281,7 +290,12 @@ namespace Rock.Web.Cache
 
             var lookupKey = $"{interactionChannel.ChannelTypeMediumValueId}|{interactionChannel.ChannelEntityId}";
 
-            _interactionChannelLookup.AddOrUpdate( lookupKey, interactionChannel.Id, ( k, v ) => interactionChannel.Id );
+            _interactionChannelLookupFromChannelIdByEntityId.AddOrUpdate( lookupKey, interactionChannel.Id, ( k, v ) => interactionChannel.Id );
+
+            if ( interactionChannel.ForeignKey.IsNotNullOrWhiteSpace() )
+            {
+                _interactionChannelIdLookupFromForeignKey.AddOrUpdate( interactionChannel.ForeignKey, interactionChannel.Id, ( k, v ) => interactionChannel.Id );
+            }
         }
 
         /// <summary>
@@ -296,18 +310,19 @@ namespace Rock.Web.Cache
         }
 
         /// <summary>
-        /// Gets the channel identifier by entity identifier, and creates it if it doesn't exist
+        /// Gets the channel identifier by type identifier and entity identifier, and creates it if it doesn't exist.
         /// </summary>
         /// <param name="channelTypeMediumValueId">The channel type medium value identifier.</param>
         /// <param name="channelEntityId">The channel entity identifier.</param>
-        /// <param name="componentEntityTypeId">The component entity type identifier.</param>
-        /// <param name="channelName">Name of the channel.</param>
+        /// <param name="channelName">Name of the channel. This value will only be used if a new record is created.</param>
+        /// <param name="componentEntityTypeId">The component entity type identifier. This value will only be used if a new record is created.</param>
+        /// <param name="interactionEntityTypeId">The interaction entity type identifier. This value will only be used if a new record is created.</param>
         /// <returns></returns>
-        public static int GetChannelIdByEntityId( int channelTypeMediumValueId, int channelEntityId, int componentEntityTypeId, string channelName )
+        public static int GetChannelIdByTypeIdAndEntityId( int? channelTypeMediumValueId, int? channelEntityId, string channelName, int? componentEntityTypeId, int? interactionEntityTypeId )
         {
             var lookupKey = $"{channelTypeMediumValueId}|{channelEntityId}";
 
-            if ( _interactionChannelLookup.TryGetValue( lookupKey, out int channelId ) )
+            if ( _interactionChannelLookupFromChannelIdByEntityId.TryGetValue( lookupKey, out int channelId ) )
             {
                 return channelId;
             }
@@ -316,10 +331,10 @@ namespace Rock.Web.Cache
             {
                 var interactionChannelService = new InteractionChannelService( rockContext );
                 var interactionChannel = interactionChannelService.Queryable()
-                .Where( a =>
-                    a.ChannelTypeMediumValueId == channelTypeMediumValueId &&
-                    a.ChannelEntityId == channelEntityId )
-                .FirstOrDefault();
+                    .Where( a =>
+                        a.ChannelTypeMediumValueId == channelTypeMediumValueId &&
+                        a.ChannelEntityId == channelEntityId )
+                    .FirstOrDefault();
 
                 if ( interactionChannel == null )
                 {
@@ -328,18 +343,78 @@ namespace Rock.Web.Cache
                     interactionChannel.ChannelTypeMediumValueId = channelTypeMediumValueId;
                     interactionChannel.ChannelEntityId = channelEntityId;
                     interactionChannel.ComponentEntityTypeId = componentEntityTypeId;
+                    interactionChannel.InteractionEntityTypeId = interactionEntityTypeId;
                     interactionChannelService.Add( interactionChannel );
                     rockContext.SaveChanges();
                 }
 
                 var interactionChannelId = Get( interactionChannel ).Id;
-                _interactionChannelLookup.AddOrUpdate( lookupKey, interactionChannelId, ( k, v ) => interactionChannelId );
+                _interactionChannelLookupFromChannelIdByEntityId.AddOrUpdate( lookupKey, interactionChannelId, ( k, v ) => interactionChannelId );
+
+                return interactionChannelId;
+            }
+        }
+
+        /// <summary>
+        /// Gets the channel identifier by ForeignKey, and creates it if it doesn't exist.
+        /// If foreignKey is blank, this will throw a <seealso cref="ArgumentNullException" />
+        /// </summary>
+        /// <param name="foreignKey">The foreign key.</param>
+        /// <param name="channelName">Name of the channel.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException">ForeignKey must be specified when using GetChannelIdByForeignKey</exception>
+        [Obsolete( "Use GetCreateChannelIdByForeignKey instead." )]
+        [RockObsolete("1.11")]
+        public static int GetChannelIdByForeignKey( string foreignKey, string channelName)
+        {
+            return GetCreateChannelIdByForeignKey( foreignKey, channelName, null );
+        }
+
+        /// <summary>
+        /// Gets the channel identifier by ForeignKey, and creates it if it doesn't exist.
+        /// If foreignKey is blank, this will throw a <seealso cref="ArgumentNullException" />
+        /// </summary>
+        /// <param name="foreignKey">The foreign key.</param>
+        /// <param name="channelName">Name of the channel.</param>
+        /// <param name="channelTypeMediumValueId">The channel type medium value identifier.</param>
+        /// <returns></returns>
+        /// <exception cref="System.ArgumentNullException">ForeignKey must be specified when using GetChannelIdByForeignKey</exception>
+        /// <exception cref="ArgumentNullException">ForeignKey must be specified when using GetChannelIdByForeignKey</exception>
+        public static int GetCreateChannelIdByForeignKey( string foreignKey, string channelName, int? channelTypeMediumValueId )
+        {
+            if ( foreignKey.IsNullOrWhiteSpace() )
+            {
+                throw new ArgumentNullException( "ForeignKey must be specified when using GetChannelIdByForeignKey" );
+            }
+
+            if ( _interactionChannelIdLookupFromForeignKey.TryGetValue( foreignKey, out int channelId ) )
+            {
+                return channelId;
+            }
+
+            using ( var rockContext = new RockContext() )
+            {
+                var interactionChannelService = new InteractionChannelService( rockContext );
+                var interactionChannel = interactionChannelService.Queryable()
+                .Where( a => a.ForeignKey == foreignKey ).FirstOrDefault();
+
+                if ( interactionChannel == null )
+                {
+                    interactionChannel = new InteractionChannel();
+                    interactionChannel.Name = channelName;
+                    interactionChannel.ForeignKey = foreignKey;
+                    interactionChannel.ChannelTypeMediumValueId = channelTypeMediumValueId;
+                    interactionChannelService.Add( interactionChannel );
+                    rockContext.SaveChanges();
+                }
+
+                var interactionChannelId = Get( interactionChannel ).Id;
+                _interactionChannelIdLookupFromForeignKey.AddOrUpdate( foreignKey, interactionChannelId, ( k, v ) => interactionChannelId );
 
                 return interactionChannelId;
             }
         }
 
         #endregion
-
     }
 }

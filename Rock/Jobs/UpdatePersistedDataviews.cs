@@ -16,6 +16,7 @@
 //
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -29,9 +30,12 @@ using Rock.Model;
 namespace Rock.Jobs
 {
     /// <summary>
-    /// 
+    /// Job to makes sure that persisted dataviews are updated based on their schedule interval.
     /// </summary>
     /// <seealso cref="Quartz.IJob" />
+    [DisplayName( "Update Persisted DataViews" )]
+    [Description( "Job to makes sure that persisted dataviews are updated based on their schedule interval." )]
+
     [DisallowConcurrentExecution]
     [IntegerField( "SQL Command Timeout", "Maximum amount of time (in seconds) to wait for each SQL command to complete. Leave blank to use the default for this job (300 seconds). ", false, 5 * 60, "General", 1, TIMEOUT_KEY )]
     public class UpdatePersistedDataviews : IJob
@@ -85,11 +89,7 @@ namespace Rock.Jobs
                         try
                         {
                             context.UpdateLastStatusMessage( $"Updating {dataView.Name}" );
-                            Stopwatch stopwatch = Stopwatch.StartNew();
                             dataView.PersistResult( sqlCommandTimeout );
-                            stopwatch.Stop();
-                            dataView.PersistedLastRefreshDateTime = RockDateTime.Now;
-                            dataView.PersistedLastRunDuration = Convert.ToInt32( stopwatch.Elapsed.TotalMilliseconds );
                             persistContext.SaveChanges();
                             updatedDataViewCount++;
                         }

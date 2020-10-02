@@ -16,8 +16,10 @@
 //
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data.Entity;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
 
 using Quartz;
@@ -31,6 +33,9 @@ namespace Rock.Jobs
     /// Job to calculate metric values for metrics that are based on a schedule and have a database or sql datasource type
     /// Only Metrics that need to be populated (based on their Schedule) will be processed
     /// </summary>
+    [DisplayName( "Calculate Metrics" )]
+    [Description( "A job that processes any metrics with schedules." )]
+
     [DisallowConcurrentExecution]
     public class CalculateMetrics : IJob
     {
@@ -107,19 +112,23 @@ namespace Rock.Jobs
                                     // get the metric value from the DataView
                                     if ( metric.DataView != null )
                                     {
-                                        var errorMessages = new List<string>();
-                                        var qry = metric.DataView.GetQuery( null, null, out errorMessages );
                                         if ( metricPartitions.Count > 1 || metricPartitions.First().EntityTypeId.HasValue )
                                         {
                                             throw new NotImplementedException( "Partitioned Metrics using DataViews is not supported." );
                                         }
                                         else
                                         {
+                                            Stopwatch stopwatch = Stopwatch.StartNew();
+                                            var dataViewGetQueryArgs = new DataViewGetQueryArgs();
+                                            var qry = metric.DataView.GetQuery( dataViewGetQueryArgs );
                                             var resultValue = new ResultValue();
                                             resultValue.Value = Convert.ToDecimal( qry.Count() );
+                                            stopwatch.Stop();
                                             resultValue.Partitions = new List<ResultValuePartition>();
                                             resultValue.MetricValueDateTime = scheduleDateTime;
                                             resultValues.Add( resultValue );
+                                            DataViewService.AddRunDataViewTransaction( metric.DataView.Id,
+                                                        Convert.ToInt32( stopwatch.Elapsed.TotalMilliseconds ) );
                                         }
                                     }
                                 }
@@ -352,7 +361,7 @@ namespace Rock.Jobs
                 }
                 catch ( Exception ex )
                 {
-                    metricExceptions.Add( new Exception( string.Format( "Exception when calculating metric for {0} ", metric ), ex ) );
+                    metricExceptions.Add( new Exception( $"Exception when calculating metric for {metric}: {ex.Message}", ex ) );
                 }
             }
 

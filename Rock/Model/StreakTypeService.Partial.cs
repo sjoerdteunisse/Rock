@@ -62,27 +62,6 @@ namespace Rock.Model
 
         #endregion Constants
 
-        #region Overrides
-
-        /// <summary>
-        /// Deletes the specified item.
-        /// </summary>
-        /// <param name="item">The item.</param>
-        /// <returns></returns>
-        public override bool Delete( StreakType item )
-        {
-            // Since Entity Framework cannot cascade delete achievement attempts because of a possible circular reference,
-            // we need to delete them here
-            var attemptService = new StreakAchievementAttemptService( Context as RockContext );
-            var attempts = attemptService.Queryable().Where( a => a.Streak.StreakTypeId == item.Id );
-            attemptService.DeleteRange( attempts );
-
-            // Now we can delete the streak type as normal
-            return base.Delete( item );
-        }
-
-        #endregion Overrides
-
         #region Methods
 
         /// <summary>
@@ -774,10 +753,7 @@ namespace Rock.Model
             if ( streaksToDelete.Any() )
             {
                 // Keep all attempts by pointing them to the streak that will be kept
-                var attemptService = new StreakAchievementAttemptService( rockContext );
                 var streaksToDeleteIds = streaksToDelete.Select( s => s.Id ).ToList();
-                var attempts = attemptService.Queryable().Where( saa => streaksToDeleteIds.Contains( saa.StreakId ) ).ToList();
-                attempts.ForEach( saa => saa.Streak = streakToKeep );
 
                 // Delete the streaks
                 streakService.DeleteRange( streaksToDelete );
@@ -1621,8 +1597,8 @@ namespace Rock.Model
 
             // Calculate the interaction hierarchy details
             var componentId = interaction.InteractionComponentId;
-            var channelId = interaction.InteractionComponent?.ChannelId;
-            var mediumId = interaction.InteractionComponent?.Channel?.ChannelTypeMediumValueId;
+            var channelId = interaction.InteractionComponent?.InteractionChannelId;
+            var mediumId = interaction.InteractionComponent?.InteractionChannel?.ChannelTypeMediumValueId;
 
             // Query each active streak type and mark engagement for it if the person
             // is enrolled or the streak type does not require enrollment
@@ -1864,9 +1840,9 @@ namespace Rock.Model
                 case StreakStructureType.InteractionComponent:
                     var interactionComponentService = new InteractionComponentService( rockContext );
                     var interactionComponent = interactionComponentService.Queryable().AsNoTracking()
-                        .Include( ic => ic.Channel )
+                        .Include( ic => ic.InteractionChannel )
                         .FirstOrDefault( ic => ic.Id == structureEntityId.Value );
-                    return $"{interactionComponent?.Channel?.Name} / {interactionComponent?.Name}";
+                    return $"{interactionComponent?.InteractionChannel?.Name} / {interactionComponent?.Name}";
                 default:
                     throw new NotImplementedException( string.Format( "Getting structure name for the StreakStructureType '{0}' is not implemented", structureType ) );
             }
@@ -2504,9 +2480,9 @@ namespace Rock.Model
             switch ( structureType )
             {
                 case StreakStructureType.InteractionMedium:
-                    return query.Where( i => i.InteractionComponent.Channel.ChannelTypeMediumValueId == structureEntityId );
+                    return query.Where( i => i.InteractionComponent.InteractionChannel.ChannelTypeMediumValueId == structureEntityId );
                 case StreakStructureType.InteractionChannel:
-                    return query.Where( i => i.InteractionComponent.ChannelId == structureEntityId );
+                    return query.Where( i => i.InteractionComponent.InteractionChannelId == structureEntityId );
                 case StreakStructureType.InteractionComponent:
                     return query.Where( i => i.InteractionComponentId == structureEntityId );
                 default:
