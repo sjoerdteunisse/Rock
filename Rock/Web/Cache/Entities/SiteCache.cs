@@ -91,7 +91,6 @@ namespace Rock.Web.Cache
             {
                 var httpContext = HttpContext.Current;
                 var request = httpContext?.Request;
-                //HttpCookie responseCookie;
 
                 if ( request == null )
                 {
