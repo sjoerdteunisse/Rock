@@ -269,7 +269,7 @@
         	                            {% if phoneCount > 0 %}
         	                                <ul class="phone-list list-unstyled">
         	                                {% for phoneNumber in familyMember.Person.PhoneNumbers %}
-        	                                    {% assign numberTypeValue = phoneNumber.NumberTypeValueId | FromCache:'DefinedValue' | Property:'Value' %}
+        	                                    {% assign numberTypeValue = phoneNumber.NumberTypeValueId | FromCache:'DefinedValue' %}
         	                                    {% assign displayPhoneType = DisplayedPhoneTypeValueIds | Contains:numberTypeValue.Id %}
         	                                    {% if displayPhoneType %}
         	                                        <li>{{ phoneNumber.NumberFormatted }}<small>{{ numberTypeValue }} {% if phoneNumber.IsUnlisted %}Unlisted{% endif %}</small></li>
