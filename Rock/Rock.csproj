@@ -550,6 +550,7 @@
     <Compile Include="Jobs\JobMigration.cs" />
     <Compile Include="Jobs\PostV110DataMigrationsResponseCodeIndex.cs" />
     <Compile Include="Jobs\PostV110DataMigrationsUpdateRelatedDataViewId.cs" />
+    <Compile Include="Jobs\PostV12DataMigrationsAddStatusIndexToCommunicationRecipient.cs" />
     <Compile Include="Jobs\PostV12DataMigrationsAddInteractionIndexes.cs" />
     <Compile Include="Jobs\RockJobWarningException.cs" />
     <Compile Include="Jobs\CampaignManager.cs" />
@@ -577,8 +578,10 @@
     <Compile Include="Model\CodeGenerated\AuthScopeService.cs" />
     <Compile Include="Model\CodeGenerated\IdentityVerificationCodeService.cs" />
     <Compile Include="Model\CodeGenerated\IdentityVerificationService.cs" />
+    <Compile Include="Model\ConnectionRequestService.Partial.cs" />
     <Compile Include="Model\FinancialPaymentDetailService.Partial.cs" />
     <Compile Include="Model\GroupSyncService.Partial.cs" />
+    <Compile Include="Plugin\HotFixes\136_MigrationRollupsFor11_3_0.cs" />
     <Compile Include="Plugin\HotFixes\135_MigrationRollupsFor11_2_0.cs" />
     <Compile Include="Plugin\HotFixes\134_AddDocumentsToPersonMerge.cs" />
     <Compile Include="Plugin\HotFixes\133_MigrationRollupsFor11_1_2.cs" />
@@ -596,6 +599,7 @@
     <Compile Include="Transactions\AchievementsProcessTransaction.cs" />
     <Compile Include="Utility\Enums\PushOpenAction.cs" />
     <Compile Include="Utility\KeyHelper.cs" />
+    <Compile Include="Utility\ExtensionMethods\Request.cs" />
     <Compile Include="Utility\RockSerializableList.cs" />
     <Compile Include="Utility\RockSerializableDictionary.cs" />
     <Compile Include="Model\CampaignConnectionItem.cs" />
@@ -651,6 +655,7 @@
     <Compile Include="Web\Cache\Entities\BinaryFileTypeCache.cs" />
     <Compile Include="Web\Cache\Entities\StepTypeCache.cs" />
     <Compile Include="Web\Cache\Entities\StepProgramCache.cs" />
+    <Compile Include="Web\Cache\Entities\ConnectionTypeCache.cs" />
     <Compile Include="Web\Cache\IIHasLifespan.cs" />
     <Compile Include="Logging\IRockLogConfiguration.cs" />
     <Compile Include="Logging\IRockLogger.cs" />
@@ -658,6 +663,7 @@
     <Compile Include="Logging\RockLoggerSerilog.cs" />
     <Compile Include="Logging\RockLogger.cs" />
     <Compile Include="Logging\RockLogConfiguration.cs" />
+    <Compile Include="Web\UI\Controls\Grid\PersonProfileLinkField.cs" />
     <Compile Include="Web\UI\Controls\Pickers\CacheabilityPicker.cs" />
     <Compile Include="Web\UI\Controls\Pickers\IntervalPicker.cs" />
     <Compile Include="Plugin\HotFixes\118_FixFailedPaymentCommunicationTemplate.cs" />
