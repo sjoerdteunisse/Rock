@@ -742,7 +742,11 @@ namespace RockWeb.Blocks.Cms
                 return;
             }
 
-            rockContext.WrapTransaction( () =>
+            bool showPhoneNumbers = GetAttributeValue( AttributeKey.ShowPhoneNumbers ).AsBoolean();
+            bool showCommunicationPreference = GetAttributeValue( AttributeKey.ShowCommunicationPreference ).AsBoolean();
+            var communicationPreference = rblCommunicationPreference.SelectedValueAsEnum<CommunicationType>();
+
+            var wrapTransactionResult = rockContext.WrapTransactionIf( () =>
             {
                 var personService = new PersonService( rockContext );
 
@@ -885,7 +889,6 @@ namespace RockWeb.Blocks.Cms
                         }
                     }
 
-                    bool showPhoneNumbers = GetAttributeValue( AttributeKey.ShowPhoneNumbers ).AsBoolean();
                     if ( showPhoneNumbers )
                     {
                         var phoneNumberTypeIds = new List<int>();
@@ -957,7 +960,36 @@ namespace RockWeb.Blocks.Cms
 
                     person.Email = tbEmail.Text.Trim();
                     person.EmailPreference = rblEmailPreference.SelectedValue.ConvertToEnum<EmailPreference>();
-                    person.CommunicationPreference = rblCommunicationPreference.SelectedValueAsEnum<CommunicationType>();
+
+                    /* 2020-10-06 MDP
+                     To help prevent a person from setting their communication preference to SMS, even if they don't have an SMS number,
+                      we'll require an SMS number in these situations. The goal is to only enforce if they are able to do something about it.
+                      1) The block is configured to show both 'Communication Preference' and 'Phone Numbers'.
+                      2) Communication Preference is set to SMS
+                      
+                     Edge cases
+                       - Both #1 and #2 are true, but no Phone Types are selected in block settings. In this case, still enforce.
+                         Think of this as a block configuration issue (they shouldn't have configured it that way)
+
+                       - Person has an SMS phone number, but the block settings don't show it. We'll see if any of the Person's phone numbers
+                         have SMS, including ones that are not shown. So, they can set communication preference to SMS without getting a warning.
+
+                    NOTE: We might have already done a save changes at this point, but we are in a DB Transaction, so it'll get rolled back if
+                        we return false, with a warning message.
+                     */
+
+                    if ( showCommunicationPreference && showPhoneNumbers && communicationPreference == CommunicationType.SMS )
+                    {
+                        if ( !person.PhoneNumbers.Any( a => a.IsMessagingEnabled ) )
+                        {
+                            nbCommunicationPreferenceWarning.Text = "A phone number with SMS enabled is required when Communication Preference is set to SMS.";
+                            nbCommunicationPreferenceWarning.NotificationBoxType = NotificationBoxType.Warning;
+                            nbCommunicationPreferenceWarning.Visible = true;
+                            return false;
+                        }
+                    }
+
+                    person.CommunicationPreference = communicationPreference;
 
                     person.LoadAttributes();
                     Rock.Attribute.Helper.GetEditValues( phPersonAttributes, person );
@@ -1098,9 +1130,14 @@ namespace RockWeb.Blocks.Cms
                         }
                     }
                 }
+
+                return true;
             } );
 
-            NavigateToCurrentPage();
+            if ( wrapTransactionResult )
+            {
+                NavigateToCurrentPage();
+            }
         }
 
         /// <summary>
@@ -1417,6 +1454,7 @@ namespace RockWeb.Blocks.Cms
                 }
 
                 rContactInfo.DataSource = phoneNumbers;
+                rContactInfo.DataBind();
                 rContactInfo.DataBind();
             }
         }
