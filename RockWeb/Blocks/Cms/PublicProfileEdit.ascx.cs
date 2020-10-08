@@ -184,7 +184,7 @@ namespace RockWeb.Blocks.Cms
         EditorTheme = CodeEditorTheme.Rock,
         EditorHeight = 400,
         IsRequired = true,
-        DefaultValue = "{% include '~~/Assets/Lava/PublicProfile.lava' %}",
+        DefaultValue = "{% include '~/Assets/Lava/PublicProfile.lava' %}",
         Order = 17 )]
     #endregion
 
