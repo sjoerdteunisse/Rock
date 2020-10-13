@@ -15,55 +15,34 @@
 // </copyright>
 //
 using System;
-using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.Composition;
 using MassTransit;
 
 namespace Rock.Bus.Transport
 {
     /// <summary>
-    /// Base class for transport components
+    /// Bus Transport using InMemory
     /// </summary>
-    public abstract class TransportComponent : Rock.Extension.Component
+    [Description( "Use InMemory as the bus transport (only works with a single Rock server)" )]
+    [Export( typeof( TransportComponent ) )]
+    [ExportMetadata( "ComponentName", "InMemory" )]
+
+    public class InMemory : TransportComponent
     {
-        #region Attributes
-
-        /// <summary>
-        /// Gets the attribute value defaults.
-        /// </summary>
-        /// <value>
-        /// The attribute defaults.
-        /// </value>
-        public override Dictionary<string, string> AttributeValueDefaults
-        {
-            get => new Dictionary<string, string>
-            {
-                { "Active", "True" },
-                { "Order", "0" }
-            };
-        }
-
-        /// <summary>
-        /// Gets the order.
-        /// </summary>
-        /// <value>
-        /// The order.
-        /// </value>
-        public override int Order
-        {
-            get => 0;
-        }
-
-        #endregion Attributes
-
-        #region Abstract Methods
-
         /// <summary>
         /// Gets the bus control.
         /// </summary>
         /// <param name="configureEndpoints">Call this within your configuration function to add the
         /// endpoints with appropriate queues.</param>
         /// <returns></returns>
-        public abstract IBusControl GetBusControl( Action<IBusFactoryConfigurator> configureEndpoints );
+        public override IBusControl GetBusControl( Action<IBusFactoryConfigurator> configureEndpoints )
+        {
+            return MassTransit.Bus.Factory.CreateUsingInMemory( configurator =>
+            {
+                configureEndpoints( configurator );
+            } );
+        }
 
         /// <summary>
         /// Gets the send endpoint.
@@ -71,8 +50,10 @@ namespace Rock.Bus.Transport
         /// <param name="bus">The bus.</param>
         /// <param name="queueName">Name of the queue.</param>
         /// <returns></returns>
-        public abstract ISendEndpoint GetSendEndpoint( IBusControl bus, string queueName );
-
-        #endregion Abstract Methods
+        public override ISendEndpoint GetSendEndpoint( IBusControl bus, string queueName )
+        {
+            var url = $"{bus.Address.AbsoluteUri}/{queueName}";
+            return bus.GetSendEndpoint( new Uri( url ) ).Result;
+        }
     }
 }

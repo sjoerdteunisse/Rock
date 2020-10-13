@@ -68,9 +68,23 @@ namespace Rock.Bus
         /// </summary>
         public static async Task Start()
         {
-            _transportComponent = TransportContainer.Instance.Components.First().Value.Value;
-            _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
-            await _bus.StartAsync();
+            var components = TransportContainer.Instance.Components.Select( c => c.Value.Value );
+            _transportComponent = components.FirstOrDefault( c => c.IsActive ) ?? components.FirstOrDefault( c => c is InMemory );
+
+            if ( _transportComponent == null )
+            {
+                throw new ConfigurationException( "An active transport component is required for Rock to run correctly" );
+            }
+
+            try
+            {
+                _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
+                await _bus.StartAsync();
+            }
+            catch ( Exception e )
+            {
+                throw new ConfigurationException( "The Message Bus is required for Rock to run correctly, but it did not initialize correctly", e );
+            }
         }
 
         /// <summary>
@@ -92,6 +106,11 @@ namespace Rock.Bus
         /// <param name="message">The message.</param>
         public static async Task PublishEntityUpdate( IEntityWasUpdatedMessage message )
         {
+            if ( !IsReady() )
+            {
+                return;
+            }
+
             await _bus.Publish( message );
         }
 
@@ -101,6 +120,11 @@ namespace Rock.Bus
         /// <param name="message">The message.</param>
         public static async Task SendStartTask( IEventBusTransaction message )
         {
+            if ( !IsReady() )
+            {
+                return;
+            }
+
             var endpoint = _sendEndpoints.GetValueOrNull( _startTaskQueue.Name );
 
             if ( endpoint == null )
@@ -110,6 +134,17 @@ namespace Rock.Bus
             }
 
             await endpoint.Send( message );
+        }
+
+        /// <summary>
+        /// Determines whether this instance is ready.
+        /// </summary>
+        /// <returns>
+        ///   <c>true</c> if this instance is ready; otherwise, <c>false</c>.
+        /// </returns>
+        private static bool IsReady()
+        {
+            return _transportComponent != null && _bus != null;
         }
     }
 }

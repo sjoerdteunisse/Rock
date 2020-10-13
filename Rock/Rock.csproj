@@ -552,6 +552,7 @@
     <Compile Include="Bus\Queue\EntityUpdateQueue.cs" />
     <Compile Include="Bus\Queue\IRockQueue.cs" />
     <Compile Include="Bus\RockMessageBus.cs" />
+    <Compile Include="Bus\Transport\Component\InMemory.cs" />
     <Compile Include="Bus\Transport\Component\RabbitMq.cs" />
     <Compile Include="Bus\Transport\TransportComponent.cs" />
     <Compile Include="Bus\Transport\TransportContainer.cs" />

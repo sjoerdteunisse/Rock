@@ -18,6 +18,8 @@ using System;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using MassTransit;
+using Rock.Attribute;
+using Rock.Security;
 
 namespace Rock.Bus.Transport
 {
@@ -28,18 +30,42 @@ namespace Rock.Bus.Transport
     [Export( typeof( TransportComponent ) )]
     [ExportMetadata( "ComponentName", "RabbitMQ" )]
 
+    [TextField(
+        "User",
+        Description = "Enter the username for the Rabbit MQ server.",
+        IsRequired = true,
+        Order = 0,
+        Key = AttributeKey.User )]
+
+    [TextField(
+        "Host",
+        Description = "Enter the host URL for the Rabbit MQ server.",
+        IsRequired = true,
+        Order = 0,
+        Key = AttributeKey.Host )]
+
+    [EncryptedTextField(
+        "Password",
+        Description = "Enter the password for the Rabbit MQ server.",
+        IsRequired = true,
+        Order = 0,
+        Key = AttributeKey.Password )]
+
     public class RabbitMq : TransportComponent
     {
+        #region Attribute Keys
+
         /// <summary>
-        /// Config (TODO move to attributes)
+        /// Keys to use for Component Attributes
         /// </summary>
-        private static class Config
+        private static class AttributeKey
         {
-            // https://api.cloudamqp.com/console/a0c463fd-c62c-463e-8903-849d9e99cacf/details
-            internal static readonly string User = "njfbxtoz";
-            internal static readonly string Password = "*** REDACTED ***";
-            internal static readonly string Host = "coyote.rmq.cloudamqp.com";
+            public const string User = "User";
+            public const string Password = "Password";
+            public const string Host = "Host";
         }
+
+        #endregion Attribute Keys
 
         /// <summary>
         /// Gets the bus control.
@@ -51,7 +77,8 @@ namespace Rock.Bus.Transport
         {
             return MassTransit.Bus.Factory.CreateUsingRabbitMq( configurator =>
             {
-                var url = $"amqps://{Config.User}:{Config.Password}@{Config.Host}/{Config.User}";
+                var user = GetUser();
+                var url = $"amqps://{user}:{GetPassword()}@{GetHost()}/{user}";
                 configurator.Host( new Uri( url ), host => { } );
                 configureEndpoints( configurator );
             } );
@@ -65,8 +92,37 @@ namespace Rock.Bus.Transport
         /// <returns></returns>
         public override ISendEndpoint GetSendEndpoint( IBusControl bus, string queueName )
         {
-            var url = $"rabbitmq://{Config.Host}:5671/{Config.User}/{queueName}";
+            var url = $"rabbitmq://{GetHost()}:5671/{GetUser()}/{queueName}";
             return bus.GetSendEndpoint( new Uri( url ) ).Result;
+        }
+
+        /// <summary>
+        /// Gets the host.
+        /// </summary>
+        /// <returns></returns>
+        private string GetHost()
+        {
+            return GetAttributeValue( AttributeKey.Host );
+        }
+
+        /// <summary>
+        /// Gets the password.
+        /// </summary>
+        /// <returns></returns>
+        private string GetPassword()
+        {
+            var encryptedValue = GetAttributeValue( AttributeKey.Password );
+            var value = Encryption.DecryptString( encryptedValue );
+            return value;
+        }
+
+        /// <summary>
+        /// Gets the user.
+        /// </summary>
+        /// <returns></returns>
+        private string GetUser()
+        {
+            return GetAttributeValue( AttributeKey.User );
         }
     }
 }
