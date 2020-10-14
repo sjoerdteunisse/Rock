@@ -25,7 +25,7 @@ using Rock.Model;
 namespace Rock.Web.UI.Controls
 {
     /// <summary>
-    /// 
+    /// An editor control for a set of rows in an Attribute Matrix. Each matrix row is comprised of multiple Attributes Values.
     /// </summary>
     public class AttributeMatrixEditor : CompositeControl, INamingContainer, IHasRequired, IHasValidationGroup
     {
@@ -49,12 +49,16 @@ namespace Rock.Web.UI.Controls
         #region Properties
 
         /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="IHasRequired" /> is required.
+        /// Gets or sets a value indicating whether this <see cref="AttributeMatrixEditor" /> is required.
         /// </summary>
         /// <value>
         ///   <c>true</c> if required; otherwise, <c>false</c>.
         /// </value>
-        public virtual bool Required { get; set; }
+        public virtual bool Required
+        {
+            get { return ViewState["Required"] as bool? ?? false; }
+            set { ViewState["Required"] = value; }
+        }
 
         /// <summary>
         /// Gets or sets the validation group.
@@ -207,15 +211,24 @@ namespace Rock.Web.UI.Controls
 
                 AttributeMatrixTemplateService attributeMatrixTemplateService = new AttributeMatrixTemplateService( new RockContext() );
                 var attributeMatrixTemplateRanges = attributeMatrixTemplateService.GetSelect( this.AttributeMatrixTemplateId.Value, s => new { s.MinimumRows, s.MaximumRows } );
-                _requiredRowCountRangeValidator.MinimumValue = ( attributeMatrixTemplateRanges.MinimumRows ?? 0 ).ToString();
-                _requiredRowCountRangeValidator.Enabled = this.Required && attributeMatrixTemplateRanges.MinimumRows.HasValue;
-                if ( attributeMatrixTemplateRanges.MinimumRows == 1 )
+
+                // If a value is required, make sure we have a minumum row count of at least 1.
+                var minRowCount = attributeMatrixTemplateRanges.MinimumRows.GetValueOrDefault( 0 );
+                if ( this.Required
+                     && minRowCount < 1 )
                 {
-                    _requiredRowCountRangeValidator.ErrorMessage = $"At least {attributeMatrixTemplateRanges.MinimumRows} row is required";
+                    minRowCount = 1;
+                }
+                _requiredRowCountRangeValidator.MinimumValue = minRowCount.ToString();
+
+                _requiredRowCountRangeValidator.Enabled = minRowCount > 0;
+                if ( minRowCount == 1 )
+                {
+                    _requiredRowCountRangeValidator.ErrorMessage = "At least 1 row is required.";
                 }
                 else
                 {
-                    _requiredRowCountRangeValidator.ErrorMessage = $"At least {attributeMatrixTemplateRanges.MinimumRows} rows are required";
+                    _requiredRowCountRangeValidator.ErrorMessage = $"At least {minRowCount} rows are required";
                 }
             }
 
