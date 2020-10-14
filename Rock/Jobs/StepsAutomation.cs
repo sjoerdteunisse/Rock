@@ -65,7 +65,7 @@ namespace Rock.Jobs
 
         #region Constructors
 
-        /// <summary> 
+        /// <summary>
         /// Empty constructor for job initialization
         /// <para>
         /// Jobs require a public empty constructor so that the
@@ -181,7 +181,8 @@ namespace Rock.Jobs
 
             // Convert to person aliases ids
             var personAliasService = new PersonAliasService( rockContext );
-            var personAliasIds = personAliasService.Queryable().AsNoTracking()
+            var personAliasIds = personAliasService.GetPrimaryAliasQuery()
+                .AsNoTracking()
                 .Where( pa => personIdQuery.Contains( pa.PersonId ) )
                 .Select( pa => pa.Id )
                 .Distinct()
