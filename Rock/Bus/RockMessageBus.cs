@@ -104,7 +104,7 @@ namespace Rock.Bus
         /// Publishes the entity update.
         /// </summary>
         /// <param name="message">The message.</param>
-        public static async Task PublishEntityUpdate( IEntityWasUpdatedMessage message )
+        public static async Task Publish<T>( T message ) where T : class, IRockMessage
         {
             if ( !IsReady() )
             {
@@ -118,19 +118,29 @@ namespace Rock.Bus
         /// Publishes the entity update.
         /// </summary>
         /// <param name="message">The message.</param>
-        public static async Task SendStartTask( IEventBusTransaction message )
+        public static async Task SendOnStartTaskQueue<T>( T message ) where T : class, IRockMessage
+        {
+            await Send( _startTaskQueue, message );
+        }
+
+        /// <summary>
+        /// Publishes the entity update.
+        /// </summary>
+        /// <param name="queue">The queue.</param>
+        /// <param name="message">The message.</param>
+        public static async Task Send<T>( IRockQueue queue, T message ) where T : class, IRockMessage
         {
             if ( !IsReady() )
             {
                 return;
             }
 
-            var endpoint = _sendEndpoints.GetValueOrNull( _startTaskQueue.Name );
+            var endpoint = _sendEndpoints.GetValueOrNull( queue.Name );
 
             if ( endpoint == null )
             {
-                endpoint = _transportComponent.GetSendEndpoint( _bus, _startTaskQueue.Name );
-                _sendEndpoints[_startTaskQueue.Name] = endpoint;
+                endpoint = _transportComponent.GetSendEndpoint( _bus, queue.Name );
+                _sendEndpoints[queue.Name] = endpoint;
             }
 
             await endpoint.Send( message );

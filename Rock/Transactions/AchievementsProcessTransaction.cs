@@ -17,8 +17,14 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using MassTransit;
+using Rock.Bus;
+using Rock.Bus.Consumer;
 using Rock.Bus.Message;
+using Rock.Bus.Queue;
 using Rock.Data;
+using Rock.Model;
 using Rock.Web.Cache;
 
 namespace Rock.Transactions
@@ -27,17 +33,77 @@ namespace Rock.Transactions
     /// Transaction to process achievements for updated source entities
     /// </summary>
     /// <seealso cref="Rock.Transactions.ITransaction" />
-    public class AchievementsProcessingTransaction : IEventBusTransaction
+    public class AchievementsProcessingTransaction : IBusStartedTransaction, IRockConsumer<StartTaskQueue, AchievementsProcessingTransaction.PropsClass>
     {
         /// <summary>
-        /// Gets or sets the name of the task.
+        /// Source Entity
         /// </summary>
-        public string TaskName { get; set; } = nameof( AchievementsProcessingTransaction );
+        public sealed class SourceEntity
+        {
+            /// <summary>
+            /// Gets or sets the entity type identifier.
+            /// </summary>
+            /// <value>
+            /// The entity type identifier.
+            /// </value>
+            public int EntityTypeId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the entity identifier.
+            /// </summary>
+            /// <value>
+            /// The entity identifier.
+            /// </value>
+            public int EntityId { get; set; }
+        }
+
+        /// <summary>
+        /// Props
+        /// </summary>
+        public sealed class PropsClass : IRockMessage
+        {
+            /// <summary>
+            /// The entities that need to be processed
+            /// </summary>
+            public IEnumerable<SourceEntity> SourceEntities { get; set; }
+        }
+
+        /// <summary>
+        /// Gets or sets the props.
+        /// </summary>
+        /// <value>
+        /// The props.
+        /// </value>
+        public PropsClass Props
+        {
+            get
+            {
+                return new PropsClass
+                {
+                    SourceEntities = SourceEntities.Select( e => new SourceEntity
+                    {
+                        EntityId = e.Id,
+                        EntityTypeId = EntityTypeCache.Get( e.GetType() ).Id
+                    } )
+                };
+            }
+            set
+            {
+                // TODO
+            }
+        }
 
         /// <summary>
         /// The entities that need to be processed
         /// </summary>
-        private IEnumerable<IEntity> SourceEntities { get; }
+        private IEnumerable<IEntity> SourceEntities { get; set; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AchievementAttemptChangeTransaction"/> class.
+        /// </summary>
+        public AchievementsProcessingTransaction()
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AchievementAttemptChangeTransaction"/> class.
@@ -59,7 +125,7 @@ namespace Rock.Transactions
         /// <exception cref="System.NotImplementedException"></exception>
         public void Execute()
         {
-            if ( SourceEntities == null || !SourceEntities.Any() )
+            if ( SourceEntities == null )
             {
                 return;
             }
@@ -68,6 +134,27 @@ namespace Rock.Transactions
             {
                 AchievementTypeCache.ProcessAchievements( sourceEntity );
             }
+        }
+
+        /// <summary>
+        /// Consumes the specified context.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <returns></returns>
+        /// <exception cref="System.NotImplementedException"></exception>
+        public Task Consume( ConsumeContext<PropsClass> context )
+        {
+            Props = context.Message;
+            Execute();
+            return Task.Delay( 0 );
+        }
+
+        /// <summary>
+        /// Sends the message.
+        /// </summary>
+        public Task Send()
+        {
+            return RockMessageBus.SendOnStartTaskQueue( Props );
         }
     }
 }

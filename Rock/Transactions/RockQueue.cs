@@ -35,9 +35,9 @@ namespace Rock.Transactions
         /// The value can be a null reference (Nothing in Visual Basic) for reference types.</param>
         public new void Enqueue( ITransaction item )
         {
-            if ( item is IEventBusTransaction eventBusTransaction )
+            if ( item is IBusStartedTransaction busStartedTransaction )
             {
-                RockMessageBus.SendStartTask( eventBusTransaction ).Wait();
+                busStartedTransaction.Send().Wait();
                 return;
             }
 

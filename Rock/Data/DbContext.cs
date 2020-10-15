@@ -388,7 +388,7 @@ namespace Rock.Data
                 // Publish on the message bus if configured
                 if ( RockMessageBus.ShouldPublishEntityUpdate( item.Entity.TypeId, item.PreSaveState ) )
                 {
-                    _ = RockMessageBus.PublishEntityUpdate( new EntityWasUpdatedMessage
+                    _ = RockMessageBus.Publish( new EntityWasUpdatedMessage
                     {
                         EntityTypeId = item.Entity.TypeId,
                         EntityId = item.Entity.Id,

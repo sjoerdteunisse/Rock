@@ -15,14 +15,19 @@
 // </copyright>
 //
 
-using Rock.Transactions;
+using System.Threading.Tasks;
 
-namespace Rock.Bus.Message
+namespace Rock.Transactions
 {
     /// <summary>
-    /// Start Task Message
+    /// Bus Started Transaction
     /// </summary>
-    public interface IEventBusTransaction : ITransaction, IStartTaskMessage
+    /// <seealso cref="Rock.Transactions.ITransaction" />
+    public interface IBusStartedTransaction : ITransaction
     {
+        /// <summary>
+        /// Sends the message.
+        /// </summary>
+        Task Send();
     }
 }

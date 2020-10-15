@@ -546,7 +546,6 @@
     <Compile Include="Bus\Consumer\EntityWasUpdatedConsumer.cs" />
     <Compile Include="Bus\Message\IRockMessage.cs" />
     <Compile Include="Bus\Message\StartTaskMessage.cs" />
-    <Compile Include="Bus\Message\IEventBusTransaction.cs" />
     <Compile Include="Bus\Message\EntityWasUpdatedMessage.cs" />
     <Compile Include="Bus\Queue\StartTaskQueue.cs" />
     <Compile Include="Bus\Queue\EntityUpdateQueue.cs" />
@@ -602,6 +601,7 @@
     <Compile Include="Plugin\HotFixes\129_MigrationRollupsFor11_1_0.cs" />
     <Compile Include="SystemKey\DeviceAttributeKey.cs" />
     <Compile Include="Transactions\AchievementsProcessTransaction.cs" />
+    <Compile Include="Transactions\IBusStartedTransaction.cs" />
     <Compile Include="Utility\Enums\PushOpenAction.cs" />
     <Compile Include="Utility\RockSerializableList.cs" />
     <Compile Include="Utility\RockSerializableDictionary.cs" />

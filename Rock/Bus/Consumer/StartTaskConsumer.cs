@@ -35,11 +35,6 @@ namespace Rock.Bus.Consumer
         /// <returns></returns>
         public Task Consume( ConsumeContext<IStartTaskMessage> context )
         {
-            if ( context.Message is IEventBusTransaction messageAsTransaction )
-            {
-                messageAsTransaction.Execute();
-            }
-
             var json = context.Message.ToJson();
             Debug.WriteLine( $"==================\nStartTaskConsumer\n{json}" );
             return Task.Delay( 0 );
