@@ -18,10 +18,13 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Entity;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using DDay.iCal;
+using Rock.Data;
+using Rock.Web.Cache;
 
 namespace Rock
 {
@@ -213,6 +216,28 @@ namespace Rock
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Gets the specified entity.
+        /// </summary>
+        /// <param name="entityTypeId">The entity type identifier.</param>
+        /// <param name="entityGuid">The entity unique identifier.</param>
+        /// <param name="dbContext">The database context.</param>
+        /// <returns></returns>
+        public static IEntity GetIEntityForEntityType( int entityTypeId, Guid entityGuid, Data.DbContext dbContext = null )
+        {
+            var type = EntityTypeCache.Get( entityTypeId )?.GetEntityType();
+
+            if ( type == null )
+            {
+                return null;
+            }
+
+            var serviceInstance = GetServiceForEntityType( type, dbContext ?? new RockContext() );
+            var getMethod = serviceInstance?.GetType().GetMethod( "Get", new Type[] { typeof( Guid ) } );
+            var entity = getMethod?.Invoke( serviceInstance, new object[] { entityGuid } ) as IEntity;
+            return entity;
         }
 
         /// <summary>

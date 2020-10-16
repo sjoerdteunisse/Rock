@@ -15,7 +15,9 @@
 // </copyright>
 //
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using MassTransit;
@@ -24,7 +26,6 @@ using Rock.Bus.Consumer;
 using Rock.Bus.Message;
 using Rock.Bus.Queue;
 using Rock.Data;
-using Rock.Model;
 using Rock.Web.Cache;
 
 namespace Rock.Transactions
@@ -33,70 +34,15 @@ namespace Rock.Transactions
     /// Transaction to process achievements for updated source entities
     /// </summary>
     /// <seealso cref="Rock.Transactions.ITransaction" />
-    public class AchievementsProcessingTransaction : IBusStartedTransaction, IRockConsumer<StartTaskQueue, AchievementsProcessingTransaction.PropsClass>
+    public class AchievementsProcessingTransaction : IBusStartedTransaction, IRockConsumer<StartTaskQueue, AchievementsProcessingTransaction.Message>
     {
         /// <summary>
-        /// Source Entity
-        /// </summary>
-        public sealed class SourceEntity
-        {
-            /// <summary>
-            /// Gets or sets the entity type identifier.
-            /// </summary>
-            /// <value>
-            /// The entity type identifier.
-            /// </value>
-            public int EntityTypeId { get; set; }
-
-            /// <summary>
-            /// Gets or sets the entity identifier.
-            /// </summary>
-            /// <value>
-            /// The entity identifier.
-            /// </value>
-            public int EntityId { get; set; }
-        }
-
-        /// <summary>
-        /// Props
-        /// </summary>
-        public sealed class PropsClass : IRockMessage
-        {
-            /// <summary>
-            /// The entities that need to be processed
-            /// </summary>
-            public IEnumerable<SourceEntity> SourceEntities { get; set; }
-        }
-
-        /// <summary>
-        /// Gets or sets the props.
+        /// Gets the sources.
         /// </summary>
         /// <value>
-        /// The props.
+        /// The sources.
         /// </value>
-        public PropsClass Props
-        {
-            get
-            {
-                return new PropsClass
-                {
-                    SourceEntities = SourceEntities.Select( e => new SourceEntity
-                    {
-                        EntityId = e.Id,
-                        EntityTypeId = EntityTypeCache.Get( e.GetType() ).Id
-                    } )
-                };
-            }
-            set
-            {
-                // TODO
-            }
-        }
-
-        /// <summary>
-        /// The entities that need to be processed
-        /// </summary>
-        private IEnumerable<IEntity> SourceEntities { get; set; }
+        private List<SourceEntity> SourceEntities;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AchievementAttemptChangeTransaction"/> class.
@@ -116,7 +62,11 @@ namespace Rock.Transactions
                 return;
             }
 
-            SourceEntities = sourceEntities;
+            SourceEntities = sourceEntities?.Select( e => new SourceEntity
+            {
+                EntityGuid = e.Guid,
+                EntityTypeId = EntityTypeCache.Get( e.GetType() ).Id
+            } ).ToList();
         }
 
         /// <summary>
@@ -130,9 +80,18 @@ namespace Rock.Transactions
                 return;
             }
 
+            var rockContext = new RockContext();
+
             foreach ( var sourceEntity in SourceEntities )
             {
-                AchievementTypeCache.ProcessAchievements( sourceEntity );
+                var entity = Reflection.GetIEntityForEntityType( sourceEntity.EntityTypeId, sourceEntity.EntityGuid, rockContext );
+
+                if ( entity == null )
+                {
+                    continue;
+                }
+
+                AchievementTypeCache.ProcessAchievements( entity );
             }
         }
 
@@ -142,9 +101,12 @@ namespace Rock.Transactions
         /// <param name="context">The context.</param>
         /// <returns></returns>
         /// <exception cref="System.NotImplementedException"></exception>
-        public Task Consume( ConsumeContext<PropsClass> context )
+        public Task Consume( ConsumeContext<Message> context )
         {
-            Props = context.Message;
+            var json = context.Message.ToJson();
+            Debug.WriteLine( $"==================\nAchievementsProcessingTransactionConsumer\n{json}" );
+
+            SourceEntities = context.Message.SourceEntities;
             Execute();
             return Task.Delay( 0 );
         }
@@ -154,7 +116,42 @@ namespace Rock.Transactions
         /// </summary>
         public Task Send()
         {
-            return RockMessageBus.SendOnStartTaskQueue( Props );
+            return RockMessageBus.SendOnStartTaskQueue( new Message {
+                SourceEntities = SourceEntities
+            } );
+        }
+
+        /// <summary>
+        /// Source Entity
+        /// </summary>
+        public sealed class SourceEntity
+        {
+            /// <summary>
+            /// Gets or sets the entity type identifier.
+            /// </summary>
+            /// <value>
+            /// The entity type identifier.
+            /// </value>
+            public int EntityTypeId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the entity guid.
+            /// </summary>
+            /// <value>
+            /// The entity identifier.
+            /// </value>
+            public Guid EntityGuid { get; set; }
+        }
+
+        /// <summary>
+        /// Props
+        /// </summary>
+        public sealed class Message : IRockMessage
+        {
+            /// <summary>
+            /// The entities that need to be processed
+            /// </summary>
+            public List<SourceEntity> SourceEntities { get; set; }
         }
     }
 }
