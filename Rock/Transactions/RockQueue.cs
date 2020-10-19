@@ -17,34 +17,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using Rock.Bus;
-using Rock.Bus.Message;
 
 namespace Rock.Transactions
 {
-    /// <summary>
-    /// The internal queue used to hold the transactions to run in <see cref="RockQueue"/>
-    /// </summary>
-    public sealed class RockQueueInternalQueue : ConcurrentQueue<ITransaction>
-    {
-        /// <summary>
-        /// If the transaction is a IEventBusTransaction, then the transaction is sent on the bus. Otherwise,
-        /// adds an object to the end of the <see cref="T:System.Collections.Concurrent.ConcurrentQueue`1" />.
-        /// </summary>
-        /// <param name="item">The object to add to the end of the <see cref="T:System.Collections.Concurrent.ConcurrentQueue`1" />.
-        /// The value can be a null reference (Nothing in Visual Basic) for reference types.</param>
-        public new void Enqueue( ITransaction item )
-        {
-            if ( item is IBusStartedTransaction busStartedTransaction )
-            {
-                busStartedTransaction.Send().Wait();
-                return;
-            }
-
-            base.Enqueue( item );
-        }
-    }
-
     /// <summary>
     /// The Rock Queue
     /// </summary>
@@ -73,7 +48,7 @@ namespace Rock.Transactions
         /// <value>
         /// The transaction queue.
         /// </value>
-        public static RockQueueInternalQueue TransactionQueue { get; set; }
+        public static ConcurrentQueue<ITransaction> TransactionQueue { get; set; }
 
         /// <summary>
         /// Drains this queue.
@@ -148,7 +123,7 @@ namespace Rock.Transactions
         /// </summary>
         static RockQueue()
         {
-            TransactionQueue = new RockQueueInternalQueue();
+            TransactionQueue = new ConcurrentQueue<ITransaction>();
         }
     }
 }

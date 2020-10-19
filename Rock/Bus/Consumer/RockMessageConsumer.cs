@@ -26,17 +26,17 @@ namespace Rock.Bus.Consumer
     /// <summary>
     /// Entity Update Consumer
     /// </summary>
-    public class StartTaskConsumer : IRockConsumer<StartTaskQueue, IStartTaskMessage>
+    public class RockMessageConsumer : IRockConsumer<StartTaskQueue, IRockMessage>, IRockConsumer<EntityUpdateQueue, IRockMessage>
     {
         /// <summary>
         /// Consumes the specified context.
         /// </summary>
         /// <param name="context">The context.</param>
         /// <returns></returns>
-        public Task Consume( ConsumeContext<IStartTaskMessage> context )
+        public Task Consume( ConsumeContext<IRockMessage> context )
         {
             var json = context.Message.ToJson();
-            Debug.WriteLine( $"==================\nStartTaskConsumer\n{json}" );
+            Debug.WriteLine( $"==================\nRockMessageConsumer\n{context.ReceiveContext.InputAddress}\n{json}" );
             return Task.Delay( 0 );
         }
     }

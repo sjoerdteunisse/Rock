@@ -17,14 +17,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
-using MassTransit;
-using Rock.Bus;
-using Rock.Bus.Consumer;
 using Rock.Bus.Message;
-using Rock.Bus.Queue;
 using Rock.Data;
 using Rock.Web.Cache;
 
@@ -33,98 +27,65 @@ namespace Rock.Transactions
     /// <summary>
     /// Transaction to process achievements for updated source entities
     /// </summary>
-    /// <seealso cref="Rock.Transactions.ITransaction" />
-    public class AchievementsProcessingTransaction : IBusStartedTransaction, IRockConsumer<StartTaskQueue, AchievementsProcessingTransaction.Message>
+    public class AchievementsProcessingTransaction : BusStartedTransaction<AchievementsProcessingTransaction.Message>
     {
+        #region Instance Properties
+
         /// <summary>
-        /// Gets the sources.
+        /// Gets or sets the source entities.
         /// </summary>
         /// <value>
-        /// The sources.
+        /// The source entities.
         /// </value>
-        private List<SourceEntity> SourceEntities;
+        public IEnumerable<IEntity> SourceEntities { get; set; }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AchievementAttemptChangeTransaction"/> class.
-        /// </summary>
-        public AchievementsProcessingTransaction()
-        {
-        }
+        #endregion Instance Properties
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AchievementAttemptChangeTransaction"/> class.
-        /// </summary>
-        /// <param name="sourceEntities">The source entities.</param>
-        public AchievementsProcessingTransaction( IEnumerable<IEntity> sourceEntities )
-        {
-            if ( sourceEntities == null || !sourceEntities.Any() )
-            {
-                return;
-            }
-
-            SourceEntities = sourceEntities?.Select( e => new SourceEntity
-            {
-                EntityGuid = e.Guid,
-                EntityTypeId = EntityTypeCache.Get( e.GetType() ).Id
-            } ).ToList();
-        }
+        #region Abstract Implementation
 
         /// <summary>
         /// Executes this instance.
         /// </summary>
-        /// <exception cref="System.NotImplementedException"></exception>
-        public void Execute()
+        public override void Execute( Message message )
         {
-            if ( SourceEntities == null )
+            if ( message == null )
             {
                 return;
             }
 
             var rockContext = new RockContext();
+            var entity = Reflection.GetIEntityForEntityType( message.EntityTypeId, message.EntityGuid, rockContext );
 
-            foreach ( var sourceEntity in SourceEntities )
+            if ( entity == null )
             {
-                var entity = Reflection.GetIEntityForEntityType( sourceEntity.EntityTypeId, sourceEntity.EntityGuid, rockContext );
-
-                if ( entity == null )
-                {
-                    continue;
-                }
-
-                AchievementTypeCache.ProcessAchievements( entity );
+                return;
             }
+
+            AchievementTypeCache.ProcessAchievements( entity );
         }
 
         /// <summary>
-        /// Consumes the specified context.
+        /// Generate messages from the instance properties.
         /// </summary>
-        /// <param name="context">The context.</param>
         /// <returns></returns>
-        /// <exception cref="System.NotImplementedException"></exception>
-        public Task Consume( ConsumeContext<Message> context )
+        /// <exception cref="NotImplementedException"></exception>
+        public override IEnumerable<Message> GetMessages()
         {
-            var json = context.Message.ToJson();
-            Debug.WriteLine( $"==================\nAchievementsProcessingTransactionConsumer\n{json}" );
-
-            SourceEntities = context.Message.SourceEntities;
-            Execute();
-            return Task.Delay( 0 );
-        }
-
-        /// <summary>
-        /// Sends the message.
-        /// </summary>
-        public Task Send()
-        {
-            return RockMessageBus.SendOnStartTaskQueue( new Message {
-                SourceEntities = SourceEntities
+            return SourceEntities?.Select( e => new Message
+            {
+                EntityGuid = e.Guid,
+                EntityTypeId = e.TypeId
             } );
         }
 
+        #endregion Abstract Implementation
+
+        #region Helper Classes
+
         /// <summary>
-        /// Source Entity
+        /// Message Class
         /// </summary>
-        public sealed class SourceEntity
+        public sealed class Message : IRockMessage
         {
             /// <summary>
             /// Gets or sets the entity type identifier.
@@ -143,15 +104,6 @@ namespace Rock.Transactions
             public Guid EntityGuid { get; set; }
         }
 
-        /// <summary>
-        /// Props
-        /// </summary>
-        public sealed class Message : IRockMessage
-        {
-            /// <summary>
-            /// The entities that need to be processed
-            /// </summary>
-            public List<SourceEntity> SourceEntities { get; set; }
-        }
+        #endregion Helper Classes
     }
 }

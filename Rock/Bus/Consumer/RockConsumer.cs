@@ -87,6 +87,11 @@ namespace Rock.Bus.Consumer
         /// </returns>
         public static bool IsRockConsumer( Type type )
         {
+            if ( type.IsAbstract || type.ContainsGenericParameters )
+            {
+                return false;
+            }
+
             var typeInterfaces = type.GetInterfaces().Where( i => i.IsGenericType );
 
             foreach ( var typeInterface in typeInterfaces )

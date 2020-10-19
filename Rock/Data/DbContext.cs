@@ -547,7 +547,10 @@ namespace Rock.Data
                 // This logic is normally handled in the SaveChanges method, but since the BulkInsert bypasses those
                 // model hooks, achievements need to be updated here. Also, it is not necessary for this logic to complete before this
                 // transaction can continue processing and exit.
-                new AchievementsProcessingTransaction( records as IEnumerable<IEntity> ).Enqueue();
+                new AchievementsProcessingTransaction
+                {
+                    SourceEntities = records as IEnumerable<IEntity>
+                }.Send();
             }
         }
 
