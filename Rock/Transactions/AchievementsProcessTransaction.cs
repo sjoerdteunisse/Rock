@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Rock.Bus.Message;
+using Rock.Bus.Queue;
 using Rock.Data;
 using Rock.Web.Cache;
 
@@ -85,7 +86,7 @@ namespace Rock.Transactions
         /// <summary>
         /// Message Class
         /// </summary>
-        public sealed class Message : IRockMessage
+        public sealed class Message : IRockMessage<StartTaskQueue>
         {
             /// <summary>
             /// Gets or sets the entity type identifier.

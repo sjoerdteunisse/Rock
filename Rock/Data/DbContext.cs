@@ -27,6 +27,7 @@ using System.Web;
 using DotLiquid;
 using Rock.Bus;
 using Rock.Bus.Message;
+using Rock.Bus.Queue;
 using Rock.Model;
 using Rock.Transactions;
 using Rock.UniversalSearch;
@@ -386,15 +387,7 @@ namespace Rock.Data
             foreach ( var item in updatedItems )
             {
                 // Publish on the message bus if configured
-                if ( RockMessageBus.ShouldPublishEntityUpdate( item.Entity.TypeId, item.PreSaveState ) )
-                {
-                    _ = RockMessageBus.Publish( new EntityWasUpdatedMessage
-                    {
-                        EntityTypeId = item.Entity.TypeId,
-                        EntityId = item.Entity.Id,
-                        EntityState = item.PreSaveState.ToString()
-                    } );
-                }
+                EntityWasUpdatedMessage.PublishIfShould( item.Entity, item.PreSaveState );
 
                 if ( item.State == EntityState.Detached || item.State == EntityState.Deleted )
                 {

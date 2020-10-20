@@ -15,12 +15,19 @@
 // </copyright>
 //
 
+using System;
+using System.Collections.Generic;
+using System.Data.Entity;
+using Rock.Bus.Queue;
+using Rock.Data;
+using Rock.Web.Cache;
+
 namespace Rock.Bus.Message
 {
     /// <summary>
-    /// Entity Update Message
+    /// Entity Update Message Interface
     /// </summary>
-    public interface IEntityWasUpdatedMessage : IRockMessage
+    public interface IEntityWasUpdatedMessage : IRockMessage<EntityUpdateQueue>
     {
         /// <summary>
         /// Gets the entity type identifier.
@@ -39,9 +46,17 @@ namespace Rock.Bus.Message
     }
 
     /// <summary>
-    /// Entity Update Message
+    /// Typed Entity Update Message Interface
     /// </summary>
-    public class EntityWasUpdatedMessage: IEntityWasUpdatedMessage
+    /// <typeparam name="TEntity">The type of the entity.</typeparam>
+    public interface IEntityWasUpdatedMessage<TEntity> : IEntityWasUpdatedMessage
+        where TEntity : IEntity
+    { }
+
+    /// <summary>
+    /// Entity Update Message Class
+    /// </summary>
+    public class EntityWasUpdatedMessage : IEntityWasUpdatedMessage
     {
         /// <summary>
         /// Gets the entity type identifier.
@@ -57,5 +72,76 @@ namespace Rock.Bus.Message
         /// Gets the state of the entity.
         /// </summary>
         public string EntityState { get; set; }
+
+        /// <summary>
+        /// The of an entity that will cause publishing a message on the <see cref="RockMessageBus"/>
+        /// </summary>
+        private static readonly HashSet<EntityState> _statesToPublishOnBus = new HashSet<EntityState> {
+            System.Data.Entity.EntityState.Added,
+            System.Data.Entity.EntityState.Modified,
+            System.Data.Entity.EntityState.Deleted
+        };
+
+        /// <summary>
+        /// Should entity updates be published for this entity type.
+        /// </summary>
+        /// <param name="entityState">State of the entity.</param>
+        /// <param name="entityTypeId">The entity type identifier.</param>
+        /// <returns></returns>
+        public static bool ShouldPublish( int entityTypeId, EntityState entityState )
+        {
+            return
+                _statesToPublishOnBus.Contains( entityState ) &&
+                ( EntityTypeCache.Get( entityTypeId )?.IsMessageBusEventPublishEnabled ?? false );
+        }
+
+        /// <summary>
+        /// Publishes the specified entity.
+        /// </summary>
+        /// <param name="entity">The entity.</param>
+        /// <param name="entityState">State of the entity.</param>
+        public static void Publish( IEntity entity, EntityState entityState )
+        {
+            var entityTypeId = entity.TypeId;
+            var entityType = EntityTypeCache.Get( entityTypeId );
+
+            var messageType = typeof( EntityWasUpdatedMessage<> ).MakeGenericType( entityType.GetEntityType() );
+            var message = Activator.CreateInstance( messageType ) as IEntityWasUpdatedMessage;
+
+            message.EntityId = entity.Id;
+            message.EntityTypeId = entity.TypeId;
+            message.EntityState = entityState.ToString();
+
+            typeof( RockMessageBus )
+                .GetMethod( nameof( RockMessageBus.Publish ) )
+                .MakeGenericMethod( typeof( EntityUpdateQueue ), messageType )
+                .Invoke( null, new[] { message } );
+        }
+
+        /// <summary>
+        /// Publishes the entity update if the entity type is configured to do so.
+        /// </summary>
+        /// <param name="entity">The entity.</param>
+        /// <param name="entityState">State of the entity.</param>
+        /// <returns></returns>
+        public static bool PublishIfShould( IEntity entity, EntityState entityState )
+        {
+            if ( !ShouldPublish( entity.TypeId, entityState ) )
+            {
+                return false;
+            }
+
+            Publish( entity, entityState );
+            return true;
+        }
     }
+
+    /// <summary>
+    /// Typed Entity Update Message Class
+    /// </summary>
+    /// <typeparam name="TEntity">The type of the entity.</typeparam>
+    /// <seealso cref="Rock.Bus.Message.IEntityWasUpdatedMessage" />
+    public class EntityWasUpdatedMessage<TEntity> : EntityWasUpdatedMessage, IEntityWasUpdatedMessage<TEntity>
+        where TEntity : IEntity
+    { }
 }

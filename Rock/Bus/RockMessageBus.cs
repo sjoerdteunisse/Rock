@@ -20,10 +20,8 @@ using Rock.Bus.Consumer;
 using Rock.Bus.Message;
 using Rock.Bus.Queue;
 using Rock.Bus.Transport;
-using Rock.Web.Cache;
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -34,15 +32,6 @@ namespace Rock.Bus
     /// </summary>
     public static class RockMessageBus
     {
-        /// <summary>
-        /// The of an entity that will cause publishing a message on the <see cref="RockMessageBus"/>
-        /// </summary>
-        private static readonly HashSet<EntityState> _statesToPublishOnBus = new HashSet<EntityState> {
-            EntityState.Added,
-            EntityState.Modified,
-            EntityState.Deleted
-        };
-
         /// <summary>
         /// The send endpoints
         /// </summary>
@@ -57,11 +46,6 @@ namespace Rock.Bus
         /// The transport component
         /// </summary>
         private static TransportComponent _transportComponent = null;
-
-        /// <summary>
-        /// The start task queue
-        /// </summary>
-        private static StartTaskQueue _startTaskQueue = new StartTaskQueue();
 
         /// <summary>
         /// Starts this bus.
@@ -88,23 +72,12 @@ namespace Rock.Bus
         }
 
         /// <summary>
-        /// Should entity updates be published for this entity type.
-        /// </summary>
-        /// <param name="entityState">State of the entity.</param>
-        /// <param name="entityTypeId">The entity type identifier.</param>
-        /// <returns></returns>
-        public static bool ShouldPublishEntityUpdate( int entityTypeId, EntityState entityState )
-        {
-            return
-                _statesToPublishOnBus.Contains( entityState ) &&
-                ( EntityTypeCache.Get( entityTypeId )?.IsMessageBusEventPublishEnabled ?? false );
-        }
-
-        /// <summary>
         /// Publishes the entity update.
         /// </summary>
         /// <param name="message">The message.</param>
-        public static async Task Publish<T>( T message ) where T : class, IRockMessage
+        public static async Task Publish<TQueue, TMessage>( TMessage message )
+            where TQueue : IRockQueue, new()
+            where TMessage : class, IRockMessage<TQueue>
         {
             if ( !IsReady() )
             {
@@ -118,23 +91,16 @@ namespace Rock.Bus
         /// Publishes the entity update.
         /// </summary>
         /// <param name="message">The message.</param>
-        public static async Task SendOnStartTaskQueue<T>( T message ) where T : class, IRockMessage
-        {
-            await Send( _startTaskQueue, message );
-        }
-
-        /// <summary>
-        /// Publishes the entity update.
-        /// </summary>
-        /// <param name="queue">The queue.</param>
-        /// <param name="message">The message.</param>
-        public static async Task Send<T>( IRockQueue queue, T message ) where T : class, IRockMessage
+        public static async Task Send<TQueue, TMessage>( TMessage message )
+            where TQueue : IRockQueue, new()
+            where TMessage : class, IRockMessage<TQueue>
         {
             if ( !IsReady() )
             {
                 return;
             }
 
+            var queue = RockConsumer<TQueue, TMessage>.GetQueue();
             var endpoint = _sendEndpoints.GetValueOrNull( queue.Name );
 
             if ( endpoint == null )

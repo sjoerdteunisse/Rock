@@ -18,7 +18,7 @@
 namespace Rock.Bus.Queue
 {
     /// <summary>
-    /// A Rock Message Bus Queue
+    /// Queue Interface
     /// </summary>
     public interface IRockQueue
     {

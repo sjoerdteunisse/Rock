@@ -15,12 +15,15 @@
 // </copyright>
 //
 
+using Rock.Bus.Queue;
+
 namespace Rock.Bus.Message
 {
     /// <summary>
     /// A Rock Bus Message
     /// </summary>
-    public interface IRockMessage
+    public interface IRockMessage<TQueue>
+        where TQueue : IRockQueue, new()
     {
     }
 }

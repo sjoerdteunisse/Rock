@@ -15,27 +15,19 @@
 // </copyright>
 //
 
-namespace Rock.Bus.Message
+namespace Rock.Bus.Queue
 {
     /// <summary>
-    /// Start Task Message
+    /// A Rock Message Bus Queue for Cache Events
     /// </summary>
-    public interface IStartTaskMessage : IRockMessage
+    public sealed class CacheQueue : IRockQueue
     {
         /// <summary>
-        /// Gets the name of the task.
+        /// Gets the queue name.
         /// </summary>
-        string TaskName { get; set; }
-    }
-
-    /// <summary>
-    /// Start Task Message
-    /// </summary>
-    public class StartTaskMessage : IStartTaskMessage
-    {
-        /// <summary>
-        /// Gets the name of the task.
-        /// </summary>
-        public string TaskName { get; set; }
+        /// <value>
+        /// The name.
+        /// </value>
+        public string Name => "rock-cache-queue";
     }
 }

@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using MassTransit;
 using Rock.Bus;
 using Rock.Bus.Consumer;
 using Rock.Bus.Message;
@@ -30,22 +29,19 @@ namespace Rock.Transactions
     /// <summary>
     /// Bus Started Transaction
     /// </summary>
-    public abstract class BusStartedTransaction<TMessage> : IRockConsumer<StartTaskQueue, TMessage>
-        where TMessage : class, IRockMessage
+    public abstract class BusStartedTransaction<TMessage> : RockConsumer<StartTaskQueue, TMessage>
+        where TMessage : class, IRockMessage<StartTaskQueue>
     {
         /// <summary>
         /// Consumes the specified context.
         /// </summary>
-        /// <param name="context">The context.</param>
-        /// <returns></returns>
-        /// <exception cref="System.NotImplementedException"></exception>
-        public Task Consume( ConsumeContext<TMessage> context )
+        /// <param name="message">The message.</param>
+        public override void Consume( TMessage message )
         {
-            var json = context.Message.ToJson();
+            var json = message.ToJson();
             Debug.WriteLine( $"==================\n{GetType().Name}\n{json}" );
 
-            Execute( context.Message );
-            return Task.Delay( 0 );
+            Execute( message );
         }
 
         /// <summary>
@@ -62,7 +58,7 @@ namespace Rock.Transactions
         /// <summary>
         /// Sends the messages.
         /// </summary>
-        public async void Send()
+        public void Send()
         {
             var messages = GetMessages();
 
@@ -73,7 +69,7 @@ namespace Rock.Transactions
 
             foreach ( var message in messages )
             {
-                await RockMessageBus.SendOnStartTaskQueue( message );
+                _ = RockMessageBus.Send<StartTaskQueue, TMessage>( message );
             }
         }
     }

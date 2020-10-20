@@ -16,8 +16,6 @@
 //
 
 using System.Diagnostics;
-using System.Threading.Tasks;
-using MassTransit;
 using Rock.Bus.Message;
 using Rock.Bus.Queue;
 
@@ -26,18 +24,16 @@ namespace Rock.Bus.Consumer
     /// <summary>
     /// Entity Update Consumer
     /// </summary>
-    public class EntityWasUpdatedConsumer : IRockConsumer<EntityUpdateQueue, IEntityWasUpdatedMessage>
+    public class EntityWasUpdatedConsumer : RockConsumer<EntityUpdateQueue, IEntityWasUpdatedMessage>
     {
         /// <summary>
-        /// Consumes the specified context.
+        /// Consumes the specified message.
         /// </summary>
-        /// <param name="context">The context.</param>
-        /// <returns></returns>
-        public Task Consume( ConsumeContext<IEntityWasUpdatedMessage> context )
+        /// <param name="message">The message.</param>
+        public override void Consume( IEntityWasUpdatedMessage message )
         {
-            var json = context.Message.ToJson();
+            var json = message.ToJson();
             Debug.WriteLine( $"==================\nEntityWasUpdatedConsumer\n{json}" );
-            return Task.Delay( 0 );
         }
     }
 }

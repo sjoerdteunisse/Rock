@@ -18,11 +18,72 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using MassTransit;
+using Rock.Bus.Message;
 using Rock.Bus.Queue;
 
 namespace Rock.Bus.Consumer
 {
+    /// <summary>
+    /// Rock Consumer Interface
+    /// </summary>
+    /// <seealso cref="IConsumer" />
+    public interface IRockConsumer<TQueue, TMessage> : IConsumer<TMessage>
+        where TQueue : IRockQueue, new()
+        where TMessage : class, IRockMessage<TQueue>
+    {
+    }
+
+    /// <summary>
+    /// Rock Consumer
+    /// </summary>
+    /// <typeparam name="TQueue">The type of the queue.</typeparam>
+    /// <typeparam name="TMessage">The type of the message.</typeparam>
+    /// <seealso cref="Rock.Bus.Consumer.IRockConsumer{TQueue, TMessage}" />
+    public abstract class RockConsumer<TQueue, TMessage> : IRockConsumer<TQueue, TMessage>
+        where TQueue : IRockQueue, new()
+        where TMessage : class, IRockMessage<TQueue>
+    {
+        /// <summary>
+        /// The context
+        /// </summary>
+        protected ConsumeContext<TMessage> _consumeContext = null;
+
+        /// <summary>
+        /// Consumes the specified message.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        public abstract void Consume( TMessage message );
+
+        /// <summary>
+        /// Consumes the specified context.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <returns></returns>
+        public virtual Task Consume( ConsumeContext<TMessage> context )
+        {
+            _consumeContext = context;
+            Consume( context.Message );
+            return Task.Delay( 0 );
+        }
+
+        /// <summary>
+        /// Gets an instance of the queue.
+        /// </summary>
+        /// <returns></returns>
+        public static IRockQueue GetQueue()
+        {
+            if ( _queue == null )
+            {
+                _queue = Activator.CreateInstance<TQueue>();
+            }
+
+            return _queue;
+        }
+        private static IRockQueue _queue = null; 
+    }
+
     /// <summary>
     /// Rock Message Bus Consumer Helpers
     /// </summary>
@@ -64,7 +125,9 @@ namespace Rock.Bus.Consumer
         {
             var consumerTypes = new Dictionary<string, Type>();
             var assemblies = Reflection.GetRockAndPluginAssemblies();
-            var types = assemblies.SelectMany( a => a.GetTypes().Where( t => t.IsClass && t.IsPublic ) );
+            var types = assemblies
+                .SelectMany( a => a.GetTypes()
+                .Where( t => t.IsClass && ( t.IsPublic || t.IsNestedPublic ) ) );
 
             foreach ( var type in types )
             {

@@ -540,13 +540,13 @@
     <Compile Include="Blocks\Types\Mobile\Prayer\PrayerSessionSetup.cs" />
     <Compile Include="Bulk\BulkImport\InteractionsImport.cs" />
     <Compile Include="Bulk\BulkImport\InteractionImport.cs" />
-    <Compile Include="Bus\Consumer\IRockConsumer.cs" />
     <Compile Include="Bus\Consumer\RockConsumer.cs" />
-    <Compile Include="Bus\Consumer\RockMessageConsumer.cs" />
+    <Compile Include="Bus\Consumer\RockDebugConsumer.cs" />
     <Compile Include="Bus\Consumer\EntityWasUpdatedConsumer.cs" />
+    <Compile Include="Bus\Message\CacheWasUpdatedMessage.cs" />
     <Compile Include="Bus\Message\IRockMessage.cs" />
-    <Compile Include="Bus\Message\StartTaskMessage.cs" />
     <Compile Include="Bus\Message\EntityWasUpdatedMessage.cs" />
+    <Compile Include="Bus\Queue\CacheQueue.cs" />
     <Compile Include="Bus\Queue\StartTaskQueue.cs" />
     <Compile Include="Bus\Queue\EntityUpdateQueue.cs" />
     <Compile Include="Bus\Queue\IRockQueue.cs" />
