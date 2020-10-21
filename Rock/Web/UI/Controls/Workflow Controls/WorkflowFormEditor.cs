@@ -36,7 +36,8 @@ namespace Rock.Web.UI.Controls
         private HiddenField _hfFormGuid;
         private RockDropDownList _ddlNotificationSystemEmail;
         private RockCheckBox _cbIncludeActions;
-        private RockCheckBox _cbAllowNotes;
+        private RockCheckBox _cbAllowNotesEntry;
+        private RockCheckBox _cbAllowPersonEntry;
         private CodeEditor _ceHeaderText;
         private CodeEditor _ceFooterText;
         private WorkflowFormActionList _falActions;
@@ -78,7 +79,8 @@ namespace Rock.Web.UI.Controls
                 form.Header = _ceHeaderText.Text;
                 form.Footer = _ceFooterText.Text;
                 form.Actions = _falActions.Value;
-                form.AllowNotes = _cbAllowNotes.Checked;
+                form.AllowNotes = _cbAllowNotesEntry.Checked;
+                form.AllowPersonEntry = _cbAllowPersonEntry.Checked;
 
                 foreach ( var row in AttributeRows )
                 {
@@ -119,7 +121,8 @@ namespace Rock.Web.UI.Controls
                 _ceHeaderText.Text = value.Header;
                 _ceFooterText.Text = value.Footer;
                 _falActions.Value = value.Actions;
-                _cbAllowNotes.Checked = value.AllowNotes.HasValue && value.AllowNotes.Value;
+                _cbAllowNotesEntry.Checked = value.AllowNotes ?? false;
+                _cbAllowPersonEntry.Checked = value.AllowPersonEntry;
 
                 // Remove any existing rows (shouldn't be any)
                 foreach ( var attributeRow in Controls.OfType<WorkflowFormAttributeRow>() )
@@ -165,7 +168,8 @@ namespace Rock.Web.UI.Controls
                 _ceFooterText.Text = string.Empty;
                 _falActions.Value = "Submit^^^Your information has been submitted successfully.";
                 _ddlNotificationSystemEmail.SelectedIndex = 0;
-                _cbAllowNotes.Checked = false;
+                _cbAllowNotesEntry.Checked = false;
+                _cbAllowPersonEntry.Checked = false;
             }
         }
 
@@ -257,7 +261,7 @@ namespace Rock.Web.UI.Controls
             _cbIncludeActions = new RockCheckBox();
             _cbIncludeActions.Label = "Include Actions in Email";
             _cbIncludeActions.Text = "Yes";
-            _cbIncludeActions.Help = "Should the email include the option for recipient to select an action directly from within the email? Note: This only applies if none of the the form fields are required. The workflow will be persisted immediately prior to sending the email.";
+            _cbIncludeActions.Help = "Should the email include the option for recipient to select an action directly from within the email? Note: This only applies if none of the form fields are required. The workflow will be persisted immediately prior to sending the email.";
             _cbIncludeActions.ID = this.ID + "_cbIncludeActions";
             Controls.Add( _cbIncludeActions );
 
@@ -290,12 +294,20 @@ namespace Rock.Web.UI.Controls
             _ddlActionAttribute.Help = "Optional text attribute that should be updated with the selected command label.";
             Controls.Add( _ddlActionAttribute );
 
-            _cbAllowNotes = new RockCheckBox();
-            _cbAllowNotes.Label = "Enable Note Entry";
-            _cbAllowNotes.Text = "Yes";
-            _cbAllowNotes.Help = "Should this form include an area for viewing and editing notes related to the workflow?";
-            _cbAllowNotes.ID = this.ID + "_cbAllowNotes";
-            Controls.Add( _cbAllowNotes );
+            _cbAllowNotesEntry = new RockCheckBox();
+            _cbAllowNotesEntry.Label = "Enable Note Entry";
+            _cbAllowNotesEntry.Text = "Yes";
+            _cbAllowNotesEntry.Help = "Should this form include an area for viewing and editing notes related to the workflow?";
+            _cbAllowNotesEntry.ID = this.ID + "_cbAllowNotesEntry";
+            Controls.Add( _cbAllowNotesEntry );
+
+
+            _cbAllowPersonEntry = new RockCheckBox();
+            _cbAllowPersonEntry.Label = "Enable Person Entry";
+            _cbAllowPersonEntry.Text = "Yes";
+            _cbAllowPersonEntry.Help = "If enabled, the form will prompt to add a new person.";
+            _cbAllowPersonEntry.ID = this.ID + "_cbAllowPersonEntry";
+            Controls.Add( _cbAllowPersonEntry );
         }
 
         /// <summary>
@@ -323,7 +335,21 @@ namespace Rock.Web.UI.Controls
 
                 writer.RenderEndTag();  // row
 
-                _cbAllowNotes.RenderControl( writer );
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                _cbAllowNotesEntry.RenderControl( writer );
+                writer.RenderEndTag();
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                _cbAllowPersonEntry.RenderControl( writer );
+                writer.RenderEndTag();
+
+                writer.RenderEndTag();  // row
 
                 _ceHeaderText.ValidationGroup = ValidationGroup;
                 _ceHeaderText.RenderControl( writer );

@@ -104,13 +104,22 @@ namespace Rock.Web.Cache
         public Guid? ActionAttributeGuid { get; private set; }
 
         /// <summary>
-        /// Gets or sets the allow notes.
+        /// Gets or sets whether Notes can be entered
         /// </summary>
         /// <value>
         /// The allow notes.
         /// </value>
         [DataMember]
         public bool? AllowNotes { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether a new person (and spouse) can be added
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [allow person entry]; otherwise, <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool AllowPersonEntry { get; private set; }
 
         /// <summary>
         /// Gets the defined values.
@@ -193,6 +202,7 @@ namespace Rock.Web.Cache
             Actions = workflowActionForm.Actions;
             ActionAttributeGuid = workflowActionForm.ActionAttributeGuid;
             AllowNotes = workflowActionForm.AllowNotes;
+            AllowPersonEntry = workflowActionForm.AllowPersonEntry;
 
             // set formAttributeIds to null so it load them all at once on demand
             _formAttributeIds = null;

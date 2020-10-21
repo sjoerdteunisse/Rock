@@ -106,13 +106,22 @@ namespace Rock.Model
         public Guid? ActionAttributeGuid { get; set; }
 
         /// <summary>
-        /// Gets or sets the allow notes.
+        /// Gets or sets whether Notes can be entered
         /// </summary>
         /// <value>
-        /// The allow notes.
+        ///   <c>true</c> if [allow notes entry]; otherwise, <c>false</c>.
         /// </value>
         [DataMember]
         public bool? AllowNotes { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether a new person (and spouse) can be added
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [allow person entry]; otherwise, <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool AllowPersonEntry { get; set; }
 
         #endregion
 

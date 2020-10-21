@@ -18,7 +18,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Linq.Dynamic;
 using System.Web.UI.WebControls;
+
 using Rock.Model;
 using Rock.Web.Cache;
 
@@ -29,8 +31,23 @@ namespace Rock.Web.UI.Controls
     /// </summary>
     public class PersonBasicEditor : CompositeControl, IHasValidationGroup
     {
+        #region ViewStateKey
+
+        private static class ViewStateKey
+        {
+            public const string PersonLabelPrefix = "PersonLabelPrefix";
+            public const string ShowInColumns = "ShowInColumns";
+            public const string RequireGender = "RequireGender";
+        }
+
+        #endregion
+
         #region Controls
 
+        private Panel _pnlRow;
+        private Panel _pnlCol1;
+        private Panel _pnlCol2;
+        private Panel _pnlCol3;
         private DefinedValuePicker _dvpPersonTitle;
         private RockTextBox _tbPersonFirstName;
         private RockTextBox _tbPersonLastName;
@@ -42,6 +59,7 @@ namespace Rock.Web.UI.Controls
         private GradePicker _ddlGradePicker;
         private DefinedValuePicker _dvpPersonMaritalStatus;
         private EmailBox _ebPersonEmail;
+        private PhoneNumberBox _pnbMobilePhoneNumber;
 
         #endregion Controls
 
@@ -111,6 +129,27 @@ namespace Rock.Web.UI.Controls
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether [show birthdate].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [show birthdate]; otherwise, <c>false</c>.
+        /// </value>
+        public bool ShowBirthdate
+        {
+            get
+            {
+                EnsureChildControls();
+                return _dpPersonBirthDate.Visible;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _dpPersonBirthDate.Visible = value;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets a value indicating whether [require birthdate].
         /// </summary>
         /// <value>
@@ -130,6 +169,7 @@ namespace Rock.Web.UI.Controls
                 _dpPersonBirthDate.Required = value;
             }
         }
+
         /// <summary>
         /// Gets or sets a value indicating whether [show email].
         /// </summary>
@@ -148,6 +188,168 @@ namespace Rock.Web.UI.Controls
             {
                 EnsureChildControls();
                 _ebPersonEmail.Visible = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [require email].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [require email]; otherwise, <c>false</c>.
+        /// </value>
+        public bool RequireEmail
+        {
+            get
+            {
+                EnsureChildControls();
+                return _ebPersonEmail.Required;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _ebPersonEmail.Required = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [show mobile phone].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [show mobile phone]; otherwise, <c>false</c>.
+        /// </value>
+        public bool ShowMobilePhone
+        {
+            get
+            {
+                EnsureChildControls();
+                return _pnbMobilePhoneNumber.Visible;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _pnbMobilePhoneNumber.Visible = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [require mobile phone].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [require mobile phone]; otherwise, <c>false</c>.
+        /// </value>
+        public bool RequireMobilePhone
+        {
+            get
+            {
+                EnsureChildControls();
+                return _pnbMobilePhoneNumber.Required;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _pnbMobilePhoneNumber.Required = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [show person role].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [show person role]; otherwise, <c>false</c>.
+        /// </value>
+        public bool ShowPersonRole
+        {
+            get
+            {
+                EnsureChildControls();
+                return _rblPersonRole.Visible;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _rblPersonRole.Visible = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [show connection status].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [show connection status]; otherwise, <c>false</c>.
+        /// </value>
+        public bool ShowConnectionStatus
+        {
+            get
+            {
+                EnsureChildControls();
+                return _dvpPersonConnectionStatus.Visible;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _dvpPersonConnectionStatus.Visible = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [show marital status].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [show marital status]; otherwise, <c>false</c>.
+        /// </value>
+        public bool ShowMaritalStatus
+        {
+            get
+            {
+                EnsureChildControls();
+                return _dvpPersonMaritalStatus.Visible;
+            }
+
+            set
+            {
+                EnsureChildControls();
+                _dvpPersonMaritalStatus.Visible = value;
+            }
+        }
+
+        /// <summary>
+        /// If Required, the "Unknown" option won't be displayed
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [require gender]; otherwise, <c>false</c>.
+        /// </value>
+        public bool RequireGender
+        {
+            get
+            {
+                return ViewState[ViewStateKey.RequireGender] as bool? ?? false;
+            }
+
+            set
+            {
+                ViewState[ViewStateKey.RequireGender] = value;
+
+                var listItemUnknown = _rblPersonGender.Items.OfType<ListItem>().FirstOrDefault( x => x.Value == Gender.Unknown.ConvertToInt().ToString() );
+
+                if ( value )
+                {
+                    if ( listItemUnknown == null )
+                    {
+                        _rblPersonGender.Items.Add( new ListItem( Gender.Unknown.ConvertToString(), Gender.Unknown.ConvertToInt().ToString() ) );
+                    }
+                }
+                else
+                {
+                    if ( listItemUnknown != null )
+                    {
+                        _rblPersonGender.Items.Remove( listItemUnknown );
+                    }
+                }
             }
         }
 
@@ -384,6 +586,72 @@ namespace Rock.Web.UI.Controls
         /// </value>
         public string ValidationGroup { get; set; }
 
+        /// <summary>
+        /// Gets or sets the label prefix. For example "Spouse", would label things as "Spouse First Name", "Spouse Last Name", etc
+        /// </summary>
+        /// <value>
+        /// The label prefix.
+        /// </value>
+        public string PersonLabelPrefix
+        {
+            set
+            {
+                EnsureChildControls();
+                ViewState[ViewStateKey.PersonLabelPrefix] = value;
+                _dvpPersonTitle.Label = AddLabelPrefix( "Title" );
+                _tbPersonFirstName.Label = AddLabelPrefix( "First Name" );
+                _tbPersonLastName.Label = AddLabelPrefix( "Last Name" );
+                _dvpPersonSuffix.Label = AddLabelPrefix( "Suffix" );
+                _dvpPersonConnectionStatus.Label = AddLabelPrefix( "Connection Status" );
+                _rblPersonRole.Label = AddLabelPrefix( "Role" );
+                _rblPersonGender.Label = AddLabelPrefix( "Gender" );
+                _dpPersonBirthDate.Label = AddLabelPrefix( "Birthdate" );
+                _ddlGradePicker.Label = AddLabelPrefix( "Grade" );
+                _dvpPersonMaritalStatus.Label = AddLabelPrefix( "Marital Status" );
+                _ebPersonEmail.Label = AddLabelPrefix( "Email" );
+                _pnbMobilePhoneNumber.Label = AddLabelPrefix( "MobilePhone" );
+            }
+
+            get
+            {
+                return ViewState[ViewStateKey.PersonLabelPrefix] as string;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [show in columns].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [show in columns]; otherwise, <c>false</c>.
+        /// </value>
+        public bool ShowInColumns
+        {
+            set
+            {
+                EnsureChildControls();
+                ViewState[ViewStateKey.ShowInColumns] = value;
+                if ( value )
+                {
+                    _pnlRow.AddCssClass( "row" );
+                    _pnlCol1.AddCssClass( "col-sm-4" );
+                    _pnlCol2.AddCssClass( "col-sm-4" );
+                    _pnlCol3.AddCssClass( "col-sm-4" );
+                }
+                else
+                {
+                    _pnlRow.RemoveCssClass( "row" );
+                    _pnlCol1.RemoveCssClass( "col-sm-4" );
+                    _pnlCol2.RemoveCssClass( "col-sm-4" );
+                    _pnlCol3.RemoveCssClass( "col-sm-4" );
+                }
+            }
+
+            get
+            {
+                return ViewState[ViewStateKey.ShowInColumns] as bool? ?? false;
+            }
+        }
+
         #endregion Properties
 
         #region Events
@@ -395,21 +663,13 @@ namespace Rock.Web.UI.Controls
         {
             base.CreateChildControls();
 
-            Panel pnlRow = new Panel
-            {
-                ID = "pnlRow",
-                CssClass = "row"
-            };
+            _pnlRow = new Panel { ID = "pnlRow", CssClass = "row" };
 
-            this.Controls.Add( pnlRow );
+            this.Controls.Add( _pnlRow );
 
-            Panel pnlCol1 = new Panel
-            {
-                ID = "pnlCol1",
-                CssClass = "col-sm-4"
-            };
+            _pnlCol1 = new Panel { ID = "pnlCol1", CssClass = "col-sm-4" };
 
-            pnlRow.Controls.Add( pnlCol1 );
+            _pnlRow.Controls.Add( _pnlCol1 );
             _dvpPersonTitle = new DefinedValuePicker
             {
                 ID = "_dvpPersonTitle",
@@ -419,7 +679,7 @@ namespace Rock.Web.UI.Controls
                 ValidationGroup = ValidationGroup
             };
 
-            pnlCol1.Controls.Add( _dvpPersonTitle );
+            _pnlCol1.Controls.Add( _dvpPersonTitle );
 
             _tbPersonFirstName = new RockTextBox
             {
@@ -430,7 +690,7 @@ namespace Rock.Web.UI.Controls
                 ValidationGroup = ValidationGroup
             };
 
-            pnlCol1.Controls.Add( _tbPersonFirstName );
+            _pnlCol1.Controls.Add( _tbPersonFirstName );
 
             _tbPersonLastName = new RockTextBox
             {
@@ -441,7 +701,7 @@ namespace Rock.Web.UI.Controls
                 ValidationGroup = ValidationGroup
             };
 
-            pnlCol1.Controls.Add( _tbPersonLastName );
+            _pnlCol1.Controls.Add( _tbPersonLastName );
 
             _dvpPersonSuffix = new DefinedValuePicker
             {
@@ -452,15 +712,11 @@ namespace Rock.Web.UI.Controls
                 ValidationGroup = ValidationGroup
             };
 
-            pnlCol1.Controls.Add( _dvpPersonSuffix );
+            _pnlCol1.Controls.Add( _dvpPersonSuffix );
 
-            Panel pnlCol2 = new Panel
-            {
-                ID = "pnlCol2",
-                CssClass = "col-sm-4"
-            };
+            _pnlCol2 = new Panel { ID = "pnlCol2", CssClass = "col-sm-4" };
 
-            pnlRow.Controls.Add( pnlCol2 );
+            _pnlRow.Controls.Add( _pnlCol2 );
 
             _dvpPersonConnectionStatus = new DefinedValuePicker
             {
@@ -471,7 +727,7 @@ namespace Rock.Web.UI.Controls
                 ValidationGroup = ValidationGroup
             };
 
-            pnlCol2.Controls.Add( _dvpPersonConnectionStatus );
+            _pnlCol2.Controls.Add( _dvpPersonConnectionStatus );
 
             _rblPersonRole = new RockRadioButtonList
             {
@@ -484,7 +740,7 @@ namespace Rock.Web.UI.Controls
                 ValidationGroup = ValidationGroup
             };
 
-            pnlCol2.Controls.Add( _rblPersonRole );
+            _pnlCol2.Controls.Add( _rblPersonRole );
 
             _rblPersonGender = new RockRadioButtonList
             {
@@ -495,10 +751,10 @@ namespace Rock.Web.UI.Controls
                 ValidationGroup = ValidationGroup
             };
 
-            pnlCol2.Controls.Add( _rblPersonGender );
+            _pnlCol2.Controls.Add( _rblPersonGender );
 
-            Panel pnlCol3 = new Panel { ID = "pnlCol3", CssClass = "col-sm-4" };
-            pnlRow.Controls.Add( pnlCol3 );
+            _pnlCol3 = new Panel { ID = "pnlCol3", CssClass = "col-sm-4" };
+            _pnlRow.Controls.Add( _pnlCol3 );
 
             _dpPersonBirthDate = new DatePicker
             {
@@ -509,7 +765,7 @@ namespace Rock.Web.UI.Controls
                 ValidationGroup = ValidationGroup
             };
 
-            pnlCol3.Controls.Add( _dpPersonBirthDate );
+            _pnlCol3.Controls.Add( _dpPersonBirthDate );
 
             _ddlGradePicker = new GradePicker
             {
@@ -520,26 +776,32 @@ namespace Rock.Web.UI.Controls
                 ValidationGroup = ValidationGroup
             };
 
-            pnlCol3.Controls.Add( _ddlGradePicker );
+            _pnlCol3.Controls.Add( _ddlGradePicker );
 
             _dvpPersonMaritalStatus = new DefinedValuePicker
             {
-                ID = "_vpPersonMaritalStatus",
+                ID = "dvpPersonMaritalStatus",
                 Label = "Marital Status",
                 DefinedTypeId = DefinedTypeCache.GetId( Rock.SystemGuid.DefinedType.PERSON_MARITAL_STATUS.AsGuid() ),
                 ValidationGroup = ValidationGroup
             };
 
-            pnlCol3.Controls.Add( _dvpPersonMaritalStatus );
+            _pnlCol3.Controls.Add( _dvpPersonMaritalStatus );
 
             _ebPersonEmail = new EmailBox
             {
-                ID = "dbPersonEmail",
+                ID = "ebPersonEmail",
                 Label = "Email",
                 ValidationGroup = ValidationGroup
             };
 
-            pnlCol3.Controls.Add( _ebPersonEmail );
+            _pnlCol3.Controls.Add( _ebPersonEmail );
+
+            _pnbMobilePhoneNumber = new PhoneNumberBox
+            {
+                Label = "Mobile Phone",
+                ID = "pnbMobilePhoneNumber",
+            };
 
             var groupType = GroupTypeCache.GetFamilyGroupType();
             _rblPersonRole.DataSource = groupType.Roles.OrderBy( r => r.Order ).ToList();
@@ -549,6 +811,17 @@ namespace Rock.Web.UI.Controls
             _rblPersonGender.Items.Add( new ListItem( Gender.Male.ConvertToString(), Gender.Male.ConvertToInt().ToString() ) );
             _rblPersonGender.Items.Add( new ListItem( Gender.Female.ConvertToString(), Gender.Female.ConvertToInt().ToString() ) );
             _rblPersonGender.Items.Add( new ListItem( Gender.Unknown.ConvertToString(), Gender.Unknown.ConvertToInt().ToString() ) );
+        }
+
+
+        private string AddLabelPrefix( string labelText )
+        {
+            if ( PersonLabelPrefix.IsNullOrWhiteSpace() )
+            {
+                return labelText;
+            }
+
+            return $"{PersonLabelPrefix} {labelText}";
         }
 
         /// <summary>
@@ -611,7 +884,7 @@ namespace Rock.Web.UI.Controls
             DateTime? birthdate = this.PersonBirthDate;
             if ( !this.PersonBirthDateIsValid )
             {
-                validationResults.Add( new ValidationResult("Birth date is not valid.") );
+                validationResults.Add( new ValidationResult( "Birth date is not valid." ) );
                 isValid = false;
             }
 

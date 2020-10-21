@@ -241,7 +241,7 @@ namespace RockWeb.Blocks.WorkFlow
         /// <summary>
         /// Returns breadcrumbs specific to the block that should be added to navigation
         /// based on the current page reference.  This function is called during the page's
-        /// oninit to load any initial breadcrumbs.
+        /// OnInit to load any initial breadcrumbs.
         /// </summary>
         /// <param name="pageReference">The <see cref="Rock.Web.PageReference" />.</param>
         /// <returns>

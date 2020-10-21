@@ -163,6 +163,8 @@ This {{ Workflow.WorkflowType.WorkTerm }} does not currently require your attent
         {
             base.OnInit( e );
 
+            DebugHelper.SQLLoggingStart();
+
             // assign attributes grid actions
             gAttributes.AddCssClass( "attribute-grid" );
             gAttributes.DataKeyNames = new string[] { "Guid" };
@@ -178,12 +180,20 @@ This {{ Workflow.WorkflowType.WorkTerm }} does not currently require your attent
             btnSecurity.EntityTypeId = EntityTypeCache.Get( typeof( Rock.Model.WorkflowType ) ).Id;
         }
 
+        protected override void OnUnload( EventArgs e )
+        {
+            base.OnUnload( e );
+            DebugHelper.SQLLoggingStop();
+        }
+
         /// <summary>
         /// Raises the <see cref="E:System.Web.UI.Control.Load" /> event.
         /// </summary>
         /// <param name="e">The <see cref="T:System.EventArgs" /> object that contains the event data.</param>
         protected override void OnLoad( EventArgs e )
         {
+            
+
             base.OnLoad( e );
 
             nbValidationError.Visible = false;
@@ -798,6 +808,7 @@ This {{ Workflow.WorkflowType.WorkTerm }} does not currently require your attent
                         workflowActionType.WorkflowForm.NotificationSystemCommunicationId = editorWorkflowActionType.WorkflowForm.NotificationSystemCommunicationId;
                         workflowActionType.WorkflowForm.IncludeActionsInNotification = editorWorkflowActionType.WorkflowForm.IncludeActionsInNotification;
                         workflowActionType.WorkflowForm.AllowNotes = editorWorkflowActionType.WorkflowForm.AllowNotes;
+                        workflowActionType.WorkflowForm.AllowPersonEntry = editorWorkflowActionType.WorkflowForm.AllowPersonEntry;
                         workflowActionType.WorkflowForm.Header = editorWorkflowActionType.WorkflowForm.Header;
                         workflowActionType.WorkflowForm.Footer = editorWorkflowActionType.WorkflowForm.Footer;
                         workflowActionType.WorkflowForm.Actions = editorWorkflowActionType.WorkflowForm.Actions;
