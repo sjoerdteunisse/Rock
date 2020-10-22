@@ -36,7 +36,6 @@ namespace Rock.Model
     [DataContract]
     public partial class WorkflowActionForm : Model<WorkflowActionForm>, ICacheable
     {
-
         #region Entity Properties
 
         /// <summary>
@@ -67,7 +66,7 @@ namespace Rock.Model
         /// </value>
         [DataMember]
         public bool IncludeActionsInNotification { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the header.
         /// </summary>
@@ -114,6 +113,10 @@ namespace Rock.Model
         [DataMember]
         public bool? AllowNotes { get; set; }
 
+        #endregion Entity Properties
+
+        #region Person entry related Entity Properties
+
         /// <summary>
         /// Gets or sets a value indicating whether a new person (and spouse) can be added
         /// </summary>
@@ -123,7 +126,172 @@ namespace Rock.Model
         [DataMember]
         public bool AllowPersonEntry { get; set; }
 
-        #endregion
+        /// <summary>
+        /// Gets or sets the person entry pre HTML.
+        /// </summary>
+        /// <value>
+        /// The person entry pre HTML.
+        /// </value>
+        [DataMember]
+        public string PersonEntryPreHtml { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person entry post HTML.
+        /// </summary>
+        /// <value>
+        /// The person entry post HTML.
+        /// </value>
+        [DataMember]
+        public string PersonEntryPostHtml { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [person entry show campus].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [person entry show campus]; otherwise, <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool PersonEntryShowCampus { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [person entry autofill current person].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [person entry autofill current person]; otherwise, <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool PersonEntryAutofillCurrentPerson { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [person entry hide if current person known].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [person entry hide if current person known]; otherwise, <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool PersonEntryHideIfCurrentPersonKnown { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person entry spouse entry option.
+        /// </summary>
+        /// <value>
+        /// The person entry spouse entry option.
+        /// </value>
+        [DataMember]
+        public PersonEntryOption PersonEntrySpouseEntryOption { get; set; } = PersonEntryOption.Hide;
+
+        /// <summary>
+        /// Gets or sets the person entry email entry option.
+        /// </summary>
+        /// <value>
+        /// The person entry email entry option.
+        /// </value>
+        [DataMember]
+        public PersonEntryOption PersonEntryEmailEntryOption { get; set; } = PersonEntryOption.Required;
+
+        /// <summary>
+        /// Gets or sets the person entry mobile phone entry option.
+        /// </summary>
+        /// <value>
+        /// The person entry mobile phone entry option.
+        /// </value>
+        [DataMember]
+        public PersonEntryOption PersonEntryMobilePhoneEntryOption { get; set; } = PersonEntryOption.Hide;
+
+        /// <summary>
+        /// Gets or sets the person entry birthdate entry option.
+        /// </summary>
+        /// <value>
+        /// The person entry birthdate entry option.
+        /// </value>
+        [DataMember]
+        public PersonEntryOption PersonEntryBirthdateEntryOption { get; set; } = PersonEntryOption.Hide;
+
+        /// <summary>
+        /// Gets or sets the person entry address entry option.
+        /// </summary>
+        /// <value>
+        /// The person entry address entry option.
+        /// </value>
+        [DataMember]
+        public PersonEntryOption PersonEntryAddressEntryOption { get; set; } = PersonEntryOption.Hide;
+
+        /// <summary>
+        /// Gets or sets the person entry marital status entry option.
+        /// </summary>
+        /// <value>
+        /// The person entry marital entry option.
+        /// </value>
+        [DataMember]
+        public PersonEntryOption PersonEntryMaritalStatusEntryOption { get; set; } = PersonEntryOption.Hide;
+
+        /// <summary>
+        /// Gets or sets the person entry spouse label.
+        /// </summary>
+        /// <value>
+        /// The person entry spouse label.
+        /// </value>
+        [DataMember]
+        public string PersonEntrySpouseLabel { get; set; } = "Spouse";
+
+        /// <summary>
+        /// Gets or sets the person entry connection status value identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry connection status value identifier.
+        /// </value>
+        [DataMember]
+        [DefinedValue( Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS )]
+        public int? PersonEntryConnectionStatusValueId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person entry record status value identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry record status value identifier.
+        /// </value>
+        [DataMember]
+        [DefinedValue( Rock.SystemGuid.DefinedType.PERSON_RECORD_STATUS )]
+        public int? PersonEntryRecordStatusValueId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person entry address type value identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry address type value identifier.
+        /// </value>
+        [DataMember]
+        [DefinedValue( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE )]
+        public int? PersonEntryAddressTypeValueId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person entry person attribute identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry person attribute identifier.
+        /// </value>
+        [DataMember]
+        public int? PersonEntryPersonAttributeId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person entry spouse attribute identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry spouse attribute identifier.
+        /// </value>
+        [DataMember]
+        public int? PersonEntrySpouseAttributeId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person entry family attribute identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry family attribute identifier.
+        /// </value>
+        [DataMember]
+        public int? PersonEntryFamilyAttributeId { get; set; }
+
+        #endregion Person entry related Entity Properties
 
         #region Virtual Properties
 
@@ -139,6 +307,7 @@ namespace Rock.Model
             get { return _formAttributes ?? ( _formAttributes = new Collection<WorkflowActionFormAttribute>() ); }
             set { _formAttributes = value; }
         }
+
         private ICollection<WorkflowActionFormAttribute> _formAttributes;
 
         /// <summary>
@@ -162,6 +331,64 @@ namespace Rock.Model
         public virtual SystemCommunication NotificationSystemCommunication { get; set; }
 
         /// <summary>
+        /// Gets or sets the person entry connection status value
+        /// </summary>
+        /// <value>
+        /// The person entry connection status value
+        /// </value>
+        [DataMember]
+        public DefinedValue PersonEntryConnectionStatusValue { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person entry record status value identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry record status value identifier.
+        /// </value>
+        [DataMember]
+        public DefinedValue PersonEntryRecordStatusValue { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person entry address type value identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry address type value identifier.
+        /// </value>
+        [DataMember]
+        public DefinedValue PersonEntryAddressTypeValue { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person entry person attribute identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry person attribute identifier.
+        /// </value>
+        [DataMember]
+        public Attribute PersonEntryPersonAttribute { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person entry spouse attribute identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry spouse attribute identifier.
+        /// </value>
+        [DataMember]
+        public Attribute PersonEntrySpouseAttribute { get; set; }
+
+        /// <summary>
+        /// Gets or sets the person entry family attribute identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry family attribute identifier.
+        /// </value>
+        [DataMember]
+        public Attribute PersonEntryFamilyAttribute { get; set; }
+
+        #endregion Virtual Properties
+
+        #region Other properties
+
+        /// <summary>
         /// Gets or sets the buttons.
         /// </summary>
         /// <value>
@@ -177,7 +404,7 @@ namespace Rock.Model
             }
         }
 
-        #endregion
+        #endregion Other properties
 
         #region Constructor
 
@@ -278,6 +505,27 @@ namespace Rock.Model
 
             return buttonList;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public enum PersonEntryOption
+        {
+            /// <summary>
+            /// Don't show the control
+            /// </summary>
+            Hide = 0,
+
+            /// <summary>
+            /// Control is visible, but a value is not required
+            /// </summary>
+            Enabled = 1,
+
+            /// <summary>
+            /// Control is visible, and a value is required
+            /// </summary>
+            Required = 2,
+        }
     }
 
     #region Entity Configuration
@@ -297,10 +545,16 @@ namespace Rock.Model
 #pragma warning disable CS0618 // Type or member is obsolete
             this.HasOptional( f => f.NotificationSystemEmail ).WithMany().HasForeignKey( f => f.NotificationSystemEmailId ).WillCascadeOnDelete( false );
 #pragma warning restore CS0618 // Type or member is obsolete
+
+            this.HasOptional( f => f.PersonEntryConnectionStatusValue ).WithMany().HasForeignKey( f => f.PersonEntryConnectionStatusValueId ).WillCascadeOnDelete( false );
+            this.HasOptional( f => f.PersonEntryRecordStatusValue ).WithMany().HasForeignKey( f => f.PersonEntryRecordStatusValueId ).WillCascadeOnDelete( false );
+            this.HasOptional( f => f.PersonEntryAddressTypeValue ).WithMany().HasForeignKey( f => f.PersonEntryAddressTypeValueId ).WillCascadeOnDelete( false );
+
+            this.HasOptional( f => f.PersonEntryPersonAttribute ).WithMany().HasForeignKey( f => f.PersonEntryPersonAttributeId ).WillCascadeOnDelete( false );
+            this.HasOptional( f => f.PersonEntrySpouseAttribute ).WithMany().HasForeignKey( f => f.PersonEntrySpouseAttributeId ).WillCascadeOnDelete( false );
+            this.HasOptional( f => f.PersonEntryFamilyAttribute ).WithMany().HasForeignKey( f => f.PersonEntryFamilyAttributeId ).WillCascadeOnDelete( false );
         }
     }
 
     #endregion
-
 }
-
