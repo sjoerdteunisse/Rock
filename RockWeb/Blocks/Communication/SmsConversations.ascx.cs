@@ -784,7 +784,7 @@ namespace RockWeb.Blocks.Communication
                     // new Person and new family
                     var newPerson = new Person();
 
-                    newPersonEditor.UpdatePerson( newPerson );
+                    newPersonEditor.UpdatePerson( newPerson, rockContext );
                     personService.MergeNamelessPersonToNewPerson( namelessPerson, newPerson, newPersonEditor.PersonGroupRoleId );
                     rockContext.SaveChanges();
 

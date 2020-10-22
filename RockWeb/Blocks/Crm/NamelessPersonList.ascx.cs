@@ -56,7 +56,6 @@ namespace RockWeb.Blocks.Crm
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
-            newPersonEditor.ShowEmail = false;
             gNamelessPersonList.GridRebind += gList_GridRebind;
             gNamelessPersonList.Actions.ShowMergeTemplate = false;
 
@@ -72,6 +71,8 @@ namespace RockWeb.Blocks.Crm
         protected override void OnLoad( EventArgs e )
         {
             base.OnLoad( e );
+
+            newPersonEditor.ShowInColumns = !newPersonEditor.ShowInColumns;
 
             if ( !Page.IsPostBack )
             {
@@ -212,7 +213,7 @@ namespace RockWeb.Blocks.Crm
                     // new Person and new family
                     var newPerson = new Person();
 
-                    newPersonEditor.UpdatePerson( newPerson );
+                    newPersonEditor.UpdatePerson( newPerson, rockContext );
                     personService.MergeNamelessPersonToNewPerson( namelessPerson, newPerson, newPersonEditor.PersonGroupRoleId );
                     rockContext.SaveChanges();
                 }
