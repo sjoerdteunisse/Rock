@@ -21,6 +21,7 @@
     <Ignore>Checkin</Ignore>
     <Ignore>deserialize</Ignore>
     <Ignore>deserialized</Ignore>
+    <Ignore>enums</Ignore>
     <Ignore>geocode</Ignore>
     <Ignore>Guid</Ignore>
     <Ignore>guids</Ignore>
