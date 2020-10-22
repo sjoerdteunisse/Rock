@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Linq.Dynamic;
 using System.Web.UI.WebControls;
 
 using Rock.Data;

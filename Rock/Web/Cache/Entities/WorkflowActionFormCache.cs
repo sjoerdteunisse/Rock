@@ -112,6 +112,8 @@ namespace Rock.Web.Cache
         [DataMember]
         public bool? AllowNotes { get; private set; }
 
+        #region Person entry related Entity Properties
+
         /// <summary>
         /// Gets or sets a value indicating whether a new person (and spouse) can be added
         /// </summary>
@@ -120,6 +122,170 @@ namespace Rock.Web.Cache
         /// </value>
         [DataMember]
         public bool AllowPersonEntry { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the person entry preHTML.
+        /// </summary>
+        /// <value>
+        /// The person entry preHTML.
+        /// </value>
+        [DataMember]
+        public string PersonEntryPreHtml { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the person entry post HTML.
+        /// </summary>
+        /// <value>
+        /// The person entry post HTML.
+        /// </value>
+        [DataMember]
+        public string PersonEntryPostHtml { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [person entry show campus].
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [person entry show campus]; otherwise, <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool PersonEntryCampusIsVisible { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether Person Entry should auto-fill with the CurrentPerson
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [person entry auto-fill current person]; otherwise, <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool PersonEntryAutofillCurrentPerson { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether Person Entry should be hidden if the CurrentPerson is known
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if [person entry hide if current person known]; otherwise, <c>false</c>.
+        /// </value>
+        [DataMember]
+        public bool PersonEntryHideIfCurrentPersonKnown { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the person entry spouse entry option.
+        /// </summary>
+        /// <value>
+        /// The person entry spouse entry option.
+        /// </value>
+        [DataMember]
+        public WorkflowActionFormPersonEntryOption PersonEntrySpouseEntryOption { get; private set; } = WorkflowActionFormPersonEntryOption.Hidden;
+
+        /// <summary>
+        /// Gets or sets the person entry email entry option.
+        /// </summary>
+        /// <value>
+        /// The person entry email entry option.
+        /// </value>
+        [DataMember]
+        public WorkflowActionFormPersonEntryOption PersonEntryEmailEntryOption { get; private set; } = WorkflowActionFormPersonEntryOption.Required;
+
+        /// <summary>
+        /// Gets or sets the person entry mobile phone entry option.
+        /// </summary>
+        /// <value>
+        /// The person entry mobile phone entry option.
+        /// </value>
+        [DataMember]
+        public WorkflowActionFormPersonEntryOption PersonEntryMobilePhoneEntryOption { get; private set; } = WorkflowActionFormPersonEntryOption.Hidden;
+
+        /// <summary>
+        /// Gets or sets the person entry birthdate entry option.
+        /// </summary>
+        /// <value>
+        /// The person entry birthdate entry option.
+        /// </value>
+        [DataMember]
+        public WorkflowActionFormPersonEntryOption PersonEntryBirthdateEntryOption { get; private set; } = WorkflowActionFormPersonEntryOption.Hidden;
+
+        /// <summary>
+        /// Gets or sets the person entry address entry option.
+        /// </summary>
+        /// <value>
+        /// The person entry address entry option.
+        /// </value>
+        [DataMember]
+        public WorkflowActionFormPersonEntryOption PersonEntryAddressEntryOption { get; private set; } = WorkflowActionFormPersonEntryOption.Hidden;
+
+        /// <summary>
+        /// Gets or sets the person entry marital status entry option.
+        /// </summary>
+        /// <value>
+        /// The person entry marital entry option.
+        /// </value>
+        [DataMember]
+        public WorkflowActionFormPersonEntryOption PersonEntryMaritalStatusEntryOption { get; private set; } = WorkflowActionFormPersonEntryOption.Hidden;
+
+        /// <summary>
+        /// Gets or sets the person entry spouse label.
+        /// </summary>
+        /// <value>
+        /// The person entry spouse label.
+        /// </value>
+        [DataMember]
+        public string PersonEntrySpouseLabel { get; private set; } = "Spouse";
+
+        /// <summary>
+        /// Gets or sets the person entry connection status value identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry connection status value identifier.
+        /// </value>
+        [DataMember]
+        public int? PersonEntryConnectionStatusValueId { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the person entry record status value identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry record status value identifier.
+        /// </value>
+        [DataMember]
+        public int? PersonEntryRecordStatusValueId { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the person entry address type value identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry address type value identifier.
+        /// </value>
+        [DataMember]
+        public int? PersonEntryAddressTypeValueId { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the person entry person attribute identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry person attribute identifier.
+        /// </value>
+        [DataMember]
+        public int? PersonEntryPersonAttributeId { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the person entry spouse attribute identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry spouse attribute identifier.
+        /// </value>
+        [DataMember]
+        public int? PersonEntrySpouseAttributeId { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the person entry family attribute identifier.
+        /// </summary>
+        /// <value>
+        /// The person entry family attribute identifier.
+        /// </value>
+        [DataMember]
+        public int? PersonEntryFamilyAttributeId { get; private set; }
+
+        #endregion Person entry related Entity Properties
 
         /// <summary>
         /// Gets the defined values.

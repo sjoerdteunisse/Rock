@@ -30,18 +30,50 @@ namespace Rock.Web.UI.Controls
     /// <summary>
     /// Workflow Action Form Editor
     /// </summary>
-    [ToolboxData( "<{0}:WorkflowActionFormEditor runat=server></{0}:WorkflowActionFormEditor>" )]
-    public class WorkflowFormEditor : CompositeControl, IHasValidationGroup
+    public class WorkflowFormEditor : CompositeControl, IHasValidationGroup, INamingContainer
     {
         private HiddenField _hfFormGuid;
         private RockDropDownList _ddlNotificationSystemEmail;
         private RockCheckBox _cbIncludeActions;
         private RockCheckBox _cbAllowNotesEntry;
-        private RockCheckBox _cbAllowPersonEntry;
+
         private CodeEditor _ceHeaderText;
         private CodeEditor _ceFooterText;
         private WorkflowFormActionList _falActions;
         private RockDropDownList _ddlActionAttribute;
+
+        #region PersonEntry related
+
+        private RockCheckBox _cbAllowPersonEntry;
+
+        private Panel _pnlPersonEntry;
+        private CodeEditor _cePersonEntryHeaderText;
+        
+        private RockCheckBox _cbPersonEntryShowCampus;
+        private RockCheckBox _cbPersonEntryAutofillCurrentPerson;
+        private RockCheckBox _cbPersonEntryHideIfCurrentPersonKnown;
+        private RockDropDownList _ddlPersonEntrySpouseEntryOption;
+        private RockDropDownList _ddlPersonEntryEmailEntryOption;
+        private RockDropDownList _ddlPersonEntryMobilePhoneEntryOption;
+        private RockDropDownList _ddlPersonEntryBirthdateEntryOption;
+        private RockDropDownList _ddlPersonEntryAddressEntryOption;
+        private RockDropDownList _ddlPersonEntryMaritalStatusEntryOption;
+        private RockTextBox _tbPersonEntrySpouseLabel;
+        private DefinedValuePicker _dvpPersonEntryConnectionStatus;
+        private DefinedValuePicker _dvpPersonEntryRecordStatus;
+        private DefinedValuePicker _dvpPersonEntryAddressType;
+        private RockDropDownList _ddlPersonEntryPersonAttribute;
+        private RockDropDownList _ddlPersonEntrySpouseAttribute;
+        private RockDropDownList _ddlPersonEntryFamilyAttribute;
+        private CodeEditor _cePersonEntryFooterText;
+
+        #endregion PersonEntry related
+
+        #region Workflow Attribute Rows
+
+        private Panel _pnlWorkflowAttributes;
+
+        #endregion  Workflow Attribute Rows
 
         /// <summary>
         /// Gets or sets the validation group.
@@ -55,6 +87,7 @@ namespace Rock.Web.UI.Controls
             {
                 return ViewState["ValidationGroup"] as string;
             }
+
             set
             {
                 ViewState["ValidationGroup"] = value;
@@ -101,65 +134,20 @@ namespace Rock.Web.UI.Controls
 
                 return form;
             }
+
             return null;
         }
 
         /// <summary>
         /// Sets the form.
         /// </summary>
-        /// <param name="value">The value.</param>
+        /// <param name="workflowActionForm">The workflow action form.</param>
         /// <param name="workflowTypeAttributes">The workflow type attributes.</param>
-        public void SetForm( WorkflowActionForm value, Dictionary<Guid, Rock.Model.Attribute> workflowTypeAttributes )
+        public void SetForm( WorkflowActionForm workflowActionForm, Dictionary<Guid, Rock.Model.Attribute> workflowTypeAttributes )
         {
             EnsureChildControls();
 
-            if ( value != null )
-            {
-                _hfFormGuid.Value = value.Guid.ToString();
-                _ddlNotificationSystemEmail.SetValue( value.NotificationSystemCommunicationId );
-                _cbIncludeActions.Checked = value.IncludeActionsInNotification;
-                _ceHeaderText.Text = value.Header;
-                _ceFooterText.Text = value.Footer;
-                _falActions.Value = value.Actions;
-                _cbAllowNotesEntry.Checked = value.AllowNotes ?? false;
-                _cbAllowPersonEntry.Checked = value.AllowPersonEntry;
-
-                // Remove any existing rows (shouldn't be any)
-                foreach ( var attributeRow in Controls.OfType<WorkflowFormAttributeRow>() )
-                {
-                    Controls.Remove( attributeRow );
-                }
-
-                foreach ( var formAttribute in value.FormAttributes.OrderBy( a => a.Order ) )
-                {
-                    var row = new WorkflowFormAttributeRow();
-                    row.AttributeGuid = formAttribute.Attribute.Guid;
-                    row.AttributeName = formAttribute.Attribute.Name;
-                    row.Guid = formAttribute.Guid;
-                    row.IsVisible = formAttribute.IsVisible;
-                    row.IsEditable = !formAttribute.IsReadOnly;
-                    row.IsRequired = formAttribute.IsRequired;
-                    row.HideLabel = formAttribute.HideLabel;
-                    row.PreHtml = formAttribute.PreHtml;
-                    row.PostHtml = formAttribute.PostHtml;
-                    Controls.Add( row );
-                }
-
-                _ddlActionAttribute.Items.Clear();
-                _ddlActionAttribute.Items.Add( new ListItem() );
-                foreach ( var attributeItem in workflowTypeAttributes )
-                {
-                    var fieldType = FieldTypeCache.Get( attributeItem.Value.FieldTypeId );
-                    if ( fieldType != null && fieldType.Field is Rock.Field.Types.TextFieldType )
-                    {
-                        var li = new ListItem( attributeItem.Value.Name, attributeItem.Key.ToString() );
-                        li.Selected = value.ActionAttributeGuid.HasValue && value.ActionAttributeGuid.Value.ToString() == li.Value;
-                        _ddlActionAttribute.Items.Add( li );
-                    }
-                }        
-                
-            }
-            else
+            if ( workflowActionForm == null )
             {
                 _hfFormGuid.Value = string.Empty;
                 _ddlNotificationSystemEmail.SelectedIndex = 0;
@@ -170,6 +158,50 @@ namespace Rock.Web.UI.Controls
                 _ddlNotificationSystemEmail.SelectedIndex = 0;
                 _cbAllowNotesEntry.Checked = false;
                 _cbAllowPersonEntry.Checked = false;
+                return;
+            }
+
+            _hfFormGuid.Value = workflowActionForm.Guid.ToString();
+            _ddlNotificationSystemEmail.SetValue( workflowActionForm.NotificationSystemCommunicationId );
+            _cbIncludeActions.Checked = workflowActionForm.IncludeActionsInNotification;
+            _ceHeaderText.Text = workflowActionForm.Header;
+            _ceFooterText.Text = workflowActionForm.Footer;
+            _falActions.Value = workflowActionForm.Actions;
+            _cbAllowNotesEntry.Checked = workflowActionForm.AllowNotes ?? false;
+            _cbAllowPersonEntry.Checked = workflowActionForm.AllowPersonEntry;
+
+            // Remove any existing rows (shouldn't be any)
+            foreach ( var attributeRow in Controls.OfType<WorkflowFormAttributeRow>() )
+            {
+                Controls.Remove( attributeRow );
+            }
+
+            foreach ( var formAttribute in workflowActionForm.FormAttributes.OrderBy( a => a.Order ) )
+            {
+                var row = new WorkflowFormAttributeRow();
+                row.AttributeGuid = formAttribute.Attribute.Guid;
+                row.AttributeName = formAttribute.Attribute.Name;
+                row.Guid = formAttribute.Guid;
+                row.IsVisible = formAttribute.IsVisible;
+                row.IsEditable = !formAttribute.IsReadOnly;
+                row.IsRequired = formAttribute.IsRequired;
+                row.HideLabel = formAttribute.HideLabel;
+                row.PreHtml = formAttribute.PreHtml;
+                row.PostHtml = formAttribute.PostHtml;
+                Controls.Add( row );
+            }
+
+            _ddlActionAttribute.Items.Clear();
+            _ddlActionAttribute.Items.Add( new ListItem() );
+            foreach ( var attributeItem in workflowTypeAttributes )
+            {
+                var fieldType = FieldTypeCache.Get( attributeItem.Value.FieldTypeId );
+                if ( fieldType != null && fieldType.Field is Rock.Field.Types.TextFieldType )
+                {
+                    var li = new ListItem( attributeItem.Value.Name, attributeItem.Key.ToString() );
+                    li.Selected = workflowActionForm.ActionAttributeGuid.HasValue && workflowActionForm.ActionAttributeGuid.Value.ToString() == li.Value;
+                    _ddlActionAttribute.Items.Add( li );
+                }
             }
         }
 
@@ -230,16 +262,19 @@ namespace Rock.Web.UI.Controls
             Controls.Clear();
 
             _hfFormGuid = new HiddenField();
-            _hfFormGuid.ID = this.ID + "_hfFormGuid";
+            _hfFormGuid.ID = "_hfFormGuid";
             Controls.Add( _hfFormGuid );
 
-            _ddlNotificationSystemEmail = new RockDropDownList();
-            _ddlNotificationSystemEmail.EnableViewState = false;
-            _ddlNotificationSystemEmail.DataValueField = "Id";
-            _ddlNotificationSystemEmail.DataTextField = "Title";
-            _ddlNotificationSystemEmail.Label = "Notification Email";
-            _ddlNotificationSystemEmail.Help = "An optional system email that should be sent to the person or people assigned to this activity (Any System Email with a category of 'Workflow').";
-            _ddlNotificationSystemEmail.ID = this.ID + "_ddlNotificationSystemEmail";
+            _ddlNotificationSystemEmail = new RockDropDownList
+            {
+                EnableViewState = false,
+                DataValueField = "Id",
+                DataTextField = "Title",
+                Label = "Notification Email",
+                Help = "An optional system email that should be sent to the person or people assigned to this activity (Any System Email with a category of 'Workflow').",
+                ID = "_ddlNotificationSystemEmail"
+            };
+
             Controls.Add( _ddlNotificationSystemEmail );
 
             var systemEmailCategory = CategoryCache.Get( Rock.SystemGuid.Category.SYSTEM_COMMUNICATION_WORKFLOW.AsGuid() );
@@ -258,56 +293,258 @@ namespace Rock.Web.UI.Controls
 
             _ddlNotificationSystemEmail.Items.Insert( 0, new ListItem( "None", "0" ) );
 
-            _cbIncludeActions = new RockCheckBox();
-            _cbIncludeActions.Label = "Include Actions in Email";
-            _cbIncludeActions.Text = "Yes";
-            _cbIncludeActions.Help = "Should the email include the option for recipient to select an action directly from within the email? Note: This only applies if none of the form fields are required. The workflow will be persisted immediately prior to sending the email.";
-            _cbIncludeActions.ID = this.ID + "_cbIncludeActions";
+            _cbIncludeActions = new RockCheckBox
+            {
+                Label = "Include Actions in Email",
+                Text = "Yes",
+                Help = "Should the email include the option for recipient to select an action directly from within the email? Note: This only applies if none of the form fields are required. The workflow will be persisted immediately prior to sending the email.",
+                ID = "_cbIncludeActions"
+            };
+
             Controls.Add( _cbIncludeActions );
 
-            _ceHeaderText = new CodeEditor();
-            _ceHeaderText.Label = "Form Header";
-            _ceHeaderText.Help = "Text to display to user above the form fields. <span class='tip tip-lava'></span> <span class='tip tip-html'>";
-            _ceHeaderText.ID = this.ID + "_tbHeaderText";
-            _ceHeaderText.EditorMode = CodeEditorMode.Html;
-            _ceHeaderText.EditorTheme = CodeEditorTheme.Rock;
-            _ceHeaderText.EditorHeight = "200";
+            _ceHeaderText = new CodeEditor
+            {
+                Label = "Form Header",
+                Help = "Text to display to user above the form fields. <span class='tip tip-lava'></span> <span class='tip tip-html'>",
+                ID = "_ebHeaderText",
+                EditorMode = CodeEditorMode.Html,
+                EditorTheme = CodeEditorTheme.Rock,
+                EditorHeight = "200"
+            };
+
             Controls.Add( _ceHeaderText );
 
-            _ceFooterText = new CodeEditor();
-            _ceFooterText.Label = "Form Footer";
-            _ceFooterText.Help = "Text to display to user below the form fields. <span class='tip tip-lava'></span> <span class='tip tip-html'>";
-            _ceFooterText.ID = this.ID + "_tbFooterText";
-            _ceFooterText.EditorMode = CodeEditorMode.Html;
-            _ceFooterText.EditorTheme = CodeEditorTheme.Rock;
-            _ceFooterText.EditorHeight = "200";
+            _ceFooterText = new CodeEditor
+            {
+                Label = "Form Footer",
+                Help = "Text to display to user below the form fields. <span class='tip tip-lava'></span> <span class='tip tip-html'>",
+                ID = "_ebFooterText",
+                EditorMode = CodeEditorMode.Html,
+                EditorTheme = CodeEditorTheme.Rock,
+                EditorHeight = "200"
+            };
+
             Controls.Add( _ceFooterText );
 
-            _falActions = new WorkflowFormActionList();
-            _falActions.ID = this.ID + "_falActions";
+            _falActions = new WorkflowFormActionList
+            {
+                ID = "_falActions"
+            };
+
             Controls.Add( _falActions );
 
-            _ddlActionAttribute = new RockDropDownList();
-            _ddlActionAttribute.EnableViewState = false;
-            _ddlActionAttribute.ID = this.ID + "_ddlActionAttribute";
-            _ddlActionAttribute.Label = "Command Selected Attribute";
-            _ddlActionAttribute.Help = "Optional text attribute that should be updated with the selected command label.";
+            _ddlActionAttribute = new RockDropDownList
+            {
+                EnableViewState = false,
+                ID = "_ddlActionAttribute",
+                Label = "Command Selected Attribute",
+                Help = "Optional text attribute that should be updated with the selected command label."
+            };
+
             Controls.Add( _ddlActionAttribute );
 
-            _cbAllowNotesEntry = new RockCheckBox();
-            _cbAllowNotesEntry.Label = "Enable Note Entry";
-            _cbAllowNotesEntry.Text = "Yes";
-            _cbAllowNotesEntry.Help = "Should this form include an area for viewing and editing notes related to the workflow?";
-            _cbAllowNotesEntry.ID = this.ID + "_cbAllowNotesEntry";
+            _cbAllowNotesEntry = new RockCheckBox
+            {
+                Label = "Enable Note Entry",
+                Text = "Yes",
+                Help = "Should this form include an area for viewing and editing notes related to the workflow?",
+                ID = "_cbAllowNotesEntry"
+            };
+
             Controls.Add( _cbAllowNotesEntry );
 
+            /* Person Entry related */
 
-            _cbAllowPersonEntry = new RockCheckBox();
-            _cbAllowPersonEntry.Label = "Enable Person Entry";
-            _cbAllowPersonEntry.Text = "Yes";
-            _cbAllowPersonEntry.Help = "If enabled, the form will prompt to add a new person.";
-            _cbAllowPersonEntry.ID = this.ID + "_cbAllowPersonEntry";
+            _cbAllowPersonEntry = new RockCheckBox
+            {
+                Label = "Enable Person Entry",
+                Text = "Yes",
+                Help = "If enabled, the form will prompt to add a new person.",
+                ID = "_cbAllowPersonEntry",
+            };
+
             Controls.Add( _cbAllowPersonEntry );
+
+            _pnlPersonEntry = new Panel
+            {
+                ID = "_pnlPersonEntry"
+            };
+
+            Controls.Add( _pnlPersonEntry );
+
+            _pnlPersonEntry.Controls.Add( new Literal { Text = "<h1>Person Entry Configuration</h1>" } );
+
+            _cbPersonEntryShowCampus = new RockCheckBox
+            {
+                ID = "_cbPersonEntryShowCampus",
+                Label = "Show Campus"
+            };
+
+            _cbPersonEntryAutofillCurrentPerson = new RockCheckBox
+            {
+                ID = "_cbPersonEntryAutofillCurrentPerson",
+                Label = "Autofill Current Person"
+            };
+
+            _cbPersonEntryHideIfCurrentPersonKnown = new RockCheckBox
+            {
+                ID = "_cbPersonEntryHideIfCurrentPersonKnown",
+                Label = "Hide if Current Person Known"
+            };
+
+            _ddlPersonEntrySpouseEntryOption = new RockDropDownList
+            {
+                ID = "_ddlPersonEntrySpouseEntryOption",
+                Label = "Spouse Entry"
+            };
+            
+
+            _ddlPersonEntrySpouseEntryOption.BindToEnum<WorkflowActionFormPersonEntryOption>();
+
+            _ddlPersonEntryEmailEntryOption = new RockDropDownList
+            {
+                ID = "_ddlPersonEntryEmailEntryOption",
+                Label = "Email"
+            };
+
+            _ddlPersonEntryEmailEntryOption.BindToEnum<WorkflowActionFormPersonEntryOption>();
+
+            _ddlPersonEntryMobilePhoneEntryOption = new RockDropDownList
+            {
+                ID = "_ddlPersonEntryMobilePhoneEntryOption",
+                Label = "Mobile Phone"
+            };
+
+            _ddlPersonEntryMobilePhoneEntryOption.BindToEnum<WorkflowActionFormPersonEntryOption>();
+
+            _ddlPersonEntryBirthdateEntryOption = new RockDropDownList
+            {
+                ID = "_ddlPersonEntryBirthdateEntryOption",
+                Label = "Birthdate"
+            };
+
+            _ddlPersonEntryBirthdateEntryOption.BindToEnum<WorkflowActionFormPersonEntryOption>();
+
+            _ddlPersonEntryAddressEntryOption = new RockDropDownList
+            {
+                ID = "_ddlPersonEntryAddressEntryOption",
+                Label = "Address"
+            };
+
+            _ddlPersonEntryAddressEntryOption.BindToEnum<WorkflowActionFormPersonEntryOption>();
+
+            _ddlPersonEntryMaritalStatusEntryOption = new RockDropDownList
+            {
+                ID = "_ddlPersonEntryMaritalStatusEntryOption",
+                Label = "Marital Status"
+            };
+
+            _ddlPersonEntryMaritalStatusEntryOption.BindToEnum<WorkflowActionFormPersonEntryOption>();
+
+            _tbPersonEntrySpouseLabel = new RockTextBox
+            {
+                ID = "_tbPersonEntrySpouseLabel",
+                Label = "Spouse Label"
+            };
+
+            _dvpPersonEntryConnectionStatus = new DefinedValuePicker
+            {
+                ID = "_dvpPersonEntryConnectionStatus",
+                Label = "Connection Status"
+            };
+
+            _dvpPersonEntryRecordStatus = new DefinedValuePicker
+            {
+                ID = "_dvpPersonEntryRecordStatus",
+                Label = "Record Status"
+            };
+
+            _ddlPersonEntryPersonAttribute = new RockDropDownList
+            {
+                ID = "_ddlPersonEntryPersonAttribute",
+                Label = "Person Attribute",
+                Help = ""
+            };
+
+            _ddlPersonEntrySpouseAttribute = new RockDropDownList
+            {
+                ID = "_ddlPersonEntrySpouseAttribute",
+                Label = "Spouse Attribute",
+                Help = ""
+            };
+
+            _ddlPersonEntryFamilyAttribute = new RockDropDownList
+            {
+                ID = "_ddlPersonEntryFamilyAttribute",
+                Label = "Family Attribute",
+                Help = ""
+            };
+
+            _pnlWorkflowAttributes = new Panel
+            {
+                ID = "_pnlWorkflowAttributes",
+                CssClass = "form-group"
+            };
+
+
+            Panel pnlPersonEntryRow1 = new Panel
+            {
+                ID = "pnlPersonEntryRow1",
+                CssClass = "row"
+            };
+
+            Panel pnlPersonEntryRow1Col1 = new Panel
+            {
+                ID = "pnlPersonEntryCol1",
+                CssClass = "col-xs-3"
+            };
+
+            Panel pnlPersonEntryRow1Col2 = new Panel
+            {
+                ID = "pnlPersonEntryCol2",
+                CssClass = "col-xs-3"
+            };
+
+            Panel pnlPersonEntryRow1Col3 = new Panel
+            {
+                ID = "pnlPersonEntryCol3",
+                CssClass = "col-xs-3"
+            };
+
+            Panel pnlPersonEntryRow1Col4 = new Panel
+            {
+                ID = "pnlPersonEntryCol4",
+                CssClass = "col-xs-3"
+            };
+
+            pnlPersonEntryRow1.Controls.Add( pnlPersonEntryRow1Col1 );
+            pnlPersonEntryRow1.Controls.Add( pnlPersonEntryRow1Col2 );
+            pnlPersonEntryRow1.Controls.Add( pnlPersonEntryRow1Col3 );
+            pnlPersonEntryRow1.Controls.Add( pnlPersonEntryRow1Col4 );
+
+
+            pnlPersonEntryRow1Col1.Controls.Add( _cbPersonEntryShowCampus );
+            pnlPersonEntryRow1Col1.Controls.Add( _ddlPersonEntryEmailEntryOption );
+            pnlPersonEntryRow1Col1.Controls.Add( _ddlPersonEntryMaritalStatusEntryOption );
+            pnlPersonEntryRow1Col1.Controls.Add( _dvpPersonEntryAddressType );
+
+            pnlPersonEntryRow1Col2.Controls.Add( _cbPersonEntryAutofillCurrentPerson );
+            pnlPersonEntryRow1Col2.Controls.Add( _ddlPersonEntryMobilePhoneEntryOption );
+            pnlPersonEntryRow1Col2.Controls.Add( _tbPersonEntrySpouseLabel );
+
+            pnlPersonEntryRow1Col3.Controls.Add( _cbPersonEntryHideIfCurrentPersonKnown );
+            pnlPersonEntryRow1Col3.Controls.Add( _ddlPersonEntryBirthdateEntryOption );
+            pnlPersonEntryRow1Col3.Controls.Add( _dvpPersonEntryConnectionStatus );
+
+            pnlPersonEntryRow1Col4.Controls.Add( _ddlPersonEntrySpouseEntryOption );
+            pnlPersonEntryRow1Col4.Controls.Add( _ddlPersonEntryAddressEntryOption );
+            pnlPersonEntryRow1Col4.Controls.Add( _dvpPersonEntryRecordStatus );
+
+
+
+
+            this.Controls.Add( _pnlWorkflowAttributes );
         }
 
         /// <summary>
@@ -316,174 +553,177 @@ namespace Rock.Web.UI.Controls
         /// <param name="writer">The <see cref="T:System.Web.UI.HtmlTextWriter" /> object that receives the control content.</param>
         public override void RenderControl( HtmlTextWriter writer )
         {
-            if ( _hfFormGuid.Value.AsGuid() != Guid.Empty )
+            if ( _hfFormGuid.Value.AsGuid() == Guid.Empty )
             {
-                _hfFormGuid.RenderControl( writer );
+                return;
+            }
+
+            _hfFormGuid.RenderControl( writer );
+
+            writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
+            writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
+            writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+            writer.RenderBeginTag( HtmlTextWriterTag.Div );
+            _ddlNotificationSystemEmail.RenderControl( writer );
+            writer.RenderEndTag();
+
+            writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+            writer.RenderBeginTag( HtmlTextWriterTag.Div );
+            _cbIncludeActions.RenderControl( writer );
+            writer.RenderEndTag();
+
+            writer.RenderEndTag();  // row
+
+            writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
+            writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
+            writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+            writer.RenderBeginTag( HtmlTextWriterTag.Div );
+            _cbAllowNotesEntry.RenderControl( writer );
+            writer.RenderEndTag();
+
+            writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+            writer.RenderBeginTag( HtmlTextWriterTag.Div );
+            _cbAllowPersonEntry.RenderControl( writer );
+            writer.RenderEndTag();
+
+            writer.RenderEndTag();  // row
+
+            _ceHeaderText.ValidationGroup = ValidationGroup;
+            _ceHeaderText.RenderControl( writer );
+
+            _pnlPersonEntry.RenderControl( writer );
+
+            // Attributes
+            if ( AttributeRows.Any() )
+            {
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "form-group" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "control-label" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Label );
+                writer.Write( "Form Fields" );
+
+                writer.AddAttribute( "class", "help" );
+                writer.AddAttribute( "href", "#" );
+                writer.RenderBeginTag( HtmlTextWriterTag.A );
+                writer.AddAttribute( "class", "fa fa-question-circle" );
+                writer.RenderBeginTag( HtmlTextWriterTag.I );
+                writer.RenderEndTag();
+                writer.RenderEndTag();
+
+                writer.AddAttribute( "class", "alert alert-info" );
+                writer.AddAttribute( "style", "display:none" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                writer.RenderBeginTag( HtmlTextWriterTag.Small );
+                writer.Write( "The fields (attributes) to display on the entry form" );
+                writer.RenderEndTag();
+                writer.RenderEndTag();
+
+                writer.RenderEndTag();      // Label
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "grid-table table table-condensed table-light" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Table );
+
+                writer.RenderBeginTag( HtmlTextWriterTag.Thead );
+                writer.RenderBeginTag( HtmlTextWriterTag.Tr );
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "grid-columncommand" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Th );
+                writer.Write( "&nbsp;" );
+                writer.RenderEndTag();
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Scope, "col" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Th );
 
                 writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
                 writer.RenderBeginTag( HtmlTextWriterTag.Div );
 
-                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-3" );
                 writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                _ddlNotificationSystemEmail.RenderControl( writer );
+                writer.Write( "Field" );
                 writer.RenderEndTag();
 
-                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-9" );
                 writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                _cbIncludeActions.RenderControl( writer );
-                writer.RenderEndTag();
-
-                writer.RenderEndTag();  // row
-
 
                 writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
                 writer.RenderBeginTag( HtmlTextWriterTag.Div );
 
-                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-2" );
                 writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                _cbAllowNotesEntry.RenderControl( writer );
+                writer.Write( "Visible" );
                 writer.RenderEndTag();
 
-                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-2" );
                 writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                _cbAllowPersonEntry.RenderControl( writer );
+                writer.Write( "Editable" );
                 writer.RenderEndTag();
 
-                writer.RenderEndTag();  // row
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-2" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                writer.Write( "Required" );
+                writer.RenderEndTag();
 
-                _ceHeaderText.ValidationGroup = ValidationGroup;
-                _ceHeaderText.RenderControl( writer );
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-2" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                writer.Write( "Hide Label" );
+                writer.RenderEndTag();
 
-                // Attributes
-                if ( AttributeRows.Any() )
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-2" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                writer.Write( "Pre-HTML" );
+                writer.RenderEndTag();
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-2" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                writer.Write( "Post-HTML" );
+                writer.RenderEndTag();
+
+                writer.RenderEndTag();      // row
+
+                writer.RenderEndTag();      // col-xs-9
+
+                writer.RenderEndTag();      // row
+
+                writer.RenderEndTag();      // th
+
+                writer.RenderEndTag();      // tr
+                writer.RenderEndTag();      // thead
+
+                writer.AddAttribute( HtmlTextWriterAttribute.Class, "workflow-formfield-list" );
+                writer.RenderBeginTag( HtmlTextWriterTag.Tbody );
+
+                foreach ( var row in AttributeRows )
                 {
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "form-group" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "control-label" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Label );
-                    writer.Write( "Form Fields" );
-
-                    writer.AddAttribute( "class", "help" );
-                    writer.AddAttribute( "href", "#" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.A );
-                    writer.AddAttribute( "class", "fa fa-question-circle" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.I );
-                    writer.RenderEndTag();
-                    writer.RenderEndTag();
-
-                    writer.AddAttribute( "class", "alert alert-info" );
-                    writer.AddAttribute( "style", "display:none" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Small );
-                    writer.Write( "The fields (attributes) to display on the entry form" );
-                    writer.RenderEndTag();
-                    writer.RenderEndTag();
-
-                    writer.RenderEndTag();      // Label
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "grid-table table table-condensed table-light" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Table );
-
-                    writer.RenderBeginTag( HtmlTextWriterTag.Thead );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Tr );
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "grid-columncommand" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Th );
-                    writer.Write( "&nbsp;" );
-                    writer.RenderEndTag();
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Scope, "col" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Th );
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-3" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                    writer.Write( "Field" );
-                    writer.RenderEndTag();
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-9" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-2" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                    writer.Write( "Visible" );
-                    writer.RenderEndTag();
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-2" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                    writer.Write( "Editable" );
-                    writer.RenderEndTag();
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-2" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                    writer.Write( "Required" );
-                    writer.RenderEndTag();
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-2" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                    writer.Write( "Hide Label" );
-                    writer.RenderEndTag();
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-2" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                    writer.Write( "Pre-HTML" );
-                    writer.RenderEndTag();
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-xs-2" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                    writer.Write( "Post-HTML" );
-                    writer.RenderEndTag();
-
-                    writer.RenderEndTag();      // row
-
-                    writer.RenderEndTag();      // col-xs-9
-
-                    writer.RenderEndTag();      // row
-
-                    writer.RenderEndTag();      // th
-
-                    writer.RenderEndTag();      // tr
-                    writer.RenderEndTag();      // thead
-
-                    writer.AddAttribute( HtmlTextWriterAttribute.Class, "workflow-formfield-list" );
-                    writer.RenderBeginTag( HtmlTextWriterTag.Tbody );
-
-                    foreach ( var row in AttributeRows )
-                    {
-                        row.RenderControl( writer );
-                    }
-
-                    writer.RenderEndTag();      // tbody
-
-                    writer.RenderEndTag();      // table
-
-                    writer.RenderEndTag();      // Div.form-group
+                    row.RenderControl( writer );
                 }
 
-                _ceFooterText.ValidationGroup = ValidationGroup;
-                _ceFooterText.RenderControl( writer );
-                _falActions.RenderControl( writer );
+                writer.RenderEndTag();      // tbody
 
-                writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
-                writer.RenderBeginTag( HtmlTextWriterTag.Div );
+                writer.RenderEndTag();      // table
 
-                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
-                writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                _ddlActionAttribute.RenderControl( writer );
-                writer.RenderEndTag();
-
-                writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
-                writer.RenderBeginTag( HtmlTextWriterTag.Div );
-                writer.RenderEndTag();
-
-                writer.RenderEndTag();  // row
+                writer.RenderEndTag();      // Div.form-group
             }
+
+            _ceFooterText.ValidationGroup = ValidationGroup;
+            _ceFooterText.RenderControl( writer );
+            _falActions.RenderControl( writer );
+
+            writer.AddAttribute( HtmlTextWriterAttribute.Class, "row" );
+            writer.RenderBeginTag( HtmlTextWriterTag.Div );
+
+            writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+            writer.RenderBeginTag( HtmlTextWriterTag.Div );
+            _ddlActionAttribute.RenderControl( writer );
+            writer.RenderEndTag();
+
+            writer.AddAttribute( HtmlTextWriterAttribute.Class, "col-md-6" );
+            writer.RenderBeginTag( HtmlTextWriterTag.Div );
+            writer.RenderEndTag();
+
+            writer.RenderEndTag();  // row
         }
 
         /// <summary>

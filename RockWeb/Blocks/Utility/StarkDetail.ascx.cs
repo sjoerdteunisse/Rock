@@ -16,8 +16,11 @@
 //
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Web.UI;
+
 using Rock.Attribute;
+using Rock.Data;
 using Rock.Model;
 
 namespace RockWeb.Blocks.Utility
@@ -108,6 +111,8 @@ namespace RockWeb.Blocks.Utility
 
             if ( !Page.IsPostBack )
             {
+                personEditor.PersonLabelPrefix = "";
+                personEditor.SetFromPerson( new Person() );
                 // added for your convenience
 
                 // to show the created/modified by date time details in the PanelDrawer do something like this:
@@ -138,5 +143,31 @@ namespace RockWeb.Blocks.Utility
         // helper functional methods (like BindGrid(), etc.)
 
         #endregion
+
+        protected void btnSave_Click( object sender, EventArgs e )
+        {
+            var rockContext = new RockContext();
+            var personService = new PersonService( rockContext );
+
+            var personMatchQuery = new PersonService.PersonMatchQuery( personEditor.FirstName, personEditor.LastName, personEditor.Email, personEditor.MobilePhoneNumber )
+            {
+                Gender = personEditor.PersonGender,
+                BirthDate = personEditor.PersonBirthDate,
+                SuffixValueId = personEditor.PersonSuffixValueId
+            };
+
+            var existingPerson = personService.FindPerson( personMatchQuery, false );
+            if ( existingPerson != null )
+            {
+                personEditor.UpdatePerson( existingPerson, rockContext );
+            }
+            else
+            {
+                var person = new Person();
+                personEditor.UpdatePerson( person, rockContext );
+                personService.Add( person );
+            }
+            rockContext.SaveChanges();
+        }
     }
 }

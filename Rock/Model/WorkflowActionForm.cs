@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
@@ -127,10 +128,10 @@ namespace Rock.Model
         public bool AllowPersonEntry { get; set; }
 
         /// <summary>
-        /// Gets or sets the person entry pre HTML.
+        /// Gets or sets the person entry preHTML.
         /// </summary>
         /// <value>
-        /// The person entry pre HTML.
+        /// The person entry preHTML.
         /// </value>
         [DataMember]
         public string PersonEntryPreHtml { get; set; }
@@ -151,19 +152,19 @@ namespace Rock.Model
         ///   <c>true</c> if [person entry show campus]; otherwise, <c>false</c>.
         /// </value>
         [DataMember]
-        public bool PersonEntryShowCampus { get; set; }
+        public bool PersonEntryCampusIsVisible { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether [person entry autofill current person].
+        /// Gets or sets a value indicating whether Person Entry should auto-fill with the CurrentPerson
         /// </summary>
         /// <value>
-        ///   <c>true</c> if [person entry autofill current person]; otherwise, <c>false</c>.
+        ///   <c>true</c> if [person entry auto-fill current person]; otherwise, <c>false</c>.
         /// </value>
         [DataMember]
         public bool PersonEntryAutofillCurrentPerson { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether [person entry hide if current person known].
+        /// Gets or sets a value indicating whether Person Entry should be hidden if the CurrentPerson is known
         /// </summary>
         /// <value>
         ///   <c>true</c> if [person entry hide if current person known]; otherwise, <c>false</c>.
@@ -178,7 +179,7 @@ namespace Rock.Model
         /// The person entry spouse entry option.
         /// </value>
         [DataMember]
-        public PersonEntryOption PersonEntrySpouseEntryOption { get; set; } = PersonEntryOption.Hide;
+        public WorkflowActionFormPersonEntryOption PersonEntrySpouseEntryOption { get; set; } = WorkflowActionFormPersonEntryOption.Hidden;
 
         /// <summary>
         /// Gets or sets the person entry email entry option.
@@ -187,7 +188,7 @@ namespace Rock.Model
         /// The person entry email entry option.
         /// </value>
         [DataMember]
-        public PersonEntryOption PersonEntryEmailEntryOption { get; set; } = PersonEntryOption.Required;
+        public WorkflowActionFormPersonEntryOption PersonEntryEmailEntryOption { get; set; } = WorkflowActionFormPersonEntryOption.Required;
 
         /// <summary>
         /// Gets or sets the person entry mobile phone entry option.
@@ -196,7 +197,7 @@ namespace Rock.Model
         /// The person entry mobile phone entry option.
         /// </value>
         [DataMember]
-        public PersonEntryOption PersonEntryMobilePhoneEntryOption { get; set; } = PersonEntryOption.Hide;
+        public WorkflowActionFormPersonEntryOption PersonEntryMobilePhoneEntryOption { get; set; } = WorkflowActionFormPersonEntryOption.Hidden;
 
         /// <summary>
         /// Gets or sets the person entry birthdate entry option.
@@ -205,7 +206,7 @@ namespace Rock.Model
         /// The person entry birthdate entry option.
         /// </value>
         [DataMember]
-        public PersonEntryOption PersonEntryBirthdateEntryOption { get; set; } = PersonEntryOption.Hide;
+        public WorkflowActionFormPersonEntryOption PersonEntryBirthdateEntryOption { get; set; } = WorkflowActionFormPersonEntryOption.Hidden;
 
         /// <summary>
         /// Gets or sets the person entry address entry option.
@@ -214,7 +215,7 @@ namespace Rock.Model
         /// The person entry address entry option.
         /// </value>
         [DataMember]
-        public PersonEntryOption PersonEntryAddressEntryOption { get; set; } = PersonEntryOption.Hide;
+        public WorkflowActionFormPersonEntryOption PersonEntryAddressEntryOption { get; set; } = WorkflowActionFormPersonEntryOption.Hidden;
 
         /// <summary>
         /// Gets or sets the person entry marital status entry option.
@@ -223,7 +224,7 @@ namespace Rock.Model
         /// The person entry marital entry option.
         /// </value>
         [DataMember]
-        public PersonEntryOption PersonEntryMaritalStatusEntryOption { get; set; } = PersonEntryOption.Hide;
+        public WorkflowActionFormPersonEntryOption PersonEntryMaritalStatusEntryOption { get; set; } = WorkflowActionFormPersonEntryOption.Hidden;
 
         /// <summary>
         /// Gets or sets the person entry spouse label.
@@ -231,7 +232,8 @@ namespace Rock.Model
         /// <value>
         /// The person entry spouse label.
         /// </value>
-        [DataMember]
+        [MaxLength( 50 )]
+        [DataMember( IsRequired = false )]
         public string PersonEntrySpouseLabel { get; set; } = "Spouse";
 
         /// <summary>
@@ -505,28 +507,35 @@ namespace Rock.Model
 
             return buttonList;
         }
+    }
+
+    #region Enums
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public enum WorkflowActionFormPersonEntryOption
+    {
+        /// <summary>
+        /// Don't show the control
+        /// </summary>
+        [Description( "Hide" )]
+        Hidden = 0,
 
         /// <summary>
-        /// 
+        /// Control is visible, but a value is not required
         /// </summary>
-        public enum PersonEntryOption
-        {
-            /// <summary>
-            /// Don't show the control
-            /// </summary>
-            Hide = 0,
+        [Description( "Enabled" )]
+        Enabled = 1,
 
-            /// <summary>
-            /// Control is visible, but a value is not required
-            /// </summary>
-            Enabled = 1,
-
-            /// <summary>
-            /// Control is visible, and a value is required
-            /// </summary>
-            Required = 2,
-        }
+        /// <summary>
+        /// Control is visible, and a value is required
+        /// </summary>
+        [Description( "Required" )]
+        Required = 2,
     }
+
+    #endregion Enums
 
     #region Entity Configuration
 

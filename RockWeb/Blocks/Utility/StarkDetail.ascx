@@ -4,10 +4,10 @@
     <ContentTemplate>
 
         <asp:Panel ID="pnlView" runat="server" CssClass="panel panel-block">
-        
+
             <div class="panel-heading">
                 <h1 class="panel-title">
-                    <i class="fa fa-star"></i> 
+                    <i class="fa fa-star"></i>
                     Blank Detail Block
                 </h1>
 
@@ -15,28 +15,36 @@
                     <Rock:HighlightLabel ID="hlblTest" runat="server" LabelType="Info" Text="Label" />
                 </div>
             </div>
-            <Rock:PanelDrawer ID="pdAuditDetails" runat="server"></Rock:PanelDrawer>
             <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <Rock:PersonBasicEditor
+                            ID="personEditor"
+                            runat="server"
+                            ShowInColumns="false"
+                            PersonLabelPrefix=""
+                            ShowTitle="true"
+                            ShowSuffix="true"
+                            ShowConnectionStatus="true"
+                            ShowEmail="true"
+                            ShowMobilePhone="true"
+                            ShowGrade="false"
+                            ShowMaritalStatus="false"
+                            ShowPersonRole="false"
+                            RequireGender="true"/>
 
-                <div class="alert alert-info">
-                    <h4>Stark Template Block</h4>
-                    <p>This block serves as a starting point for creating new blocks. After copy/pasting it and renaming the resulting file be sure to make the following changes:</p>
+                        <asp:LinkButton ID="btnSave" runat="server" CssClass="btn btn-primary" Text="Save" OnClick="btnSave_Click" />
+                    </div>
+                    <div class="col-md-6">
 
-                    <strong>Changes to the Codebehind (ascx.cs) File</strong>
-                    <ul>
-                        <li>Update the namespace to match your directory</li>
-                        <li>Update the class name</li>
-                        <li>Fill in the DisplayName, Category and Description attributes</li>
-                    </ul>
-
-                    <strong>Changes to the Usercontrol (.ascx) File</strong>
-                    <ul>
-                        <li>Update the Inherits to match the namespace and class file</li>
-                        <li>Remove this text... unless you really like it...</li>
-                    </ul>
+                        
+                    </div>
                 </div>
+
             </div>
-        
+            
+            
+
         </asp:Panel>
 
     </ContentTemplate>
