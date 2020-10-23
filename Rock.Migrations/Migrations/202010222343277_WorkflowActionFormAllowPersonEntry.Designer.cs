@@ -13,7 +13,7 @@ namespace Rock.Migrations
         
         string IMigrationMetadata.Id
         {
-            get { return "202010221636470_WorkflowActionFormAllowPersonEntry"; }
+            get { return "202010222343277_WorkflowActionFormAllowPersonEntry"; }
         }
         
         string IMigrationMetadata.Source
