@@ -72,35 +72,59 @@ namespace Rock.Bus
         }
 
         /// <summary>
-        /// Publishes the entity update.
+        /// Publishes the message.
         /// </summary>
         /// <param name="message">The message.</param>
         public static async Task Publish<TQueue, TMessage>( TMessage message )
             where TQueue : IRockQueue, new()
             where TMessage : class, IRockMessage<TQueue>
         {
-            if ( !IsReady() )
-            {
-                return;
-            }
-
-            await _bus.Publish( message );
+            await Publish( message, typeof( TMessage ) );
         }
 
         /// <summary>
-        /// Publishes the entity update.
+        /// Publishes the message.
         /// </summary>
+        /// <typeparam name="TQueue">The type of the queue.</typeparam>
         /// <param name="message">The message.</param>
-        public static async Task Send<TQueue, TMessage>( TMessage message )
+        /// <param name="messageType">Type of the message.</param>
+        public static async Task Publish<TQueue>( IRockMessage<TQueue> message, Type messageType )
             where TQueue : IRockQueue, new()
-            where TMessage : class, IRockMessage<TQueue>
         {
             if ( !IsReady() )
             {
                 return;
             }
 
-            var queue = RockConsumer<TQueue, TMessage>.GetQueue();
+            await _bus.Publish( message, messageType );
+        }
+
+        /// <summary>
+        /// Sends the message.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        public static async Task Send<TQueue, TMessage>( TMessage message )
+            where TQueue : IRockQueue, new()
+            where TMessage : class, IRockMessage<TQueue>
+        {
+            await Send( message, typeof( TMessage ) );
+        }
+
+        /// <summary>
+        /// Sends the message.
+        /// </summary>
+        /// <typeparam name="TQueue">The type of the queue.</typeparam>
+        /// <param name="message">The message.</param>
+        /// <param name="messageType">Type of the message.</param>
+        public static async Task Send<TQueue>( IRockMessage<TQueue> message, Type messageType )
+            where TQueue : IRockQueue, new()
+        {
+            if ( !IsReady() )
+            {
+                return;
+            }
+
+            var queue = Activator.CreateInstance<TQueue>();
             var endpoint = _sendEndpoints.GetValueOrNull( queue.Name );
 
             if ( endpoint == null )
@@ -109,7 +133,7 @@ namespace Rock.Bus
                 _sendEndpoints[queue.Name] = endpoint;
             }
 
-            await endpoint.Send( message );
+            await endpoint.Send( message, messageType );
         }
 
         /// <summary>

@@ -112,10 +112,7 @@ namespace Rock.Bus.Message
             message.EntityTypeId = entity.TypeId;
             message.EntityState = entityState.ToString();
 
-            typeof( RockMessageBus )
-                .GetMethod( nameof( RockMessageBus.Publish ) )
-                .MakeGenericMethod( typeof( EntityUpdateQueue ), messageType )
-                .Invoke( null, new[] { message } );
+            _ = RockMessageBus.Publish( message, messageType );
         }
 
         /// <summary>

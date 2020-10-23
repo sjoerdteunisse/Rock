@@ -79,10 +79,7 @@ namespace Rock.Bus.Message
             message.CacheName = itemType.FullName;
             message.EventType = callerMethodName;
 
-            typeof( RockMessageBus )
-                .GetMethod( nameof( RockMessageBus.Publish ) )
-                .MakeGenericMethod( typeof( CacheQueue ), messageType )
-                .Invoke( null, new[] { message } );
+            _ = RockMessageBus.Publish( message, messageType );
         }
     }
 }

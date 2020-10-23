@@ -15,111 +15,47 @@
 // </copyright>
 //
 
+using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
-using MassTransit;
 using Rock.Bus.Message;
 using Rock.Bus.Queue;
 using Rock.Model;
-using Rock.Web.Cache;
 
 namespace Rock.Bus.Consumer
 {
     /// <summary>
-    /// Entity Update Consumer
+    /// Abstract Debug Consumer
     /// </summary>
-    public class RockDebugConsumer
+    public abstract class RockDebugConsumer<TQueue, TMessage> : RockConsumer<TQueue, TMessage>
+        where TQueue : IRockQueue, new()
+        where TMessage : class, IRockMessage<TQueue>
     {
         /// <summary>
-        /// Entity Update Debug
+        /// Consumes the specified message.
         /// </summary>
-        public class EntityUpdate :
-            IRockConsumer<EntityUpdateQueue, IEntityWasUpdatedMessage>,
-            IRockConsumer<EntityUpdateQueue, EntityWasUpdatedMessage>,
-            IRockConsumer<EntityUpdateQueue, IEntityWasUpdatedMessage<Person>>,
-            IRockConsumer<EntityUpdateQueue, EntityWasUpdatedMessage<Person>>
+        /// <param name="message">The message.</param>
+        public override void Consume( TMessage message )
         {
-            private const string QueueName = nameof( EntityUpdateQueue );
+            var messageJson = message.ToJson();
+            var queueName = Activator.CreateInstance<TQueue>().Name;
+            var messageType = typeof( TMessage ).FullName;
+            var consumerName = GetType().FullName;
 
-            /// <summary>
-            /// Consumes the specified context.
-            /// </summary>
-            /// <param name="context">The context.</param>
-            /// <returns></returns>
-            public Task Consume( ConsumeContext<IEntityWasUpdatedMessage> context )
-            {
-                var json = context.Message.ToJson();
-                WriteToDebug( QueueName, "IEntityWasUpdatedMessage", json );
-                return Task.Delay( 0 );
-            }
-
-            /// <summary>
-            /// Consumes the specified context.
-            /// </summary>
-            /// <param name="context">The context.</param>
-            /// <returns></returns>
-            public Task Consume( ConsumeContext<EntityWasUpdatedMessage> context )
-            {
-                var json = context.Message.ToJson();
-                WriteToDebug( QueueName, "EntityWasUpdatedMessage", json );
-                return Task.Delay( 0 );
-            }
-
-            /// <summary>
-            /// Consumes the specified context.
-            /// </summary>
-            /// <param name="context">The context.</param>
-            /// <returns></returns>
-            public Task Consume( ConsumeContext<IEntityWasUpdatedMessage<Person>> context )
-            {
-                var json = context.Message.ToJson();
-                WriteToDebug( QueueName, "IEntityWasUpdatedMessage<Person>", json );
-                return Task.Delay( 0 );
-            }
-
-            /// <summary>
-            /// Consumes the specified context.
-            /// </summary>
-            /// <param name="context">The context.</param>
-            /// <returns></returns>
-            public Task Consume( ConsumeContext<EntityWasUpdatedMessage<Person>> context )
-            {
-                var json = context.Message.ToJson();
-                WriteToDebug( QueueName, "EntityWasUpdatedMessage<Person>", json );
-                return Task.Delay( 0 );
-            }
+            Debug.WriteLine( $"==================\nConsumer: {consumerName}\nQueue: {queueName}\nMessageType: {messageType}\n{messageJson}" );
         }
+    }
 
-        /// <summary>
-        /// Cache Queue Debug
-        /// </summary>
-        public class CacheUpdate :
-            IRockConsumer<CacheQueue, ICacheWasUpdatedMessage<StepTypeCache>>
-        {
-            private const string QueueName = nameof( CacheQueue );
+    /// <summary>
+    /// Person Was Updated
+    /// </summary>
+    public class FirstPersonWasUpdatedConsumer : RockDebugConsumer<EntityUpdateQueue, EntityWasUpdatedMessage<Person>>
+    {
+    }
 
-            /// <summary>
-            /// Consumes the specified context.
-            /// </summary>
-            /// <param name="context">The context.</param>
-            /// <returns></returns>
-            public Task Consume( ConsumeContext<ICacheWasUpdatedMessage<StepTypeCache>> context )
-            {
-                var json = context.Message.ToJson();
-                WriteToDebug( QueueName, "ICacheWasUpdatedMessage<StepTypeCache>", json );
-                return Task.Delay( 0 );
-            }
-        }
-
-        /// <summary>
-        /// Writes to debug.
-        /// </summary>
-        /// <param name="queueName">Name of the queue.</param>
-        /// <param name="messageType">Type of the message.</param>
-        /// <param name="messageJson">The json.</param>
-        public static void WriteToDebug( string queueName, string messageType, string messageJson )
-        {
-            Debug.WriteLine( $"==================\nQueue: {queueName}\nMessageType: {messageType}\n{messageJson}" );
-        }
+    /// <summary>
+    /// Person Was Updated
+    /// </summary>
+    public class SecondPersonWasUpdatedConsumer : RockDebugConsumer<EntityUpdateQueue, EntityWasUpdatedMessage<Person>>
+    {
     }
 }
