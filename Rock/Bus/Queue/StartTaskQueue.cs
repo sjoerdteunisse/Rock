@@ -20,7 +20,7 @@ namespace Rock.Bus.Queue
     /// <summary>
     /// A Rock Message Bus Queue for Entity Updates
     /// </summary>
-    public sealed class StartTaskQueue : IRockQueue
+    public sealed class StartTaskQueue : RockQueue
     {
         /// <summary>
         /// Gets the queue name.
@@ -28,6 +28,6 @@ namespace Rock.Bus.Queue
         /// <value>
         /// The name.
         /// </value>
-        public string Name => "rock-start-task-queue";
+        public override string Name => "rock-start-task-queue";
     }
 }

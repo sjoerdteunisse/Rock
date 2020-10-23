@@ -20,12 +20,12 @@ using Rock.Bus.Message;
 using Rock.Bus.Queue;
 using Rock.Model;
 
-namespace Rock.Bus.Consumer
+namespace Rock.Bus.Observer
 {
     /// <summary>
-    /// Abstract Debug Consumer
+    /// Abstract Debug Observer
     /// </summary>
-    public abstract class RockDebugConsumer<TQueue, TMessage> : RockConsumer<TQueue, TMessage>
+    public abstract class RockDebugObserver<TQueue, TMessage> : RockObserver<TQueue, TMessage>
         where TQueue : IRockQueue, new()
         where TMessage : class, IRockMessage<TQueue>
     {
@@ -33,28 +33,35 @@ namespace Rock.Bus.Consumer
         /// Consumes the specified message.
         /// </summary>
         /// <param name="message">The message.</param>
-        public override void Consume( TMessage message )
+        public override void Observe( TMessage message )
         {
             var messageJson = message.ToJson();
             var queueName = GetQueue().Name;
             var messageType = typeof( TMessage ).FullName;
-            var consumerName = GetType().FullName;
+            var observerName = GetType().FullName;
 
-            Debug.WriteLine( $"==================\nConsumer: {consumerName}\nQueue: {queueName}\nMessageType: {messageType}\n{messageJson}" );
+            Debug.WriteLine( $"==================\nObserver: {observerName}\nQueue: {queueName}\nMessageType: {messageType}\n{messageJson}" );
         }
     }
 
     /// <summary>
     /// Person Was Updated
     /// </summary>
-    public class FirstPersonWasUpdatedConsumer : RockDebugConsumer<EntityUpdateQueue, EntityWasUpdatedMessage<Person>>
+    public class FirstPersonWasUpdatedObserver : RockDebugObserver<EntityUpdateQueue, EntityWasUpdatedMessage<Person>>
     {
     }
 
     /// <summary>
     /// Person Was Updated
     /// </summary>
-    public class SecondPersonWasUpdatedConsumer : RockDebugConsumer<EntityUpdateQueue, EntityWasUpdatedMessage<Person>>
+    public class SecondPersonWasUpdatedObserver : RockDebugObserver<EntityUpdateQueue, EntityWasUpdatedMessage<Person>>
+    {
+    }
+
+    /// <summary>
+    /// Person Was Updated
+    /// </summary>
+    public class FirstGroupWasUpdatedObserver : RockDebugObserver<EntityUpdateQueue, EntityWasUpdatedMessage<Group>>
     {
     }
 }

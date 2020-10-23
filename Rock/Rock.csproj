@@ -545,10 +545,12 @@
     <Compile Include="Bus\Message\CacheWasUpdatedMessage.cs" />
     <Compile Include="Bus\Message\IRockMessage.cs" />
     <Compile Include="Bus\Message\EntityWasUpdatedMessage.cs" />
+    <Compile Include="Bus\Observer\RockDebugObserver.cs" />
+    <Compile Include="Bus\Observer\RockObserver.cs" />
     <Compile Include="Bus\Queue\CacheQueue.cs" />
     <Compile Include="Bus\Queue\StartTaskQueue.cs" />
     <Compile Include="Bus\Queue\EntityUpdateQueue.cs" />
-    <Compile Include="Bus\Queue\IRockQueue.cs" />
+    <Compile Include="Bus\Queue\RockQueue.cs" />
     <Compile Include="Bus\RockMessageBus.cs" />
     <Compile Include="Bus\Transport\Component\InMemory.cs" />
     <Compile Include="Bus\Transport\Component\RabbitMq.cs" />

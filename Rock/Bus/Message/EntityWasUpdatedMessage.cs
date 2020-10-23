@@ -74,6 +74,11 @@ namespace Rock.Bus.Message
         public string EntityState { get; set; }
 
         /// <summary>
+        /// Gets or sets the expiration time.
+        /// </summary>
+        public DateTime? __ExpirationTime { get; set; }
+
+        /// <summary>
         /// The of an entity that will cause publishing a message on the <see cref="RockMessageBus"/>
         /// </summary>
         private static readonly HashSet<EntityState> _statesToPublishOnBus = new HashSet<EntityState> {

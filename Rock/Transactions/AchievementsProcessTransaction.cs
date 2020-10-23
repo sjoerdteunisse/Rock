@@ -103,6 +103,14 @@ namespace Rock.Transactions
             /// The entity identifier.
             /// </value>
             public Guid EntityGuid { get; set; }
+
+            /// <summary>
+            /// Gets or sets the expiration time.
+            /// </summary>
+            /// <value>
+            /// The expiration time.
+            /// </value>
+            public DateTime? __ExpirationTime { get; set; }
         }
 
         #endregion Helper Classes

@@ -18,8 +18,10 @@
 using MassTransit;
 using Rock.Bus.Consumer;
 using Rock.Bus.Message;
+using Rock.Bus.Observer;
 using Rock.Bus.Queue;
 using Rock.Bus.Transport;
+using Rock.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,6 +65,7 @@ namespace Rock.Bus
             try
             {
                 _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
+                RockObserver.ConfigureRockObservers( _bus );
                 await _bus.StartAsync();
             }
             catch ( Exception e )
@@ -96,6 +99,7 @@ namespace Rock.Bus
                 return;
             }
 
+            ApplyMessageHeaders( message );
             await _bus.Publish( message, messageType );
         }
 
@@ -124,7 +128,7 @@ namespace Rock.Bus
                 return;
             }
 
-            var queue = Activator.CreateInstance<TQueue>();
+            var queue = RockQueue.Get<TQueue>();
             var endpoint = _sendEndpoints.GetValueOrNull( queue.Name );
 
             if ( endpoint == null )
@@ -133,6 +137,7 @@ namespace Rock.Bus
                 _sendEndpoints[queue.Name] = endpoint;
             }
 
+            ApplyMessageHeaders( message );
             await endpoint.Send( message, messageType );
         }
 
@@ -145,6 +150,18 @@ namespace Rock.Bus
         private static bool IsReady()
         {
             return _transportComponent != null && _bus != null;
+        }
+
+        /// <summary>
+        /// Applies the queue message headers.
+        /// </summary>
+        /// <typeparam name="TQueue">The type of the queue.</typeparam>
+        /// <param name="message">The message.</param>
+        private static void ApplyMessageHeaders<TQueue>( IRockMessage<TQueue> message )
+            where TQueue : IRockQueue, new()
+        {
+            var queue = RockQueue.Get<TQueue>();
+            message.__ExpirationTime = RockDateTime.Now.AddSeconds( queue.TimeToLiveSeconds );
         }
     }
 }

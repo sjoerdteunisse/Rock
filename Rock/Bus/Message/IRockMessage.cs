@@ -15,6 +15,7 @@
 // </copyright>
 //
 
+using System;
 using Rock.Bus.Queue;
 
 namespace Rock.Bus.Message
@@ -25,5 +26,12 @@ namespace Rock.Bus.Message
     public interface IRockMessage<TQueue>
         where TQueue : IRockQueue, new()
     {
+        /// <summary>
+        /// Gets or sets the expiration time.
+        /// </summary>
+        /// <value>
+        /// The expiration time.
+        /// </value>
+        DateTime? __ExpirationTime { get; set; }
     }
 }

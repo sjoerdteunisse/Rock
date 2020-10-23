@@ -26,10 +26,24 @@ using Rock.Bus.Queue;
 namespace Rock.Bus.Consumer
 {
     /// <summary>
+    /// Rock Consumer Interface.
+    /// </summary>
+    public interface IRockConsumer
+    {
+        /// <summary>
+        /// Gets the instance.
+        /// </summary>
+        /// <value>
+        /// The instance.
+        /// </value>
+        IRockConsumer Instance { get; }
+    }
+
+    /// <summary>
     /// Rock Consumer Interface
     /// </summary>
     /// <seealso cref="IConsumer" />
-    public interface IRockConsumer<TQueue, TMessage> : IConsumer<TMessage>
+    public interface IRockConsumer<TQueue, TMessage> : IRockConsumer, IConsumer<TMessage>
         where TQueue : IRockQueue, new()
         where TMessage : class, IRockMessage<TQueue>
     {
@@ -81,7 +95,15 @@ namespace Rock.Bus.Consumer
 
             return _queue;
         }
-        private static IRockQueue _queue = null; 
+        private static IRockQueue _queue = null;
+
+        /// <summary>
+        /// Gets the instance.
+        /// </summary>
+        /// <value>
+        /// The instance.
+        /// </value>
+        public virtual IRockConsumer Instance => Activator.CreateInstance( GetType() ) as IRockConsumer;
     }
 
     /// <summary>
@@ -177,6 +199,16 @@ namespace Rock.Bus.Consumer
         /// <returns></returns>
         public static IRockQueue GetQueue( Type consumerType )
         {
+            return Activator.CreateInstance( GetQueueType( consumerType ) ) as IRockQueue;
+        }
+
+        /// <summary>
+        /// Gets the queue type for the consumer type.
+        /// </summary>
+        /// <param name="consumerType">Type of the consumer.</param>
+        /// <returns></returns>
+        public static Type GetQueueType( Type consumerType )
+        {
             var queueInterface = typeof( IRockQueue );
             var typeInterfaces = consumerType.GetInterfaces().Where( i => i.IsGenericType );
 
@@ -190,7 +222,36 @@ namespace Rock.Bus.Consumer
                     {
                         if ( genericTypeArgument.GetInterfaces().Contains( queueInterface ) )
                         {
-                            return Activator.CreateInstance( genericTypeArgument ) as IRockQueue;
+                            return genericTypeArgument;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the message type for the consumer type.
+        /// </summary>
+        /// <param name="consumerType">Type of the consumer.</param>
+        /// <returns></returns>
+        public static Type GetMessageType( Type consumerType )
+        {
+            var messageInterface = typeof( IRockMessage<> );
+            var typeInterfaces = consumerType.GetInterfaces().Where( i => i.IsGenericType );
+
+            foreach ( var typeInterface in typeInterfaces )
+            {
+                var genericInterface = typeInterface.GetGenericTypeDefinition();
+
+                if ( genericInterface == _genericInterfaceType )
+                {
+                    foreach ( var genericTypeArgument in typeInterface.GenericTypeArguments )
+                    {
+                        if ( genericTypeArgument.GetInterfaces().Contains( messageInterface ) )
+                        {
+                            return genericTypeArgument;
                         }
                     }
                 }
