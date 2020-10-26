@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using DotLiquid;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Rock.Data;
@@ -9,17 +8,19 @@ using Rock.Tests.Shared;
 
 namespace Rock.Tests.Integration.Lava
 {
+    /// <summary>
+    /// Tests for Lava Command "CalendarEvents".
+    /// </summary>
+    /// <remarks>
+    /// These tests require the standard Rock sample data set to be present in the target database.
+    /// </remarks>
     [TestClass]
     public class CalendarEventsCommandTests
     {
         private static string InternalCalendarGuidString = "8C7F7F4E-1C51-41D3-9AC3-02B3F4054798";
-        private static string PublicCalendarGuidString = "8A444668-19AF-4417-9C74-09F842572974";
-        private static string StaffAudienceGuidString = "833EE2C7-F83A-4744-AD14-6907554DF8AE";
         private static string YouthAudienceGuidString = "59CD7FD8-6A62-4C3B-8966-1520E74EED58";
-        
-        private static string LavaTemplateCalendarEvents = @";
-        
 
+        private static string LavaTemplateCalendarEvents = @";
 {% calendarevents {parameters} %}
   {% assign eventItemOccurrenceCount = EventItemOccurrences | Size %}
   <<EventCount = {{ EventItemOccurrences | Size }}>>
@@ -30,7 +31,6 @@ namespace Rock.Tests.Integration.Lava
   {% endfor %}
 {% endcalendarevents %}
 ";
-
 
         [ClassInitialize]
         public static void ClassInitialize( TestContext testContext )
@@ -113,7 +113,7 @@ namespace Rock.Tests.Integration.Lava
 
             Assert.That.Contains( output, "Calendar Events not available. Cannot find a calendar matching the reference \"no_calendar\"." );
         }
-        
+
         [TestMethod]
         public void CalendarEventsCommand_WithAudienceAsName_RetrievesEventsWithMatchingAudience()
         {
@@ -177,7 +177,6 @@ namespace Rock.Tests.Integration.Lava
 
             var output = template.ResolveMergeFields( null );
 
-            //Assert.That.Contains( output, "<EventCount = 2>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-01-01|12:00 AM|All Campuses>>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-02-26|12:00 AM|All Campuses>>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-03-25|12:00 AM|All Campuses>>" );
@@ -194,7 +193,6 @@ namespace Rock.Tests.Integration.Lava
             var output = template.ResolveMergeFields( null );
 
             // Staff Meeting recurs every 2 weeks, so our date range of 5 weeks should only include 2 occurrences.
-            //Assert.That.Contains( output, "<EventCount = 2>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-01-01|12:00 AM|All Campuses>>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-01-15|12:00 AM|All Campuses>>" );
 
@@ -209,7 +207,6 @@ namespace Rock.Tests.Integration.Lava
             var output = template.ResolveMergeFields( null );
 
             // Staff Meeting recurs every 2 weeks, so our date range of 27d should only include 2 occurrences.
-            //Assert.That.Contains( output, "<EventCount = 2>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-01-01|12:00 AM|All Campuses>>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-01-15|12:00 AM|All Campuses>>" );
 
@@ -224,8 +221,6 @@ namespace Rock.Tests.Integration.Lava
             var output = template.ResolveMergeFields( null );
 
             Assert.That.Contains( output, "<EventCount = 0>" );
-            //Assert.That.Contains( output, "<<Staff Meeting|2020-01-01|12:00 AM|All Campuses>>" );
-            //Assert.That.Contains( output, "<<Staff Meeting|2020-12-30|12:00 AM|All Campuses>>" );
         }
 
         [TestMethod]

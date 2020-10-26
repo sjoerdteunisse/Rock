@@ -25,8 +25,10 @@ namespace Rock.Lava
     /// <summary>
     /// Provides functions to parse and read the attributes specified for a command or shortcode element specified in a Lava Template.
     /// Attributes are specified using the following format:
+    /// <![CDATA[
     /// <lavatag param1:value_without_spaces param2:'value with spaces' ... >
     /// </lavatag>
+    /// ]]>
     /// </summary>
     public class LavaElementAttributes
     {

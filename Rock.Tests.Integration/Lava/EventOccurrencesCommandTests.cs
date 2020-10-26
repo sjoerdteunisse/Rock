@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using DotLiquid;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Rock.Data;
@@ -9,17 +8,18 @@ using Rock.Tests.Shared;
 
 namespace Rock.Tests.Integration.Lava
 {
+    /// <summary>
+    /// Tests for Lava Command "EventOccurrences".
+    /// </summary>
+    /// <remarks>
+    /// These tests require the standard Rock sample data set to be present in the target database.
+    /// </remarks>
     [TestClass]
     public class EventOccurrencesCommandTests
     {
         private static string StaffMeetingEventGuidString = "93104654-DAFA-489B-A175-5F2AB3A846F1";
-        private static string PublicCalendarGuidString = "8A444668-19AF-4417-9C74-09F842572974";
-        private static string StaffAudienceGuidString = "833EE2C7-F83A-4744-AD14-6907554DF8AE";
-        private static string YouthAudienceGuidString = "59CD7FD8-6A62-4C3B-8966-1520E74EED58";
-        
-        private static string LavaTemplateEventOccurrences = @";
-        
 
+        private static string LavaTemplateEventOccurrences = @";
 {% eventoccurrences {parameters} %}
   {% assign eventItemOccurrenceCount = EventItemOccurrences | Size %}
   <<EventCount = {{ EventItemOccurrences | Size }}>>
@@ -30,7 +30,6 @@ namespace Rock.Tests.Integration.Lava
   {% endfor %}
 {% endeventoccurrences %}
 ";
-
 
         [ClassInitialize]
         public static void ClassInitialize( TestContext testContext )
@@ -126,62 +125,6 @@ namespace Rock.Tests.Integration.Lava
 
             Assert.That.Contains( output, "Event Occurrences not available. Cannot find an Event matching the reference \"no_event\"." );
         }
-        
-        //[TestMethod]
-        //public void EventOccurrencesCommand_WithAudienceAsName_RetrievesOccurrencesWithMatchingAudience()
-        //{
-        //    var template = GetTestTemplate( "calendarid:'Public' audienceids:'Youth' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
-
-        //    var output = template.ResolveMergeFields( null );
-
-        //    Assert.That.Contains( output, "<Audiences: All Church, Adults, Youth>" );
-        //}
-        //public void EventOccurrencesCommand_WithAudienceAsMultipleValues_RetrievesOccurrencesWithAnyMatchingAudience()
-        //{
-        //    var template = GetTestTemplate( "calendarid:'Public' audienceids:'Men,Women' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
-
-        //    var output = template.ResolveMergeFields( null );
-
-        //    Assert.That.Contains( output, "<Audiences: Internal>" );
-        //}
-
-        //[TestMethod]
-        //public void EventOccurrencesCommand_WithAudienceAsId_RetrievesOccurrencesWithMatchingAudience()
-        //{
-        //    var rockContext = new RockContext();
-
-        //    var audienceGuid = SystemGuid.DefinedType.CONTENT_CHANNEL_AUDIENCE_TYPE.AsGuid();
-
-        //    var definedValueId = new DefinedTypeService( rockContext ).Queryable()
-        //        .FirstOrDefault( x => x.Guid == audienceGuid )
-        //        .DefinedValues.FirstOrDefault( x => x.Value == "All Church" ).Id;
-
-        //    var template = GetTestTemplate( $"calendarid:'Public' audienceids:'{definedValueId}' startdate:'2018-1-1'" );
-
-        //    var output = template.ResolveMergeFields( null );
-
-        //    Assert.That.Contains( output, "<Audiences: All Church," );
-        //}
-
-        //[TestMethod]
-        //public void EventOccurrencesCommand_WithAudienceAsGuid_RetrievesOccurrencesWithMatchingAudience()
-        //{
-        //    var template = GetTestTemplate( $"calendarid:'Public' audienceids:'{YouthAudienceGuidString}' startdate:'2018-1-1'" );
-
-        //    var output = template.ResolveMergeFields( null );
-
-        //    Assert.That.Contains( output, "<Audiences: All Church, Adults, Youth" );
-        //}
-
-        //[TestMethod]
-        //public void EventOccurrencesCommand_WithAudienceInvalidValue_RendersErrorMessage()
-        //{
-        //    var template = GetTestTemplate( "eventid:'Staff Meeting' audienceids:'no_audience'" );
-
-        //    var output = template.ResolveMergeFields( null );
-
-        //    Assert.That.Contains( output, "Calendar Events not available. Cannot apply an audience filter for the reference \"no_audience\"." );
-        //}
 
         [TestMethod]
         public void EventOccurrencesCommand_WithDateRangeInMonths_ReturnsExpectedEvents()
@@ -190,7 +133,6 @@ namespace Rock.Tests.Integration.Lava
 
             var output = template.ResolveMergeFields( null );
 
-            //Assert.That.Contains( output, "<EventCount = 2>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-01-01|12:00 AM|All Campuses>>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-02-26|12:00 AM|All Campuses>>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-03-25|12:00 AM|All Campuses>>" );
@@ -207,7 +149,6 @@ namespace Rock.Tests.Integration.Lava
             var output = template.ResolveMergeFields( null );
 
             // Staff Meeting recurs every 2 weeks, so our date range of 5 weeks should only include 2 occurrences.
-            //Assert.That.Contains( output, "<EventCount = 2>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-01-01|12:00 AM|All Campuses>>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-01-15|12:00 AM|All Campuses>>" );
 
@@ -222,7 +163,6 @@ namespace Rock.Tests.Integration.Lava
             var output = template.ResolveMergeFields( null );
 
             // Staff Meeting recurs every 2 weeks, so our date range of 27d should only include 2 occurrences.
-            //Assert.That.Contains( output, "<EventCount = 2>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-01-01|12:00 AM|All Campuses>>" );
             Assert.That.Contains( output, "<<Staff Meeting|2020-01-15|12:00 AM|All Campuses>>" );
 
@@ -237,8 +177,6 @@ namespace Rock.Tests.Integration.Lava
             var output = template.ResolveMergeFields( null );
 
             Assert.That.Contains( output, "<EventCount = 0>" );
-            //Assert.That.Contains( output, "<<Staff Meeting|2020-01-01|12:00 AM|All Campuses>>" );
-            //Assert.That.Contains( output, "<<Staff Meeting|2020-12-30|12:00 AM|All Campuses>>" );
         }
 
         [TestMethod]
@@ -308,192 +246,5 @@ namespace Rock.Tests.Integration.Lava
 
             Assert.That.Contains( output, "Event Occurrences not available. Invalid configuration setting \"maxoccurrences\"." );
         }
-
-        /*
-        var expectedOutput = @"
-    Staff Meeting|1/01/2020|12:00 AM|All Campuses|
-  
-    Warrior Youth Event|5/01/2020|3:00 PM|All Campuses|
-  
-    Staff Meeting|15/01/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|29/01/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|12/02/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|26/02/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|11/03/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|25/03/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|8/04/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|22/04/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|6/05/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|20/05/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|3/06/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|17/06/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|1/07/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|15/07/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|29/07/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|12/08/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|26/08/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|9/09/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|23/09/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|7/10/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|21/10/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|4/11/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|18/11/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|2/12/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|16/12/2020|12:00 AM|All Campuses|
-  
-    Staff Meeting|30/12/2020|12:00 AM|All Campuses|
-";
-            Assert.That.Contains( output, "Liquid error: Execution Timeout Expired." );
-        }
-        */
-        /*
-                [TestMethod]
-                public void SqlSelectLongTimeoutShouldPass()
-                {
-                    var lavaScript = @"{% sql timeout:'40' %}
-
-                    WAITFOR DELAY '00:00:35';
-                    SELECT TOP 5 * 
-                    FROM Person
-                    {% endsql %}
-
-                    [
-                    {%- for item in results -%}
-                        {
-                                ""CreatedDateTime"": {{ item.CreatedDateTime | ToJSON }},
-                                ""LastName"": {{ item.LastName | ToJSON }},
-                        }{% unless forloop.last -%},{% endunless %}
-                    {%- endfor -%}
-                    ]";
-
-                    var output = lavaScript.ResolveMergeFields( new Dictionary<string, object>(), null, "Sql" );
-                    Assert.That.IsFalse( output.Contains( "Liquid error" ) );
-                }
-
-                [TestMethod]
-                public void SqlSelectNoTimeoutShouldPass()
-                {
-                    var lavaScript = @"{% sql %}
-
-                    SELECT TOP 5 * 
-                    FROM Person
-                    {% endsql %}
-
-                    [
-                    {%- for item in results -%}
-                        {
-                                ""CreatedDateTime"": {{ item.CreatedDateTime | ToJSON }},
-                                ""LastName"": {{ item.LastName | ToJSON }},
-                        }{% unless forloop.last -%},{% endunless %}
-                    {%- endfor -%}
-                    ]";
-
-                    var output = lavaScript.ResolveMergeFields( new Dictionary<string, object>(), null, "Sql" );
-                    Assert.That.IsFalse( output.Contains( "Liquid error" ) );
-                }
-
-                [TestMethod]
-                public void SqlSelectNoTimeoutButQueryLongerThen30SecondsShouldFail()
-                {
-                    var lavaScript = @"{% sql %}
-
-                    WAITFOR DELAY '00:00:35';
-                    SELECT TOP 5 * 
-                    FROM Person
-                    {% endsql %}
-
-                    [
-                    {%- for item in results -%}
-                        {
-                                ""CreatedDateTime"": {{ item.CreatedDateTime | ToJSON }},
-                                ""LastName"": {{ item.LastName | ToJSON }},
-                        }{% unless forloop.last -%},{% endunless %}
-                    {%- endfor -%}
-                    ]";
-
-                    var output = lavaScript.ResolveMergeFields( new Dictionary<string, object>(), null, "Sql" );
-                    Assert.That.Contains( output, "Liquid error: Execution Timeout Expired." );
-                }
-
-                [TestMethod]
-                public void SqlCommandShortTimeoutShouldFail()
-                {
-                    var lavaScript = @"{% sql statement:'command' timeout:'10' %}
-                        WAITFOR DELAY '00:00:20';
-                        DELETE FROM [DefinedValue] WHERE 1 != 1
-                    {% endsql %}
-
-                    {{ results }} {{ 'record' | PluralizeForQuantity:results }} were deleted.";
-
-                    var output = lavaScript.ResolveMergeFields( new Dictionary<string, object>(), null, "Sql" );
-                    Assert.That.Contains( output, "Liquid error: Execution Timeout Expired." );
-                }
-
-                [TestMethod]
-                public void SqlCommandLongTimeoutShouldPass()
-                {
-                    var lavaScript = @"{% sql statement:'command' timeout:'40' %}
-                        WAITFOR DELAY '00:00:35';
-                        DELETE FROM [DefinedValue] WHERE 1 != 1
-                    {% endsql %}
-
-                    {{ results }} {{ 'record' | PluralizeForQuantity:results }} were deleted.";
-
-                    var output = lavaScript.ResolveMergeFields( new Dictionary<string, object>(), null, "Sql" );
-                    Assert.That.IsFalse( output.Contains( "Liquid error" ) );
-                }
-
-                [TestMethod]
-                public void SqlCommandNoTimeoutShouldPass()
-                {
-                    var lavaScript = @"{% sql statement:'command' %}
-                        DELETE FROM [DefinedValue] WHERE 1 != 1
-                    {% endsql %}
-
-                    {{ results }} {{ 'record' | PluralizeForQuantity:results }} were deleted.";
-
-                    var output = lavaScript.ResolveMergeFields( new Dictionary<string, object>(), null, "Sql" );
-                    Assert.That.IsFalse( output.Contains( "Liquid error" ) );
-                }
-
-                [TestMethod]
-                public void SqlCommandNoTimeoutButQueryLongerThen30SecondsShouldFail()
-                {
-                    var lavaScript = @"{% sql statement:'command' %}
-                        WAITFOR DELAY '00:00:35';
-                        DELETE FROM [DefinedValue] WHERE 1 != 1
-                    {% endsql %}
-
-                    {{ results }} {{ 'record' | PluralizeForQuantity:results }} were deleted.";
-
-                    var output = lavaScript.ResolveMergeFields( new Dictionary<string, object>(), null, "Sql" );
-                    Assert.That.Contains( output, "Liquid error: Execution Timeout Expired." );
-                }
-        */
     }
-
 }

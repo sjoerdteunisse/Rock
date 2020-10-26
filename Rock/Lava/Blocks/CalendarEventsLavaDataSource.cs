@@ -34,17 +34,35 @@ namespace Rock.Lava.Blocks
         #region Filter Parameter Names
 
         /// <summary>
-        /// The name of the element as it is used in the source document.
+        /// Parameter name for specifying the Calendar from which the Event Occurrences should be retrieved. If not specified, all calendars are considered.
         /// </summary>
         public static readonly string ParameterCalendarId = "calendarid";
+        /// <summary>
+        /// Parameter name for specifying the Event for which occurrences should be retrieved.
+        /// </summary>
         public static readonly string ParameterEventId = "eventid";
+        /// <summary>
+        /// Parameter name for specifying maximum occurrences. If not specified, the default value is 100.
+        /// </summary>
         public static readonly string ParameterMaxOccurrences = "maxoccurrences";
+        /// <summary>
+        /// Parameter name for specifying the start date of the filter period. If not specified, the default value is today.
+        /// </summary>
         public static readonly string ParameterStartDate = "startdate";
+        /// <summary>
+        /// Parameter name for specifying the maximum date range from the start date. If not specified, the default value is 100 years.
+        /// </summary>
         public static readonly string ParameterDateRange = "daterange";
+        /// <summary>
+        /// Parameter name for specifying a filter for the intended audiences of the Event Occurrences. If not specified, all audiences are considered.
+        /// </summary>
         public static readonly string ParameterAudienceIds = "audienceids";
 
         #endregion
 
+        /// <summary>
+        /// The maximum number of events that can be retrieved for this data source, regardless of parameter settings.
+        /// </summary>
         public static readonly int MaximumResultSetSize = 10000;
 
         /// <summary>
@@ -99,7 +117,6 @@ namespace Rock.Lava.Blocks
 
             return summaries;
         }
-
 
         /// <summary>
         /// Get a filtered set of occurrences for a specific calendar.
@@ -496,36 +513,84 @@ namespace Rock.Lava.Blocks
     //[DotLiquid.LiquidType( "EventItemOccurrence", "DateTime", "Name", "Date", "Time", "EndDate", "EndTime", "Campus", "Location", "LocationDescription", "Description", "Summary", "OccurrenceNote", "DetailPage", "CalendarNames", "AudienceNames" )]
     public class EventOccurrenceSummary : RockDynamic
     {
+        /// <summary>
+        /// The data model for this event occurrence.
+        /// </summary>
         public EventItemOccurrence EventItemOccurrence { get; set; }
 
+        /// <summary>
+        /// The start date/time of this event occurrence.
+        /// </summary>
         public DateTime DateTime { get; set; }
 
+        /// <summary>
+        /// The name of this event.
+        /// </summary>
         public string Name { get; set; }
 
+        /// <summary>
+        /// The start date of this event occurrence, without the time component.
+        /// </summary>
         public string Date { get; set; }
 
+        /// <summary>
+        /// The start time of this event occurrence, without the date component.
+        /// </summary>
         public string Time { get; set; }
 
+        /// <summary>
+        /// The end date of this event occurrence, without the time component.
+        /// </summary>
         public string EndDate { get; set; }
 
+        /// <summary>
+        /// The end time of this event occurrence, without the date component.
+        /// </summary>
         public string EndTime { get; set; }
 
+        /// <summary>
+        /// The Campus with which this event occurrence is associated.
+        /// </summary>
         public string Campus { get; set; }
 
+        /// <summary>
+        /// The name of the Location where this event occurrence is held.
+        /// </summary>
         public string Location { get; set; }
 
+        /// <summary>
+        /// The description of the Location where this event occurrence is held.
+        /// </summary>
         public string LocationDescription { get; set; }
 
+        /// <summary>
+        /// A summary of the event occurrence.
+        /// </summary>
         public string Summary { get; set; }
 
+        /// <summary>
+        /// The description of the event occurrence.
+        /// </summary>
         public string Description { get; set; }
 
+        /// <summary>
+        /// The note associated with this event occurrence.
+        /// </summary>
         public string OccurrenceNote { get; set; }
 
+        /// <summary>
+        /// The URL for the details page associated with this event occurrence.
+        /// </summary>
         public string DetailPage { get; set; }
 
+        /// <summary>
+        /// A list of the calendars with which this event occurrence is associated.
+        /// </summary>
         public List<string> CalendarNames { get; set; }
 
+        /// <summary>
+        /// A list of the audiences targeted for this event occurrence.
+        /// </summary>
         public List<string> AudienceNames { get; set; }
     }
 
