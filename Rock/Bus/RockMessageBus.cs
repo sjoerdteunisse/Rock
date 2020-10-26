@@ -18,12 +18,9 @@
 using MassTransit;
 using Rock.Bus.Consumer;
 using Rock.Bus.Message;
-using Rock.Bus.Observer;
 using Rock.Bus.Queue;
 using Rock.Bus.Transport;
-using Rock.Model;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -63,7 +60,6 @@ namespace Rock.Bus
             }
 
             _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
-            RockObserver.ConfigureRockObservers( _bus );
             await _bus.StartAsync();
         }
 
@@ -92,8 +88,11 @@ namespace Rock.Bus
                 return;
             }
 
-            ApplyMessageHeaders( message );
-            await _bus.Publish( message, messageType );
+            var queue = RockQueue.Get<TQueue>();
+            await _bus.Publish( message, messageType, context =>
+            {
+                context.TimeToLive = TimeSpan.FromSeconds( queue.TimeToLiveSeconds );
+            } );
         }
 
         /// <summary>
@@ -123,9 +122,10 @@ namespace Rock.Bus
 
             var queue = RockQueue.Get<TQueue>();
             var endpoint = _transportComponent.GetSendEndpoint( _bus, queue.Name );
-
-            ApplyMessageHeaders( message );
-            await endpoint.Send( message, messageType );
+            await endpoint.Send( message, messageType, context =>
+            {
+                context.TimeToLive = TimeSpan.FromSeconds( queue.TimeToLiveSeconds );
+            } );
         }
 
         /// <summary>
@@ -137,18 +137,6 @@ namespace Rock.Bus
         private static bool IsReady()
         {
             return _transportComponent != null && _bus != null;
-        }
-
-        /// <summary>
-        /// Applies the queue message headers.
-        /// </summary>
-        /// <typeparam name="TQueue">The type of the queue.</typeparam>
-        /// <param name="message">The message.</param>
-        private static void ApplyMessageHeaders<TQueue>( IRockMessage<TQueue> message )
-            where TQueue : IRockQueue, new()
-        {
-            var queue = RockQueue.Get<TQueue>();
-            message.__ExpirationTime = queue.TimeToLiveSeconds * 1000;
         }
     }
 }

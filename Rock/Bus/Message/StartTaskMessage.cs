@@ -31,12 +31,5 @@ namespace Rock.Bus.Message
     /// </summary>
     public class StartTaskMessage : IStartTaskMessage
     {
-        /// <summary>
-        /// Gets or sets the expiration time.
-        /// </summary>
-        /// <value>
-        /// The expiration time.
-        /// </value>
-        public int? __ExpirationTime { get; set; }
     }
 }

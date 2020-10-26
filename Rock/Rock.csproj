@@ -546,8 +546,6 @@
     <Compile Include="Bus\Message\StartTaskMessage.cs" />
     <Compile Include="Bus\Message\IRockMessage.cs" />
     <Compile Include="Bus\Message\EntityWasUpdatedMessage.cs" />
-    <Compile Include="Bus\Observer\RockDebugObserver.cs" />
-    <Compile Include="Bus\Observer\RockObserver.cs" />
     <Compile Include="Bus\Queue\CacheQueue.cs" />
     <Compile Include="Bus\Queue\StartTaskQueue.cs" />
     <Compile Include="Bus\Queue\EntityUpdateQueue.cs" />

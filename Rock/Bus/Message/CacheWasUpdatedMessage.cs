@@ -66,14 +66,6 @@ namespace Rock.Bus.Message
         public string EventType { get; set; }
 
         /// <summary>
-        /// Gets or sets the expiration time.
-        /// </summary>
-        /// <value>
-        /// The expiration time.
-        /// </value>
-        public int? __ExpirationTime { get; set; }
-
-        /// <summary>
         /// Publishes the specified entity.
         /// </summary>
         /// <param name="callerMethodName">Name of the caller method.</param>

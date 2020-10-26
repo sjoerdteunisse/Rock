@@ -26,12 +26,5 @@ namespace Rock.Bus.Message
     public interface IRockMessage<TQueue>
         where TQueue : IRockQueue, new()
     {
-        /// <summary>
-        /// Gets or sets the expiration time.
-        /// </summary>
-        /// <value>
-        /// The expiration time.
-        /// </value>
-        int? __ExpirationTime { get; set; }
     }
 }
