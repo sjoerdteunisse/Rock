@@ -40,6 +40,16 @@ namespace Rock.Bus.Queue
         /// The time to live seconds.
         /// </value>
         int TimeToLiveSeconds { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether this queue broadcasts messages or delivers them to a single Rock instance.
+        /// Broadcasting is good for events that need to be known by all Rock instances like cache invalidation.
+        /// Not broadcasting is better for things like starting jobs where only one instance needs to execute the job.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is broadcast; otherwise, <c>false</c>.
+        /// </value>
+        bool IsBroadcast { get; }
     }
 
     /// <summary>
@@ -48,12 +58,37 @@ namespace Rock.Bus.Queue
     public abstract class RockQueue : IRockQueue
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="RockQueue"/> class.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        public RockQueue( string name )
+        {
+            _name = name;
+        }
+
+        /// <summary>
         /// Gets the queue name.
         /// </summary>
         /// <value>
         /// The name.
         /// </value>
-        public virtual string Name => GetType().Name;
+        public string Name
+        {
+            get
+            {
+                if ( IsBroadcast )
+                {
+                    // A distinct queue name per Rock instance so all consumers receive the message
+                    return $"{_name}_{RockMessageBus.RockInstanceGuid}";
+                }
+                else
+                {
+                    // A single queue name for all Rock instances
+                    return _name;
+                }
+            }
+        }
+        private readonly string _name;
 
         /// <summary>
         /// Gets the time to live seconds.
@@ -62,6 +97,16 @@ namespace Rock.Bus.Queue
         /// The time to live seconds.
         /// </value>
         public virtual int TimeToLiveSeconds => 5 * 60;
+
+        /// <summary>
+        /// Gets a value indicating whether this queue broadcasts messages or delivers them to a single Rock instance.
+        /// Broadcasting is good for events that need to be known by all Rock instances like cache invalidation.
+        /// Not broadcasting is better for things like starting jobs where only one instance needs to execute the job.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is broadcast; otherwise, <c>false</c>.
+        /// </value>
+        public virtual bool IsBroadcast => true;
 
         /// <summary>
         /// Gets this instance.

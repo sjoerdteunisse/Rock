@@ -389,6 +389,12 @@ namespace Rock.Data
                 // Publish on the message bus if configured
                 EntityWasUpdatedMessage.PublishIfShould( item.Entity, item.PreSaveState );
 
+                // TODO: DEBUG ONLY - remove this if statement
+                if ( item.Entity.TypeId == EntityTypeCache.Get<DefinedType>().Id )
+                {
+                    _ = RockMessageBus.Send<StartTaskQueue, StartTaskMessage>( new StartTaskMessage() );
+                }
+
                 if ( item.State == EntityState.Detached || item.State == EntityState.Deleted )
                 {
                     TriggerWorkflows( item, WorkflowTriggerType.PostDelete, personAlias );

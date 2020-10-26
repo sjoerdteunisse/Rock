@@ -543,6 +543,7 @@
     <Compile Include="Bus\Consumer\RockConsumer.cs" />
     <Compile Include="Bus\Consumer\RockDebugConsumer.cs" />
     <Compile Include="Bus\Message\CacheWasUpdatedMessage.cs" />
+    <Compile Include="Bus\Message\StartTaskMessage.cs" />
     <Compile Include="Bus\Message\IRockMessage.cs" />
     <Compile Include="Bus\Message\EntityWasUpdatedMessage.cs" />
     <Compile Include="Bus\Observer\RockDebugObserver.cs" />

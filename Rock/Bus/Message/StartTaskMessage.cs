@@ -15,16 +15,21 @@
 // </copyright>
 //
 
-using System;
 using Rock.Bus.Queue;
 
 namespace Rock.Bus.Message
 {
     /// <summary>
-    /// A Rock Bus Message
+    /// Start Task Message
     /// </summary>
-    public interface IRockMessage<TQueue>
-        where TQueue : IRockQueue, new()
+    public interface IStartTaskMessage : IRockMessage<StartTaskQueue>
+    {
+    }
+
+    /// <summary>
+    /// Start Task Message
+    /// </summary>
+    public class StartTaskMessage : IStartTaskMessage
     {
         /// <summary>
         /// Gets or sets the expiration time.
@@ -32,6 +37,6 @@ namespace Rock.Bus.Message
         /// <value>
         /// The expiration time.
         /// </value>
-        int? __ExpirationTime { get; set; }
+        public int? __ExpirationTime { get; set; }
     }
 }

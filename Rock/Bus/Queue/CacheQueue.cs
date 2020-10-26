@@ -23,11 +23,8 @@ namespace Rock.Bus.Queue
     public sealed class CacheQueue : RockQueue
     {
         /// <summary>
-        /// Gets the queue name.
+        /// Initializes a new instance of the <see cref="CacheQueue"/> class.
         /// </summary>
-        /// <value>
-        /// The name.
-        /// </value>
-        public override string Name => "rock-cache-queue";
+        public CacheQueue() : base( "rock-cache-queue" ) { }
     }
 }

@@ -110,7 +110,7 @@ namespace Rock.Transactions
             /// <value>
             /// The expiration time.
             /// </value>
-            public DateTime? __ExpirationTime { get; set; }
+            public int? __ExpirationTime { get; set; }
         }
 
         #endregion Helper Classes

@@ -57,4 +57,18 @@ namespace Rock.Bus.Consumer
     public class SecondPersonWasUpdatedConsumer : RockDebugConsumer<EntityUpdateQueue, EntityWasUpdatedMessage<Person>>
     {
     }
+
+    /// <summary>
+    /// Start Task
+    /// </summary>
+    public class FirstDefinedTypeWasUpdatedConsumer : RockDebugConsumer<StartTaskQueue, StartTaskMessage>
+    {
+    }
+
+    /// <summary>
+    /// Start Task
+    /// </summary>
+    public class SecondDefinedTypeWasUpdatedConsumer : RockDebugConsumer<StartTaskQueue, StartTaskMessage>
+    {
+    }
 }

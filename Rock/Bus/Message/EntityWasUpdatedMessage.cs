@@ -76,7 +76,10 @@ namespace Rock.Bus.Message
         /// <summary>
         /// Gets or sets the expiration time.
         /// </summary>
-        public DateTime? __ExpirationTime { get; set; }
+        /// <value>
+        /// The expiration time.
+        /// </value>
+        public int? __ExpirationTime { get; set; }
 
         /// <summary>
         /// The of an entity that will cause publishing a message on the <see cref="RockMessageBus"/>

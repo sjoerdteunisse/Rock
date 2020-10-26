@@ -23,11 +23,8 @@ namespace Rock.Bus.Queue
     public sealed class EntityUpdateQueue : RockQueue
     {
         /// <summary>
-        /// Gets the queue name.
+        /// Initializes a new instance of the <see cref="EntityUpdateQueue"/> class.
         /// </summary>
-        /// <value>
-        /// The name.
-        /// </value>
-        public override string Name => "rock-entity-update-queue";
+        public EntityUpdateQueue() : base( "rock-entity-update-queue" ) { }
     }
 }

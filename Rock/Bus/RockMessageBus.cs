@@ -35,11 +35,6 @@ namespace Rock.Bus
     public static class RockMessageBus
     {
         /// <summary>
-        /// The send endpoints
-        /// </summary>
-        private static Dictionary<string, ISendEndpoint> _sendEndpoints = new Dictionary<string, ISendEndpoint>();
-
-        /// <summary>
         /// The bus
         /// </summary>
         private static IBusControl _bus = null;
@@ -48,6 +43,11 @@ namespace Rock.Bus
         /// The transport component
         /// </summary>
         private static TransportComponent _transportComponent = null;
+
+        /// <summary>
+        /// The Rock instance unique identifier
+        /// </summary>
+        public static readonly Guid RockInstanceGuid = Guid.NewGuid();
 
         /// <summary>
         /// Starts this bus.
@@ -62,16 +62,9 @@ namespace Rock.Bus
                 throw new ConfigurationException( "An active transport component is required for Rock to run correctly" );
             }
 
-            try
-            {
-                _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
-                RockObserver.ConfigureRockObservers( _bus );
-                await _bus.StartAsync();
-            }
-            catch ( Exception e )
-            {
-                throw new ConfigurationException( "The Message Bus is required for Rock to run correctly, but it did not initialize correctly", e );
-            }
+            _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
+            RockObserver.ConfigureRockObservers( _bus );
+            await _bus.StartAsync();
         }
 
         /// <summary>
@@ -129,13 +122,7 @@ namespace Rock.Bus
             }
 
             var queue = RockQueue.Get<TQueue>();
-            var endpoint = _sendEndpoints.GetValueOrNull( queue.Name );
-
-            if ( endpoint == null )
-            {
-                endpoint = _transportComponent.GetSendEndpoint( _bus, queue.Name );
-                _sendEndpoints[queue.Name] = endpoint;
-            }
+            var endpoint = _transportComponent.GetSendEndpoint( _bus, queue.Name );
 
             ApplyMessageHeaders( message );
             await endpoint.Send( message, messageType );
@@ -161,7 +148,7 @@ namespace Rock.Bus
             where TQueue : IRockQueue, new()
         {
             var queue = RockQueue.Get<TQueue>();
-            message.__ExpirationTime = RockDateTime.Now.AddSeconds( queue.TimeToLiveSeconds );
+            message.__ExpirationTime = queue.TimeToLiveSeconds * 1000;
         }
     }
 }
