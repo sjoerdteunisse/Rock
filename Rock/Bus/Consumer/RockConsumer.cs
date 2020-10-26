@@ -118,6 +118,7 @@ namespace Rock.Bus.Consumer
         /// </summary>
         public static void ConfigureRockConsumers( IBusFactoryConfigurator configurator )
         {
+            var instanceGuid = Guid.NewGuid();
             var consumersByQueue = GetConsumerTypes()
                 .GroupBy( c => GetQueue( c )?.Name )
                 .ToDictionary( g => g.Key, g => g.ToList() );
@@ -126,16 +127,16 @@ namespace Rock.Bus.Consumer
 
             foreach ( var queueName in queueNames )
             {
-                var consumers = consumersByQueue[queueName];
-                var queue = GetQueue( consumers.First() );
+                var consumerTypes = consumersByQueue[queueName];
+                var queue = GetQueue( consumerTypes.First() );
 
-                if ( queue != null )
+                configurator.ReceiveEndpoint( $"{queue.Name}_{instanceGuid}", e =>
                 {
-                    configurator.ReceiveEndpoint( queue.Name, e =>
+                    foreach ( var consumerType in consumerTypes )
                     {
-                        consumers.ForEach( c => e.Consumer( c, Activator.CreateInstance ) );
-                    } );
-                }
+                        e.Consumer( consumerType, ConsumerFactory );
+                    }
+                } );
             }
         }
 
@@ -258,6 +259,16 @@ namespace Rock.Bus.Consumer
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Create a consumer instance
+        /// </summary>
+        /// <returns></returns>
+        private static object ConsumerFactory( Type consumerType )
+        {
+            var consumer = Activator.CreateInstance( consumerType ) as IRockConsumer;
+            return consumer.Instance;
         }
     }
 }

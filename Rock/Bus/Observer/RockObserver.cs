@@ -20,7 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MassTransit;
-using MassTransit.Pipeline;
+using MassTransit.Transports;
 using Rock.Bus.Message;
 using Rock.Bus.Queue;
 
@@ -48,7 +48,7 @@ namespace Rock.Bus.Observer
     /// <typeparam name="TQueue">The type of the queue.</typeparam>
     /// <typeparam name="TMessage">The type of the message.</typeparam>
     /// <seealso cref="IConsumeMessageObserver{TMessage}" />
-    public interface IRockObserver<TQueue, TMessage> : IRockObserver, IConsumeMessageObserver<TMessage>
+    public interface IRockObserver<TQueue, TMessage> : IRockObserver, IReceiveObserver
         where TQueue : IRockQueue, new()
         where TMessage : class, IRockMessage<TQueue>
     {
@@ -68,7 +68,7 @@ namespace Rock.Bus.Observer
         /// <summary>
         /// The context
         /// </summary>
-        protected ConsumeContext<TMessage> _consumeContext = null;
+        protected PublishContext<TMessage> _publishContext = null;
 
         /// <summary>
         /// Observes the specified message.
@@ -81,10 +81,9 @@ namespace Rock.Bus.Observer
         /// </summary>
         /// <param name="context">The context.</param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public Task PreConsume( ConsumeContext<TMessage> context )
+        public Task PrePublish( PublishContext<TMessage> context )
         {
-            _consumeContext = context;
+            _publishContext = context;
             Observe( context.Message );
             return Task.Delay( 0 );
         }
@@ -94,8 +93,7 @@ namespace Rock.Bus.Observer
         /// </summary>
         /// <param name="context">The context.</param>
         /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        public Task PostConsume( ConsumeContext<TMessage> context )
+        public Task PostPublish( PublishContext<TMessage> context )
         {
             return Task.Delay( 0 );
         }
@@ -106,7 +104,32 @@ namespace Rock.Bus.Observer
         /// <param name="context">The context.</param>
         /// <param name="exception">The exception.</param>
         /// <returns></returns>
-        public Task ConsumeFault( ConsumeContext<TMessage> context, Exception exception )
+        public Task PublishFault( PublishContext<TMessage> context, Exception exception )
+        {
+            return Task.Delay( 0 );
+        }
+
+        public Task PreReceive( ReceiveContext context )
+        {
+            return Task.Delay( 0 );
+        }
+
+        public Task PostReceive( ReceiveContext context )
+        {
+            return Task.Delay( 0 );
+        }
+
+        public Task PostConsume<T>( ConsumeContext<T> context, TimeSpan duration, string consumerType ) where T : class
+        {
+            return Task.Delay( 0 );
+        }
+
+        public Task ConsumeFault<T>( ConsumeContext<T> context, TimeSpan duration, string consumerType, Exception exception ) where T : class
+        {
+            return Task.Delay( 0 );
+        }
+
+        public Task ReceiveFault( ReceiveContext context, Exception exception )
         {
             return Task.Delay( 0 );
         }
@@ -156,15 +179,7 @@ namespace Rock.Bus.Observer
             foreach ( var observerType in observerTypes )
             {
                 var observer = Activator.CreateInstance( observerType ) as IRockObserver;
-                var messageType = GetMessageType( observerType );
-
-                // There is no consumer so "consume observing" obviosuly doesn't work... duh.  Need to observe publishing or something...
-                wegwegwegweg
-
-                typeof( IConsumeMessageObserverConnector )
-                    .GetMethod( nameof( IConsumeMessageObserverConnector.ConnectConsumeMessageObserver ) )
-                    .MakeGenericMethod( messageType )
-                    .Invoke( bus, new[] { observer.Instance } );
+                bus.ConnectReceiveObserver( observer.Instance as IReceiveObserver );
             }
         }
 
