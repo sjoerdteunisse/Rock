@@ -26,12 +26,20 @@ namespace Rock.Bus.Queue
     public interface IRockQueue
     {
         /// <summary>
-        /// Gets the queue name.
+        /// Gets the name. Each instance of Rock shares this name for this queue.
         /// </summary>
         /// <value>
         /// The name.
         /// </value>
         string Name { get; }
+
+        /// <summary>
+        /// Gets the Rock instance specific name. This name is unique for this queue and this instance of Rock.
+        /// </summary>
+        /// <value>
+        /// The name.
+        /// </value>
+        string InstanceSpecificName { get; }
 
         /// <summary>
         /// Gets the time to live seconds.
@@ -58,37 +66,20 @@ namespace Rock.Bus.Queue
     public abstract class RockQueue : IRockQueue
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="RockQueue"/> class.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        public RockQueue( string name )
-        {
-            _name = name;
-        }
-
-        /// <summary>
-        /// Gets the queue name.
+        /// Gets the queue name. Each instance of Rock shares this name for this queue.
         /// </summary>
         /// <value>
         /// The name.
         /// </value>
-        public string Name
-        {
-            get
-            {
-                if ( IsBroadcast )
-                {
-                    // A distinct queue name per Rock instance so all consumers receive the message
-                    return $"{_name}_{RockMessageBus.RockInstanceGuid}";
-                }
-                else
-                {
-                    // A single queue name for all Rock instances
-                    return _name;
-                }
-            }
-        }
-        private readonly string _name;
+        public virtual string Name => GetType().Name;
+
+        /// <summary>
+        /// Gets the Rock instance specific name. This name is unique for this queue and this instance of Rock.
+        /// </summary>
+        /// <value>
+        /// The name.
+        /// </value>
+        public virtual string InstanceSpecificName => $"{Name}_{RockMessageBus.RockInstanceGuid}";
 
         /// <summary>
         /// Gets the time to live seconds.
@@ -137,5 +128,14 @@ namespace Rock.Bus.Queue
             return queue;
         }
         private static Dictionary<string, IRockQueue> _queues = new Dictionary<string, IRockQueue>();
+
+        /// <summary>
+        /// Gets the name for configuration.
+        /// </summary>
+        /// <returns></returns>
+        internal static string GetNameForConfiguration( IRockQueue queue )
+        {
+            return queue.IsBroadcast ? queue.InstanceSpecificName : queue.Name;
+        }
     }
 }

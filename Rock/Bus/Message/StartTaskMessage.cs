@@ -24,6 +24,13 @@ namespace Rock.Bus.Message
     /// </summary>
     public interface IStartTaskMessage : IRockMessage<StartTaskQueue>
     {
+        /// <summary>
+        /// Gets or sets the data.
+        /// </summary>
+        /// <value>
+        /// The data.
+        /// </value>
+        string Data { get; set; }
     }
 
     /// <summary>
@@ -31,5 +38,12 @@ namespace Rock.Bus.Message
     /// </summary>
     public class StartTaskMessage : IStartTaskMessage
     {
+        /// <summary>
+        /// Gets or sets the data.
+        /// </summary>
+        /// <value>
+        /// The data.
+        /// </value>
+        public string Data { get; set; }
     }
 }

@@ -23,9 +23,12 @@ namespace Rock.Bus.Queue
     public sealed class StartTaskQueue : RockQueue
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="StartTaskQueue"/> class.
+        /// Gets the queue name. Each instance of Rock shares this name for this queue.
         /// </summary>
-        public StartTaskQueue() : base( "rock-start-task-queue" ) { }
+        /// <value>
+        /// The name.
+        /// </value>
+        public override string Name => "rock-start-task-queue";
 
         /// <summary>
         /// Gets a value indicating whether this queue broadcasts messages or delivers them to a single Rock instance.

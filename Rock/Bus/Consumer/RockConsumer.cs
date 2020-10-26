@@ -119,17 +119,17 @@ namespace Rock.Bus.Consumer
         public static void ConfigureRockConsumers( IBusFactoryConfigurator configurator )
         {
             var consumersByQueue = GetConsumerTypes()
-                .GroupBy( c => GetQueue( c )?.Name )
+                .GroupBy( c => GetQueue( c ) )
                 .ToDictionary( g => g.Key, g => g.ToList() );
 
-            var queueNames = consumersByQueue.Keys;
+            var queues = consumersByQueue.Keys;
 
-            foreach ( var queueName in queueNames )
+            foreach ( var queue in queues )
             {
-                var consumerTypes = consumersByQueue[queueName];
-                var queue = GetQueue( consumerTypes.First() );
+                var consumerTypes = consumersByQueue[queue];
+                var queueName = RockQueue.GetNameForConfiguration( queue );
 
-                configurator.ReceiveEndpoint( queue.Name, e =>
+                configurator.ReceiveEndpoint( queueName, e =>
                 {
                     foreach ( var consumerType in consumerTypes )
                     {
@@ -199,7 +199,8 @@ namespace Rock.Bus.Consumer
         /// <returns></returns>
         public static IRockQueue GetQueue( Type consumerType )
         {
-            return Activator.CreateInstance( GetQueueType( consumerType ) ) as IRockQueue;
+            var queueType = GetQueueType( consumerType );
+            return RockQueue.Get( queueType );
         }
 
         /// <summary>

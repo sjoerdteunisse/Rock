@@ -16,9 +16,7 @@
 //
 
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using Rock.Bus;
 using Rock.Bus.Consumer;
 using Rock.Bus.Message;
@@ -38,9 +36,6 @@ namespace Rock.Transactions
         /// <param name="message">The message.</param>
         public override void Consume( TMessage message )
         {
-            var json = message.ToJson();
-            Debug.WriteLine( $"==================\n{GetType().Name}\n{json}" );
-
             Execute( message );
         }
 

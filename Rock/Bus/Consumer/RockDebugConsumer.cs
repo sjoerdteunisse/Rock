@@ -61,14 +61,14 @@ namespace Rock.Bus.Consumer
     /// <summary>
     /// Start Task
     /// </summary>
-    public class FirstDefinedTypeWasUpdatedConsumer : RockDebugConsumer<StartTaskQueue, StartTaskMessage>
+    public class FirstStartTaskConsumer : RockDebugConsumer<StartTaskQueue, StartTaskMessage>
     {
     }
 
     /// <summary>
     /// Start Task
     /// </summary>
-    public class SecondDefinedTypeWasUpdatedConsumer : RockDebugConsumer<StartTaskQueue, StartTaskMessage>
+    public class SecondStartTaskConsumer : RockDebugConsumer<StartTaskQueue, StartTaskMessage>
     {
     }
 }
