@@ -16,95 +16,46 @@
 //
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-
-using DotLiquid;
 
 using Rock.Data;
 using Rock.Model;
 using Rock.Web.Cache;
 using Ical.Net.DataTypes;
+using Rock.Utility;
 
 namespace Rock.Lava.Blocks
 {
     /// <summary>
-    /// A Lava Block that provides access to a filtered set of events from a specified calendar.
-    /// Lava objects are created in the block context to provide access to the set of events matching the filter parmeters.
-    /// The <c>EventItems</c> collection contains information about the Event instances.
-    /// The <c>EventItemOccurrences</c> collection contains the actual occurrences of the event that match the filter.
+    /// Creates filtered sets of calendar events as Lava data objects suitable for use in a Lava template.
     /// </summary>
-    public class CalendarEvents : RockLavaBlockBase
+    public class EventOccurrencesLavaDataSource
     {
+        #region Filter Parameter Names
+
         /// <summary>
         /// The name of the element as it is used in the source document.
         /// </summary>
-        public static string TagSourceName = "calendarevents";
-        public static string ParameterCalendarId = "calendarid";
-        public static string ParameterMaxOccurrences = "maxoccurrences";
-        public static string ParameterStartDate = "startdate";
-        public static string ParameterDateRange = "daterange";
-        public static string ParameterAudienceIds = "audienceids";
-        public static int MaximumResultSetSize = 10000;
+        public static readonly string ParameterCalendarId = "calendarid";
+        public static readonly string ParameterEventId = "eventid";
+        public static readonly string ParameterMaxOccurrences = "maxoccurrences";
+        public static readonly string ParameterStartDate = "startdate";
+        public static readonly string ParameterDateRange = "daterange";
+        public static readonly string ParameterAudienceIds = "audienceids";
 
-        private string _attributesMarkup;
-        private bool _renderErrors = true;
+        #endregion
 
-        LavaElementAttributes _settings = new LavaElementAttributes();
+        public static readonly int MaximumResultSetSize = 10000;
 
         /// <summary>
-        /// Method that will be run at Rock startup
+        /// Get a filtered set of occurrences for a specific calendar.
         /// </summary>
-        public override void OnStartup()
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        public List<EventOccurrenceSummary> GetEventOccurrencesForCalendar( LavaElementAttributes settings )
         {
-            Template.RegisterTag<CalendarEvents>( TagSourceName );
-        }
-
-        /// <summary>
-        /// Initializes the specified tag name.
-        /// </summary>
-        /// <param name="tagName">Name of the tag.</param>
-        /// <param name="markup">The markup.</param>
-        /// <param name="tokens">The tokens.</param>
-        public override void Initialize( string tagName, string markup, List<string> tokens )
-        {
-            _attributesMarkup = markup;
-
-            base.Initialize( tagName, markup, tokens );
-        }
-
-        /// <summary>
-        /// Renders the specified context.
-        /// </summary>
-        /// <param name="context">The context.</param>
-        /// <param name="result">The result.</param>
-        public override void Render( Context context, TextWriter result )
-        {
-            try
-            {
-                RenderInternal( context, result );
-            }
-            catch ( Exception ex )
-            {
-                var message = "Calendar Events not available. " + ex.Message;
-
-                if ( _renderErrors )
-                {
-                    result.Write( message );
-                }
-                else
-                {
-                    ExceptionLogService.LogException( ex );
-                }
-            }
-        }
-
-        private void RenderInternal( Context context, TextWriter result )
-        {
-            // Parse the attributes markup and validate the parameters.
-            _settings.ParseFromMarkup( _attributesMarkup, context );
-
-            var unknownNames = _settings.GetUnknownAttributes( new List<string> { ParameterCalendarId, ParameterAudienceIds, ParameterDateRange, ParameterMaxOccurrences, ParameterStartDate } );
+            // Check for invalid parameters.
+            var unknownNames = settings.GetUnknownAttributes( new List<string> { ParameterCalendarId, ParameterAudienceIds, ParameterDateRange, ParameterMaxOccurrences, ParameterStartDate } );
 
             if ( unknownNames.Any() )
             {
@@ -114,37 +65,116 @@ namespace Rock.Lava.Blocks
             var rockContext = new RockContext();
 
             // Get the Event Calendar.
-            var calendar = ResolveCalendarSettingOrThrow( rockContext, _settings.GetStringValue( ParameterCalendarId ) );
+            var calendar = ResolveCalendarSettingOrThrow( rockContext, settings.GetStringValue( ParameterCalendarId ) );
 
-            if ( calendar == null )
+            // Get the Date Range.
+            var startDate = settings.GetDateTimeValue( ParameterStartDate, RockDateTime.Today );
+
+            var dateRange = settings.GetStringValue( ParameterDateRange, string.Empty ).ToLower();
+
+            var endDate = GetEndDateFromStartDateAndRange( startDate, dateRange );
+
+            // Get the Maximum Occurrences.
+            int maxOccurrences = 100;
+
+            if ( settings.HasValue( ParameterMaxOccurrences ) )
             {
-                throw new Exception( "The specified Calendar is invalid." );
+                maxOccurrences = settings.GetIntegerValue( ParameterMaxOccurrences, null ) ?? 0;
+
+                if ( maxOccurrences == 0 )
+                {
+                    throw new Exception( $"Invalid configuration setting \"maxoccurrences\"." );
+                }
             }
 
-            // Get the Start Date.
-            var startDate = _settings.GetDateTimeValue( ParameterStartDate, RockDateTime.Today );
+            // Get the Audiences.
+            var audienceIdList = ResolveAudienceSettingOrThrow( settings.GetStringValue( ParameterAudienceIds, string.Empty ) );
 
+            // Get the result set.
+            var qryOccurrences = GetBaseEventOccurrenceQuery( rockContext );
+
+            qryOccurrences = qryOccurrences.Where( m => m.EventItem.EventCalendarItems.Any( i => i.EventCalendarId == calendar.Id ) );
+
+            var summaries = GetFilteredEventOccurrenceSummaries( qryOccurrences, audienceIdList, maxOccurrences, startDate, endDate );
+
+            return summaries;
+        }
+
+
+        /// <summary>
+        /// Get a filtered set of occurrences for a specific calendar.
+        /// </summary>
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        public List<EventOccurrenceSummary> GetEventOccurrencesForEvent( LavaElementAttributes settings )
+        {
+            // Check for invalid parameters.
+            var unknownNames = settings.GetUnknownAttributes( new List<string> { ParameterEventId, ParameterDateRange, ParameterMaxOccurrences, ParameterStartDate } );
+
+            if ( unknownNames.Any() )
+            {
+                throw new Exception( $"Invalid configuration setting \"{unknownNames.AsDelimited( "," )}\"." );
+            }
+
+            var rockContext = new RockContext();
+
+            // Get the Event.
+            var eventItem = ResolveEventSettingOrThrow( rockContext, settings.GetStringValue( ParameterEventId ) );
+
+            // Get the Date Range.
+            var startDate = settings.GetDateTimeValue( ParameterStartDate, RockDateTime.Today );
+
+            var dateRange = settings.GetStringValue( ParameterDateRange, string.Empty ).ToLower();
+
+            var endDate = GetEndDateFromStartDateAndRange( startDate, dateRange );
+
+            // Get the Maximum Occurrences.
+            int maxOccurrences = 100;
+
+            if ( settings.HasValue( ParameterMaxOccurrences ) )
+            {
+                maxOccurrences = settings.GetIntegerValue( ParameterMaxOccurrences, null ) ?? 0;
+
+                if ( maxOccurrences == 0 )
+                {
+                    throw new Exception( $"Invalid configuration setting \"maxoccurrences\"." );
+                }
+            }
+
+            // Get the Audiences.
+            var audienceIdList = ResolveAudienceSettingOrThrow( settings.GetStringValue( ParameterAudienceIds, string.Empty ) );
+
+            // Get the result set.
+            var qryOccurrences = GetBaseEventOccurrenceQuery( rockContext );
+
+            qryOccurrences = qryOccurrences.Where( m => m.EventItem.Id == eventItem.Id );
+
+            var summaries = GetFilteredEventOccurrenceSummaries( qryOccurrences, audienceIdList, maxOccurrences, startDate, endDate );
+
+            return summaries;
+        }
+
+        private DateTime? GetEndDateFromStartDateAndRange( DateTime? startDate, string dateRangeExpression )
+        {
             // Get the Date Range.
             DateTime? endDate = null;
 
-            var dateRange = _settings.GetStringValue( ParameterDateRange, string.Empty ).ToLower();
-
-            if ( !string.IsNullOrEmpty( dateRange ) )
+            if ( !string.IsNullOrEmpty( dateRangeExpression ) )
             {
                 string rangePeriod;
 
-                if ( dateRange.IsDigitsOnly() )
+                if ( dateRangeExpression.IsDigitsOnly() )
                 {
                     rangePeriod = "d";
                 }
                 else
                 {
-                    rangePeriod = dateRange.Right( 1 );
+                    rangePeriod = dateRangeExpression.Right( 1 );
 
-                    dateRange = dateRange.Substring( 0, dateRange.Length - 1 );
+                    dateRangeExpression = dateRangeExpression.Substring( 0, dateRangeExpression.Length - 1 );
                 }
 
-                int? rangeAmount = dateRange.AsIntegerOrNull();
+                int? rangeAmount = dateRangeExpression.AsIntegerOrNull();
 
                 if ( rangeAmount == null )
                 {
@@ -178,31 +208,10 @@ namespace Rock.Lava.Blocks
                 endDate = endDate.Value.AddDays( -1 );
             }
 
-            // Get the Maximum Occurrences
-            int maxOccurrences = 100;
-
-            if ( _settings.HasValue( ParameterMaxOccurrences ) )
-            {
-                maxOccurrences = _settings.GetIntegerValue( ParameterMaxOccurrences, null ) ?? 0;
-
-                if ( maxOccurrences == 0 )
-                {
-                    throw new Exception( $"Invalid configuration setting \"maxoccurrences\"." );
-                }
-
-            }
-
-            // Get the Audiences
-            var audienceIdList = ResolveAudienceSettingOrThrow( rockContext, _settings.GetStringValue( ParameterAudienceIds, string.Empty ) );
-
-            var events = GetCalendarEventOccurrences( calendar.Id, audienceIdList, maxOccurrences, startDate, endDate );
-
-            AddLavaMergeFieldsToContext( context, events );
-
-            RenderAll( this.NodeList, context, result );
+            return endDate;
         }
 
-        private List<int> ResolveAudienceSettingOrThrow( RockContext rockContext, string audienceSettingValue )
+        private List<int> ResolveAudienceSettingOrThrow( string audienceSettingValue )
         {
             var audienceIdList = new List<int>();
 
@@ -309,19 +318,72 @@ namespace Rock.Lava.Blocks
             return calendar;
         }
 
-        private List<EventOccurrenceSummary> GetCalendarEventOccurrences( int calendarId, List<int> audienceIdList, int maxOccurrences, DateTime? startDate, DateTime? endDate )
+        private EventItem ResolveEventSettingOrThrow( RockContext rockContext, string eventSettingValue )
         {
-            var rockContext = new RockContext();
+            var eventItemService = new EventItemService( rockContext );
 
+            EventItem eventItem = null;
+
+            // Verify that an Event reference has been provided.
+            if ( string.IsNullOrWhiteSpace( eventSettingValue ) )
+            {
+                throw new Exception( $"An Event reference must be specified." );
+            }
+
+            // Get by ID.
+            var eventId = eventSettingValue.AsIntegerOrNull();
+
+            if ( eventId != null )
+            {
+                eventItem = eventItemService.Get( eventId.Value );
+            }
+
+            // Get by Guid.
+            if ( eventItem == null )
+            {
+                var eventGuid = eventSettingValue.AsGuidOrNull();
+
+                if ( eventGuid != null )
+                {
+                    eventItem = eventItemService.Get( eventGuid.Value );
+                }
+            }
+
+            // Get By Name.
+            if ( eventItem == null )
+            {
+                var eventName = eventSettingValue.ToString();
+
+                if ( !string.IsNullOrWhiteSpace( eventName ) )
+                {
+                    eventItem = eventItemService.Queryable()
+                        .Where( x => x.Name != null && x.Name.Equals( eventName, StringComparison.OrdinalIgnoreCase ) )
+                        .FirstOrDefault();
+                }
+            }
+
+            if ( eventItem == null )
+            {
+                throw new Exception( $"Cannot find an Event matching the reference \"{ eventSettingValue }\"." );
+            }
+
+            return eventItem;
+        }
+
+        private IQueryable<EventItemOccurrence> GetBaseEventOccurrenceQuery( RockContext rockContext )
+        {
             var eventItemOccurrenceService = new EventItemOccurrenceService( rockContext );
 
-            // Get active and approved Event Occurrences in the specified calendar.
+            // Get active and approved Event Occurrences.
             var qryOccurrences = eventItemOccurrenceService
-                    .Queryable( "EventItem, EventItem.EventItemAudiences,Schedule" )
-                    .Where( m =>
-                        m.EventItem.EventCalendarItems.Any( i => i.EventCalendarId == calendarId ) &&
-                        m.EventItem.IsActive &&
-                        m.EventItem.IsApproved );
+                    .Queryable( "EventItem, EventItem.EventItemAudiences,Schedule" );
+
+            return qryOccurrences;
+        }
+
+        private List<EventOccurrenceSummary> GetFilteredEventOccurrenceSummaries( IQueryable<EventItemOccurrence> qryOccurrences, List<int> audienceIdList, int maxOccurrences, DateTime? startDate, DateTime? endDate )
+        {
+            qryOccurrences = qryOccurrences.Where( x => x.EventItem.IsActive && x.EventItem.IsApproved );
 
             // Filter by Audience
             if ( audienceIdList != null
@@ -424,32 +486,15 @@ namespace Rock.Lava.Blocks
 
             return eventOccurrenceSummaries;
         }
-
-        private void AddLavaMergeFieldsToContext( Context context, List<EventOccurrenceSummary> eventOccurrenceSummaries )
-        {
-            var eventSummaries = eventOccurrenceSummaries
-                .OrderBy( e => e.DateTime )
-                .GroupBy( e => e.Name )
-                .Select( e => e.ToList() )
-                .ToList();
-
-            eventOccurrenceSummaries = eventOccurrenceSummaries
-                .OrderBy( e => e.DateTime )
-                .ThenBy( e => e.Name )
-                .ToList();
-
-            context["EventItems"] = eventSummaries;
-            context["EventItemOccurrences"] = eventOccurrenceSummaries;
-        }
     }
-    /*
+
     #region Helper Classes
 
     /// <summary>
-    /// A class to store event item occurrence data for liquid
+    /// A class to store event item occurrence data for use in a Lava Template.
     /// </summary>
-    [DotLiquid.LiquidType( "EventItemOccurrence", "DateTime", "Name", "Date", "Time", "EndDate", "EndTime", "Campus", "Location", "LocationDescription", "Description", "Summary", "OccurrenceNote", "DetailPage", "CalendarNames", "AudienceNames" )]
-    public class EventOccurrenceSummary
+    //[DotLiquid.LiquidType( "EventItemOccurrence", "DateTime", "Name", "Date", "Time", "EndDate", "EndTime", "Campus", "Location", "LocationDescription", "Description", "Summary", "OccurrenceNote", "DetailPage", "CalendarNames", "AudienceNames" )]
+    public class EventOccurrenceSummary : RockDynamic
     {
         public EventItemOccurrence EventItemOccurrence { get; set; }
 
@@ -485,9 +530,9 @@ namespace Rock.Lava.Blocks
     }
 
     /// <summary>
-    /// A block-level viewmodel for event item occurrences dates.
+    /// An internal data structure to store event item occurrences dates.
     /// </summary>
-    public class EventOccurrenceDate
+    internal class EventOccurrenceDate
     {
         public EventItemOccurrence EventItemOccurrence { get; set; }
 
@@ -495,5 +540,4 @@ namespace Rock.Lava.Blocks
     }
 
     #endregion
-    */
 }

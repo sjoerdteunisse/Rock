@@ -12,7 +12,7 @@ namespace Rock.Tests.Integration.Lava
     [TestClass]
     public class EventOccurrencesCommandTests
     {
-        private static string InternalCalendarGuidString = "8C7F7F4E-1C51-41D3-9AC3-02B3F4054798";
+        private static string StaffMeetingEventGuidString = "93104654-DAFA-489B-A175-5F2AB3A846F1";
         private static string PublicCalendarGuidString = "8A444668-19AF-4417-9C74-09F842572974";
         private static string StaffAudienceGuidString = "833EE2C7-F83A-4744-AD14-6907554DF8AE";
         private static string YouthAudienceGuidString = "59CD7FD8-6A62-4C3B-8966-1520E74EED58";
@@ -20,7 +20,7 @@ namespace Rock.Tests.Integration.Lava
         private static string LavaTemplateEventOccurrences = @";
         
 
-{% EventOccurrences {parameters} %}
+{% eventoccurrences {parameters} %}
   {% assign eventItemOccurrenceCount = EventItemOccurrences | Size %}
   <<EventCount = {{ EventItemOccurrences | Size }}>>
   {% for eventItemOccurrence in EventItemOccurrences %}
@@ -28,7 +28,7 @@ namespace Rock.Tests.Integration.Lava
     <<Calendars: {{ eventItemOccurrence.CalendarNames | Join:', ' }}>>
     <<Audiences: {{ eventItemOccurrence.AudienceNames | Join:', ' }}>>
   {% endfor %}
-{% endEventOccurrences %}
+{% endeventoccurrences %}
 ";
 
 
@@ -57,123 +57,136 @@ namespace Rock.Tests.Integration.Lava
         [TestMethod]
         public void EventOccurrencesCommand_WithUnknownParameterName_RendersErrorMessage()
         {
-            var template = GetTestTemplate( "calendarid:'Internal' unknown_parameter:'any_value'" );
+            var template = GetTestTemplate( "eventid:'1' unknown_parameter:'any_value'" );
 
             var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "Calendar Events not available. Invalid configuration setting \"unknown_parameter\"." );
+            Assert.That.Contains( output, "Event Occurrences not available. Invalid configuration setting \"unknown_parameter\"." );
         }
 
         [TestMethod]
-        public void EventOccurrencesCommand_WithCalendarAsName_RetrievesEventsInCorrectCalendar()
+        public void EventOccurrencesCommand_WithEventAsName_RetrievesOccurrencesInCorrectEvent()
         {
-            var template = GetTestTemplate( "calendarid:'Internal' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
+            var template = GetTestTemplate( "eventid:'Staff Meeting' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
 
             var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "<Calendars: Internal>" );
+            Assert.That.Contains( output, "<<Staff Meeting|2020-01-01|12:00 AM|All Campuses>>" );
+            Assert.That.Contains( output, "<<Staff Meeting|2020-01-15|12:00 AM|All Campuses>>" );
+
         }
 
         [TestMethod]
-        public void EventOccurrencesCommand_WithCalendarAsId_RetrievesEventsInCorrectCalendar()
+        public void EventOccurrencesCommand_WithEventAsId_RetrievesOccurrencesInCorrectEvent()
         {
-            var template = GetTestTemplate( "calendarid:'1' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
+            // Get Event Item Id for "Warrior Youth Event".
+            var rockContext = new RockContext();
+
+            var eventItemService = new EventItemService( rockContext );
+            var eventId = eventItemService.GetId( StaffMeetingEventGuidString.AsGuid() );
+
+            Assert.That.IsNotNull( eventId, "Expected test data not found." );
+
+            var template = GetTestTemplate( $"eventid:{eventId} startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
 
             var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "<Calendars: Internal, Public>" );
+            Assert.That.Contains( output, "<<Staff Meeting|2020-01-01|12:00 AM|All Campuses>>" );
+            Assert.That.Contains( output, "<<Staff Meeting|2020-01-15|12:00 AM|All Campuses>>" );
+
         }
 
         [TestMethod]
-        public void EventOccurrencesCommand_WithCalendarAsGuid_RetrievesEventsInCorrectCalendar()
+        public void EventOccurrencesCommand_WithEventAsGuid_RetrievesOccurrencesInCorrectEvent()
         {
-            var template = GetTestTemplate( $"calendarid:'{InternalCalendarGuidString}' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
+            var template = GetTestTemplate( $"eventid:'{StaffMeetingEventGuidString}' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
 
             var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "<Calendars: Internal>" );
+            Assert.That.Contains( output, "<<Staff Meeting|2020-01-01|12:00 AM|All Campuses>>" );
+            Assert.That.Contains( output, "<<Staff Meeting|2020-01-15|12:00 AM|All Campuses>>" );
         }
 
         [TestMethod]
-        public void EventOccurrencesCommand_WithCalendarNotSpecified_RendersErrorMessage()
+        public void EventOccurrencesCommand_WithEventNotSpecified_RendersErrorMessage()
         {
             var template = GetTestTemplate( "startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
 
             var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "Calendar Events not available. A calendar reference must be specified." );
+            Assert.That.Contains( output, "Event Occurrences not available. An Event reference must be specified." );
         }
 
         [TestMethod]
-        public void EventOccurrencesCommand_WithCalendarInvalidValue_RendersErrorMessage()
+        public void EventOccurrencesCommand_WithEventInvalidValue_RendersErrorMessage()
         {
-            var template = GetTestTemplate( "calendarid:'no_calendar' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
+            var template = GetTestTemplate( "eventid:'no_event' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
 
             var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "Calendar Events not available. Cannot find a calendar matching the reference \"no_calendar\"." );
+            Assert.That.Contains( output, "Event Occurrences not available. Cannot find an Event matching the reference \"no_event\"." );
         }
         
-        [TestMethod]
-        public void EventOccurrencesCommand_WithAudienceAsName_RetrievesEventsWithMatchingAudience()
-        {
-            var template = GetTestTemplate( "calendarid:'Public' audienceids:'Youth' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
+        //[TestMethod]
+        //public void EventOccurrencesCommand_WithAudienceAsName_RetrievesOccurrencesWithMatchingAudience()
+        //{
+        //    var template = GetTestTemplate( "calendarid:'Public' audienceids:'Youth' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
 
-            var output = template.ResolveMergeFields( null );
+        //    var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "<Audiences: All Church, Adults, Youth>" );
-        }
-        public void EventOccurrencesCommand_WithAudienceAsMultipleValues_RetrievesEventsWithAnyMatchingAudience()
-        {
-            var template = GetTestTemplate( "calendarid:'Public' audienceids:'Men,Women' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
+        //    Assert.That.Contains( output, "<Audiences: All Church, Adults, Youth>" );
+        //}
+        //public void EventOccurrencesCommand_WithAudienceAsMultipleValues_RetrievesOccurrencesWithAnyMatchingAudience()
+        //{
+        //    var template = GetTestTemplate( "calendarid:'Public' audienceids:'Men,Women' startdate:'2020-1-1' daterange:'12m' maxoccurrences:2" );
 
-            var output = template.ResolveMergeFields( null );
+        //    var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "<Audiences: Internal>" );
-        }
+        //    Assert.That.Contains( output, "<Audiences: Internal>" );
+        //}
 
-        [TestMethod]
-        public void EventOccurrencesCommand_WithAudienceAsId_RetrievesEventsWithMatchingAudience()
-        {
-            var rockContext = new RockContext();
+        //[TestMethod]
+        //public void EventOccurrencesCommand_WithAudienceAsId_RetrievesOccurrencesWithMatchingAudience()
+        //{
+        //    var rockContext = new RockContext();
 
-            var audienceGuid = SystemGuid.DefinedType.CONTENT_CHANNEL_AUDIENCE_TYPE.AsGuid();
+        //    var audienceGuid = SystemGuid.DefinedType.CONTENT_CHANNEL_AUDIENCE_TYPE.AsGuid();
 
-            var definedValueId = new DefinedTypeService( rockContext ).Queryable()
-                .FirstOrDefault( x => x.Guid == audienceGuid )
-                .DefinedValues.FirstOrDefault( x => x.Value == "All Church" ).Id;
+        //    var definedValueId = new DefinedTypeService( rockContext ).Queryable()
+        //        .FirstOrDefault( x => x.Guid == audienceGuid )
+        //        .DefinedValues.FirstOrDefault( x => x.Value == "All Church" ).Id;
 
-            var template = GetTestTemplate( $"calendarid:'Public' audienceids:'{definedValueId}' startdate:'2018-1-1'" );
+        //    var template = GetTestTemplate( $"calendarid:'Public' audienceids:'{definedValueId}' startdate:'2018-1-1'" );
 
-            var output = template.ResolveMergeFields( null );
+        //    var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "<Audiences: All Church," );
-        }
+        //    Assert.That.Contains( output, "<Audiences: All Church," );
+        //}
 
-        [TestMethod]
-        public void EventOccurrencesCommand_WithAudienceAsGuid_RetrievesEventsWithMatchingAudience()
-        {
-            var template = GetTestTemplate( $"calendarid:'Public' audienceids:'{YouthAudienceGuidString}' startdate:'2018-1-1'" );
+        //[TestMethod]
+        //public void EventOccurrencesCommand_WithAudienceAsGuid_RetrievesOccurrencesWithMatchingAudience()
+        //{
+        //    var template = GetTestTemplate( $"calendarid:'Public' audienceids:'{YouthAudienceGuidString}' startdate:'2018-1-1'" );
 
-            var output = template.ResolveMergeFields( null );
+        //    var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "<Audiences: All Church, Adults, Youth" );
-        }
+        //    Assert.That.Contains( output, "<Audiences: All Church, Adults, Youth" );
+        //}
 
-        [TestMethod]
-        public void EventOccurrencesCommand_WithAudienceInvalidValue_RendersErrorMessage()
-        {
-            var template = GetTestTemplate( "calendarid:'Internal' audienceids:'no_audience'" );
+        //[TestMethod]
+        //public void EventOccurrencesCommand_WithAudienceInvalidValue_RendersErrorMessage()
+        //{
+        //    var template = GetTestTemplate( "eventid:'Staff Meeting' audienceids:'no_audience'" );
 
-            var output = template.ResolveMergeFields( null );
+        //    var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "Calendar Events not available. Cannot apply an audience filter for the reference \"no_audience\"." );
-        }
+        //    Assert.That.Contains( output, "Calendar Events not available. Cannot apply an audience filter for the reference \"no_audience\"." );
+        //}
 
         [TestMethod]
         public void EventOccurrencesCommand_WithDateRangeInMonths_ReturnsExpectedEvents()
         {
-            var template = GetTestTemplate( "calendarid:'Internal' startdate:'2020-1-1' daterange:'3m'" );
+            var template = GetTestTemplate( "eventid:'Staff Meeting' startdate:'2020-1-1' daterange:'3m'" );
 
             var output = template.ResolveMergeFields( null );
 
@@ -189,7 +202,7 @@ namespace Rock.Tests.Integration.Lava
         [TestMethod]
         public void EventOccurrencesCommand_WithDateRangeInWeeks_ReturnsExpectedEvents()
         {
-            var template = GetTestTemplate( "calendarid:'Internal' startdate:'2020-1-1' daterange:'5w'" );
+            var template = GetTestTemplate( "eventid:'Staff Meeting' startdate:'2020-1-1' daterange:'5w'" );
 
             var output = template.ResolveMergeFields( null );
 
@@ -204,7 +217,7 @@ namespace Rock.Tests.Integration.Lava
         [TestMethod]
         public void EventOccurrencesCommand_WithDateRangeInDays_ReturnsExpectedEvents()
         {
-            var template = GetTestTemplate( "calendarid:'Internal' startdate:'2020-1-1' daterange:'27d'" );
+            var template = GetTestTemplate( "eventid:'Staff Meeting' startdate:'2020-1-1' daterange:'27d'" );
 
             var output = template.ResolveMergeFields( null );
 
@@ -219,7 +232,7 @@ namespace Rock.Tests.Integration.Lava
         [TestMethod]
         public void EventOccurrencesCommand_WithDateRangeContainingNoEvents_ReturnsNoEvents()
         {
-            var template = GetTestTemplate( "calendarid:'Internal' startdate:'1020-1-1' daterange:'12m'" );
+            var template = GetTestTemplate( "eventid:'Staff Meeting' startdate:'1020-1-1' daterange:'12m'" );
 
             var output = template.ResolveMergeFields( null );
 
@@ -231,7 +244,7 @@ namespace Rock.Tests.Integration.Lava
         [TestMethod]
         public void EventOccurrencesCommand_WithDateRangeUnspecified_ReturnsAllEvents()
         {
-            var template = GetTestTemplate( "calendarid:'Internal' startdate:'2020-1-1' maxoccurrences:200" );
+            var template = GetTestTemplate( "eventid:'Staff Meeting' startdate:'2020-1-1' maxoccurrences:200" );
 
             var output = template.ResolveMergeFields( null );
 
@@ -242,11 +255,11 @@ namespace Rock.Tests.Integration.Lava
         [TestMethod]
         public void EventOccurrencesCommand_WithDateRangeInvalidValue_RendersErrorMessage()
         {
-            var template = GetTestTemplate( "calendarid:'Internal' daterange:'invalid'" );
+            var template = GetTestTemplate( "eventid:'Staff Meeting' daterange:'invalid'" );
 
             var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "Calendar Events not available. The specified Date Range is invalid." );
+            Assert.That.Contains( output, "Event Occurrences not available. The specified Date Range is invalid." );
         }
 
         [TestMethod]
@@ -254,14 +267,14 @@ namespace Rock.Tests.Integration.Lava
         {
             // First, ensure that there are more than the default maximum number of events to return.
             // The default maximum is 100 events.
-            var template1 = GetTestTemplate( "calendarid:'Internal' startdate:'2020-1-1' maxoccurrences:101" );
+            var template1 = GetTestTemplate( "eventid:'Staff Meeting' startdate:'2020-1-1' maxoccurrences:101" );
 
             var output1 = template1.ResolveMergeFields( null );
 
             Assert.That.Contains( output1, "<EventCount = 101>" );
 
             // Now ensure that the default limit is applied.
-            var template2 = GetTestTemplate( "calendarid:'Internal' startdate:'2020-1-1'" );
+            var template2 = GetTestTemplate( "eventid:'Staff Meeting' startdate:'2020-1-1'" );
 
             var output2 = template2.ResolveMergeFields( null );
 
@@ -272,14 +285,14 @@ namespace Rock.Tests.Integration.Lava
         public void EventOccurrencesCommand_WithMaxOccurrencesLessThanAvailableEvents_ReturnsMaxOccurrences()
         {
             // First, ensure that there are more than the test maximum number of events to return.
-            var template1 = GetTestTemplate( "calendarid:'Internal' startdate:'2020-1-1' maxoccurrences:11" );
+            var template1 = GetTestTemplate( "eventid:'Staff Meeting' startdate:'2020-1-1' maxoccurrences:11" );
 
             var output1 = template1.ResolveMergeFields( null );
 
             Assert.That.Contains( output1, "<EventCount = 11>" );
 
             // Now ensure that the maxoccurences limit is applied.
-            var template = GetTestTemplate( "calendarid:'Internal' startdate:'2020-1-1' maxoccurrences:10" );
+            var template = GetTestTemplate( "eventid:'Staff Meeting' startdate:'2020-1-1' maxoccurrences:10" );
 
             var output = template.ResolveMergeFields( null );
 
@@ -289,11 +302,11 @@ namespace Rock.Tests.Integration.Lava
         [TestMethod]
         public void EventOccurrencesCommand_WithMaxOccurrencesInvalidValue_RendersErrorMessage()
         {
-            var template = GetTestTemplate( "calendarid:'Internal' startdate:'2020-1-1' maxoccurrences:'invalid_value'" );
+            var template = GetTestTemplate( "eventid:'Staff Meeting' startdate:'2020-1-1' maxoccurrences:'invalid_value'" );
 
             var output = template.ResolveMergeFields( null );
 
-            Assert.That.Contains( output, "Calendar Events not available. Invalid configuration setting \"maxoccurrences\"." );
+            Assert.That.Contains( output, "Event Occurrences not available. Invalid configuration setting \"maxoccurrences\"." );
         }
 
         /*
