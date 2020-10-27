@@ -34,30 +34,21 @@ namespace Rock.Bus.Queue
         string Name { get; }
 
         /// <summary>
-        /// Gets the Rock instance specific name. This name is unique for this queue and this instance of Rock.
+        /// Gets the name for configuration.
         /// </summary>
         /// <value>
-        /// The name.
+        /// The name for configuration.
         /// </value>
-        string InstanceSpecificName { get; }
+        string NameForConfiguration { get; }
 
         /// <summary>
         /// Gets the time to live seconds.
+        /// A setting of null or less than 1 means there is no expiration.
         /// </summary>
         /// <value>
         /// The time to live seconds.
         /// </value>
-        int TimeToLiveSeconds { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether this queue broadcasts messages or delivers them to a single Rock instance.
-        /// Broadcasting is good for events that need to be known by all Rock instances like cache invalidation.
-        /// Not broadcasting is better for things like starting jobs where only one instance needs to execute the job.
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if this instance is broadcast; otherwise, <c>false</c>.
-        /// </value>
-        bool IsBroadcast { get; }
+        int? TimeToLiveSeconds { get; }
     }
 
     /// <summary>
@@ -74,12 +65,12 @@ namespace Rock.Bus.Queue
         public virtual string Name => GetType().Name;
 
         /// <summary>
-        /// Gets the Rock instance specific name. This name is unique for this queue and this instance of Rock.
+        /// Gets the name for configuration.
         /// </summary>
         /// <value>
-        /// The name.
+        /// The name for configuration.
         /// </value>
-        public virtual string InstanceSpecificName => $"{Name}_{RockMessageBus.RockInstanceGuid}";
+        public virtual string NameForConfiguration => Name;
 
         /// <summary>
         /// Gets the time to live seconds.
@@ -87,17 +78,29 @@ namespace Rock.Bus.Queue
         /// <value>
         /// The time to live seconds.
         /// </value>
-        public virtual int TimeToLiveSeconds => 5 * 60;
+        public virtual int? TimeToLiveSeconds => 5 * 60;
 
         /// <summary>
-        /// Gets a value indicating whether this queue broadcasts messages or delivers them to a single Rock instance.
-        /// Broadcasting is good for events that need to be known by all Rock instances like cache invalidation.
-        /// Not broadcasting is better for things like starting jobs where only one instance needs to execute the job.
+        /// Gets the time to live header value for a new message.
         /// </summary>
-        /// <value>
-        ///   <c>true</c> if this instance is broadcast; otherwise, <c>false</c>.
-        /// </value>
-        public virtual bool IsBroadcast => true;
+        /// <returns></returns>
+        public static TimeSpan? GetTimeToLive<TQueue>()
+            where TQueue : IRockQueue, new()
+        {
+            var queue = Get<TQueue>();
+            return GetTimeToLive( queue );
+        }
+
+        /// <summary>
+        /// Gets the time to live header value for a new message.
+        /// </summary>
+        /// <param name="queue">The queue.</param>
+        /// <returns></returns>
+        public static TimeSpan? GetTimeToLive( IRockQueue queue )
+        {
+            var canHaveValue = queue.TimeToLiveSeconds.HasValue && queue.TimeToLiveSeconds > 0;
+            return canHaveValue ? ( TimeSpan? ) TimeSpan.FromSeconds( queue.TimeToLiveSeconds.Value ) : null;
+        }
 
         /// <summary>
         /// Gets this instance.
@@ -105,6 +108,7 @@ namespace Rock.Bus.Queue
         /// <typeparam name="TQueue">The type of the queue.</typeparam>
         /// <returns></returns>
         public static IRockQueue Get<TQueue>()
+            where TQueue : IRockQueue, new()
         {
             return Get( typeof( TQueue ) );
         }
@@ -128,14 +132,5 @@ namespace Rock.Bus.Queue
             return queue;
         }
         private static Dictionary<string, IRockQueue> _queues = new Dictionary<string, IRockQueue>();
-
-        /// <summary>
-        /// Gets the name for configuration.
-        /// </summary>
-        /// <returns></returns>
-        internal static string GetNameForConfiguration( IRockQueue queue )
-        {
-            return queue.IsBroadcast ? queue.InstanceSpecificName : queue.Name;
-        }
     }
 }

@@ -20,7 +20,7 @@ namespace Rock.Bus.Queue
     /// <summary>
     /// A Rock Message Bus Queue for Entity Updates
     /// </summary>
-    public sealed class EntityUpdateQueue : RockQueue
+    public sealed class EntityUpdateQueue : PublishEventQueue
     {
         /// <summary>
         /// Gets the queue name. Each instance of Rock shares this name for this queue.

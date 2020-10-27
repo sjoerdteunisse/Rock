@@ -25,7 +25,7 @@ namespace Rock.Bus.Message
     /// <summary>
     /// Cache Update Message
     /// </summary>
-    public interface ICacheWasUpdatedMessage : IRockMessage<CacheQueue>
+    public interface ICacheWasUpdatedMessage : IEventMessage<CacheEventQueue>
     {
         /// <summary>
         /// Gets the cache name.

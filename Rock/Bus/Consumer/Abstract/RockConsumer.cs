@@ -62,7 +62,7 @@ namespace Rock.Bus.Consumer
         /// <summary>
         /// The context
         /// </summary>
-        protected ConsumeContext<TMessage> _consumeContext = null;
+        protected ConsumeContext<TMessage> ConsumeContext { get; private set; } = null;
 
         /// <summary>
         /// Consumes the specified message.
@@ -77,7 +77,7 @@ namespace Rock.Bus.Consumer
         /// <returns></returns>
         public virtual Task Consume( ConsumeContext<TMessage> context )
         {
-            _consumeContext = context;
+            ConsumeContext = context;
             Consume( context.Message );
             return Task.Delay( 0 );
         }
@@ -88,14 +88,8 @@ namespace Rock.Bus.Consumer
         /// <returns></returns>
         public static IRockQueue GetQueue()
         {
-            if ( _queue == null )
-            {
-                _queue = Activator.CreateInstance<TQueue>();
-            }
-
-            return _queue;
+            return RockQueue.Get<TQueue>();
         }
-        private static IRockQueue _queue = null;
 
         /// <summary>
         /// Gets the instance.
@@ -127,7 +121,7 @@ namespace Rock.Bus.Consumer
             foreach ( var queue in queues )
             {
                 var consumerTypes = consumersByQueue[queue];
-                var queueName = RockQueue.GetNameForConfiguration( queue );
+                var queueName = queue.NameForConfiguration;
 
                 configurator.ReceiveEndpoint( queueName, e =>
                 {
@@ -219,13 +213,8 @@ namespace Rock.Bus.Consumer
 
                 if ( genericInterface == _genericInterfaceType )
                 {
-                    foreach ( var genericTypeArgument in typeInterface.GenericTypeArguments )
-                    {
-                        if ( genericTypeArgument.GetInterfaces().Contains( queueInterface ) )
-                        {
-                            return genericTypeArgument;
-                        }
-                    }
+                    // There are two generic type arguments. The first is the queue and the second is the message
+                    return typeInterface.GenericTypeArguments[0];
                 }
             }
 
@@ -248,13 +237,8 @@ namespace Rock.Bus.Consumer
 
                 if ( genericInterface == _genericInterfaceType )
                 {
-                    foreach ( var genericTypeArgument in typeInterface.GenericTypeArguments )
-                    {
-                        if ( genericTypeArgument.GetInterfaces().Contains( messageInterface ) )
-                        {
-                            return genericTypeArgument;
-                        }
-                    }
+                    // There are two generic type arguments. The first is the queue and the second is the message
+                    return typeInterface.GenericTypeArguments[1];
                 }
             }
 

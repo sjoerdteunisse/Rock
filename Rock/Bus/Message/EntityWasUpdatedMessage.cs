@@ -27,7 +27,7 @@ namespace Rock.Bus.Message
     /// <summary>
     /// Entity Update Message Interface
     /// </summary>
-    public interface IEntityWasUpdatedMessage : IRockMessage<EntityUpdateQueue>
+    public interface IEntityWasUpdatedMessage : IEventMessage<EntityUpdateQueue>
     {
         /// <summary>
         /// Gets the entity type identifier.

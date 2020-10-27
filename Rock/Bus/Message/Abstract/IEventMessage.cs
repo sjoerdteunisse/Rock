@@ -15,16 +15,15 @@
 // </copyright>
 //
 
-using System;
 using Rock.Bus.Queue;
 
 namespace Rock.Bus.Message
 {
     /// <summary>
-    /// A Rock Bus Message
+    /// A Rock Bus Message that is an event published to an event queue.
     /// </summary>
-    public interface IRockMessage<TQueue>
-        where TQueue : IRockQueue, new()
+    public interface IEventMessage<TQueue> : IRockMessage<TQueue>
+        where TQueue : IPublishEventQueue, new()
     {
     }
 }

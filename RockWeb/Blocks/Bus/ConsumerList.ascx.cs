@@ -13,13 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // </copyright>
-//
+
 using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Web.UI;
 using Rock;
 using Rock.Bus.Consumer;
+using Rock.Bus.Queue;
 using Rock.Model;
 using Rock.Web.UI;
 
@@ -33,7 +34,7 @@ namespace RockWeb.Blocks.Bus
     {
         #region Base Control Methods
 
-        //  overrides of the base RockBlock methods (i.e. OnInit, OnLoad)
+        // overrides of the base RockBlock methods (i.e. OnInit, OnLoad)
 
         /// <summary>
         /// Raises the <see cref="E:System.Web.UI.Control.Init" /> event.
@@ -102,11 +103,19 @@ namespace RockWeb.Blocks.Bus
                 .Select( ct =>
                 {
                     var queue = RockConsumer.GetQueue( ct );
+                    var messageType = RockConsumer.GetMessageType( ct );
+
+                    var queueType =
+                        queue is ISendCommandQueue ? "Command" :
+                        queue is IPublishEventQueue ? "Event" :
+                        "Unknown";
 
                     return new ConsumerViewModel
                     {
-                        ConsumerName = ct.Name,
-                        QueueName = queue == null ? null : queue.Name
+                        ConsumerName = Reflection.GetFriendlyName( ct ),
+                        QueueName = queue == null ? null : queue.Name,
+                        QueueType = queueType,
+                        MessageName = Reflection.GetFriendlyName( messageType )
                     };
                 } )
                 .AsQueryable();
@@ -121,8 +130,8 @@ namespace RockWeb.Blocks.Bus
             else
             {
                 viewModels = viewModels
-                    .OrderBy( vm => vm.ConsumerName )
-                    .ThenBy( vm => vm.QueueName );
+                    .OrderBy( vm => vm.QueueName )
+                    .ThenBy( vm => vm.ConsumerName );
             }
 
             gList.DataSource = viewModels.ToList();
@@ -153,6 +162,22 @@ namespace RockWeb.Blocks.Bus
             /// The name of the queue.
             /// </value>
             public string QueueName { get; set; }
+
+            /// <summary>
+            /// Gets or sets the type of the queue.
+            /// </summary>
+            /// <value>
+            /// The type of the queue.
+            /// </value>
+            public string QueueType { get; set; }
+
+            /// <summary>
+            /// Gets or sets the name of the message.
+            /// </summary>
+            /// <value>
+            /// The name of the message.
+            /// </value>
+            public string MessageName { get; set; }
         }
 
         #endregion ViewModels

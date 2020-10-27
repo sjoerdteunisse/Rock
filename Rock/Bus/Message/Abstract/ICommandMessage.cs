@@ -20,30 +20,10 @@ using Rock.Bus.Queue;
 namespace Rock.Bus.Message
 {
     /// <summary>
-    /// Start Task Message
+    /// A Rock Bus Message that is a command sent over a command queue.
     /// </summary>
-    public interface IStartTaskMessage : ICommandMessage<StartTaskQueue>
+    public interface ICommandMessage<TQueue> : IRockMessage<TQueue>
+        where TQueue : ISendCommandQueue, new()
     {
-        /// <summary>
-        /// Gets or sets the data.
-        /// </summary>
-        /// <value>
-        /// The data.
-        /// </value>
-        string Data { get; set; }
-    }
-
-    /// <summary>
-    /// Start Task Message
-    /// </summary>
-    public class StartTaskMessage : IStartTaskMessage
-    {
-        /// <summary>
-        /// Gets or sets the data.
-        /// </summary>
-        /// <value>
-        /// The data.
-        /// </value>
-        public string Data { get; set; }
     }
 }

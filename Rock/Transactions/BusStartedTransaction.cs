@@ -28,7 +28,7 @@ namespace Rock.Transactions
     /// Bus Started Transaction
     /// </summary>
     public abstract class BusStartedTransaction<TMessage> : RockConsumer<StartTaskQueue, TMessage>
-        where TMessage : class, IRockMessage<StartTaskQueue>
+        where TMessage : class, ICommandMessage<StartTaskQueue>
     {
         /// <summary>
         /// Consumes the specified context.
@@ -40,10 +40,11 @@ namespace Rock.Transactions
         }
 
         /// <summary>
-        /// Generate messages from the instance properties.
+        /// Generate messages from the instance properties that should be sent on the
+        /// message bus so that a Rock instance can execute the transactions.
         /// </summary>
         /// <returns></returns>
-        public abstract IEnumerable<TMessage> GetMessages();
+        public abstract IEnumerable<TMessage> GetMessagesToSend();
 
         /// <summary>
         /// Executes this instance.
@@ -55,7 +56,7 @@ namespace Rock.Transactions
         /// </summary>
         public void Send()
         {
-            var messages = GetMessages();
+            var messages = GetMessagesToSend();
 
             if ( messages?.Any() != true )
             {

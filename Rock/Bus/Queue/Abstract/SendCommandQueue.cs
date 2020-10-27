@@ -18,16 +18,18 @@
 namespace Rock.Bus.Queue
 {
     /// <summary>
-    /// A Rock Message Bus Queue for Cache Events
+    /// Send Command Queue Interface.
+    /// Send Queues are intended for sending command messages.
     /// </summary>
-    public sealed class CacheQueue : RockQueue
+    public interface ISendCommandQueue : IRockQueue
     {
-        /// <summary>
-        /// Gets the queue name. Each instance of Rock shares this name for this queue.
-        /// </summary>
-        /// <value>
-        /// The name.
-        /// </value>
-        public override string Name => "rock-cache-queue";
+    }
+
+    /// <summary>
+    /// Send Command Queue Abstract Class.
+    /// Send Queues are intended for sending command messages.
+    /// </summary>
+    public abstract class SendCommandQueue : RockQueue, ISendCommandQueue
+    {
     }
 }

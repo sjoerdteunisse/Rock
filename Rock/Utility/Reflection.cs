@@ -431,5 +431,49 @@ namespace Rock
 
             return _pluginAssemblies.ToList();
         }
+
+
+        /// <summary>
+        /// Gets the name of the type in a "friendly" manner.
+        /// Nested types are returned as "A.B.C."
+        /// Generic types are returned as "A&lt;B,C&gt;"
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        public static string GetFriendlyName( Type type )
+        {
+            if ( type == null )
+            {
+                return string.Empty;
+            }
+
+            var rawTypeName = type.Name;
+
+            if ( type.IsGenericType && type.IsNested )
+            {
+                var nameWithoutParamCount = rawTypeName.Substring( 0, rawTypeName.IndexOf( "`" ) );
+                var nestedName = string.Format( "{0}.{1}", GetFriendlyName( type.DeclaringType ), nameWithoutParamCount );
+
+                return string.Format(
+                    "{0}<{1}>",
+                    nestedName,
+                    type.GetGenericArguments().Select( GetFriendlyName ).JoinStrings( ", " ) );
+            }
+
+            if ( type.IsGenericType )
+            {
+                return string.Format(
+                    "{0}<{1}>",
+                    rawTypeName.Substring( 0, rawTypeName.IndexOf( "`" ) ),
+                    type.GetGenericArguments().Select( GetFriendlyName ).JoinStrings( ", " ) );
+            }
+
+            if ( type.IsNested )
+            {
+                return string.Format( "{0}.{1}", GetFriendlyName( type.DeclaringType ), type.Name );
+            }
+
+            return rawTypeName;
+        }
     }
 }

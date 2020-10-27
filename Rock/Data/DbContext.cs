@@ -397,14 +397,6 @@ namespace Rock.Data
                         Data = $"DefinedType: {( item.Entity as DefinedType ).Name}"
                     } );
                 }
-
-                if ( item.Entity.TypeId == EntityTypeCache.Get<DefinedValue>().Id )
-                {
-                    _ = RockMessageBus.Publish<StartTaskQueue, StartTaskMessage>( new StartTaskMessage
-                    {
-                        Data = $"DefinedValue: {( item.Entity as DefinedValue ).Value}"
-                    } );
-                }
                 // END TODO: DEBUG ONLY - remove this
 
                 if ( item.State == EntityState.Detached || item.State == EntityState.Deleted )

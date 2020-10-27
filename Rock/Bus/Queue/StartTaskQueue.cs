@@ -20,7 +20,7 @@ namespace Rock.Bus.Queue
     /// <summary>
     /// A Rock Message Bus Queue for Starting Tasks
     /// </summary>
-    public sealed class StartTaskQueue : RockQueue
+    public sealed class StartTaskQueue : SendCommandQueue
     {
         /// <summary>
         /// Gets the queue name. Each instance of Rock shares this name for this queue.
@@ -29,15 +29,5 @@ namespace Rock.Bus.Queue
         /// The name.
         /// </value>
         public override string Name => "rock-start-task-queue";
-
-        /// <summary>
-        /// Gets a value indicating whether this queue broadcasts messages or delivers them to a single Rock instance.
-        /// Broadcasting is good for events that need to be known by all Rock instances like cache invalidation.
-        /// Not broadcasting is better for things like starting jobs where only one instance needs to execute the job.
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if this instance is broadcast; otherwise, <c>false</c>.
-        /// </value>
-        public override bool IsBroadcast => false;
     }
 }

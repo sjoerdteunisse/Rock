@@ -20,30 +20,32 @@ using Rock.Bus.Queue;
 namespace Rock.Bus.Message
 {
     /// <summary>
-    /// Start Task Message
+    /// A Rock Bus Message
     /// </summary>
-    public interface IStartTaskMessage : ICommandMessage<StartTaskQueue>
+    public interface IRockMessage<TQueue>
+        where TQueue : IRockQueue, new()
     {
-        /// <summary>
-        /// Gets or sets the data.
-        /// </summary>
-        /// <value>
-        /// The data.
-        /// </value>
-        string Data { get; set; }
     }
 
     /// <summary>
-    /// Start Task Message
+    /// Rock Message Static Helpers
     /// </summary>
-    public class StartTaskMessage : IStartTaskMessage
+    public static class RockMessage
     {
         /// <summary>
-        /// Gets or sets the data.
+        /// Gets the log string.
         /// </summary>
-        /// <value>
-        /// The data.
-        /// </value>
-        public string Data { get; set; }
+        /// <typeparam name="TQueue">The type of the queue.</typeparam>
+        /// <param name="message">The message.</param>
+        /// <returns></returns>
+        public static string GetLogString<TQueue>( IRockMessage<TQueue> message )
+            where TQueue : IRockQueue, new()
+        {
+            var messageJson = message.ToJson();
+            var queueName = RockQueue.Get<TQueue>().Name;
+            var messageType = message.GetType().FullName;
+
+            return $"Queue: {queueName}\nMessageType: {messageType}\n{messageJson}";
+        }
     }
 }

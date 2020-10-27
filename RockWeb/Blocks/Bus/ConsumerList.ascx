@@ -16,8 +16,10 @@
                 <div class="grid grid-panel">
                     <Rock:Grid ID="gList" runat="server" AllowSorting="true">
                         <Columns>
-                            <Rock:RockBoundField DataField="ConsumerName" HeaderText="Consumer" SortExpression="ConsumerName" />
                             <Rock:RockBoundField DataField="QueueName" HeaderText="Queue" SortExpression="QueueName" />
+                            <Rock:RockBoundField DataField="QueueType" HeaderText="Type" SortExpression="QueueType" />
+                            <Rock:RockBoundField DataField="ConsumerName" HeaderText="Consumer" SortExpression="ConsumerName" />
+                            <Rock:RockBoundField DataField="MessageName" HeaderText="Message" SortExpression="MessageName" />
                         </Columns>
                     </Rock:Grid>
                 </div>

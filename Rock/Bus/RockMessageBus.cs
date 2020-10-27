@@ -20,6 +20,7 @@ using Rock.Bus.Consumer;
 using Rock.Bus.Message;
 using Rock.Bus.Queue;
 using Rock.Bus.Transport;
+using Rock.Model;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -31,6 +32,11 @@ namespace Rock.Bus
     /// </summary>
     public static class RockMessageBus
     {
+        /// <summary>
+        /// Is the bus started?
+        /// </summary>
+        private static bool _isBusStarted = false;
+
         /// <summary>
         /// The bus
         /// </summary>
@@ -61,6 +67,7 @@ namespace Rock.Bus
 
             _bus = _transportComponent.GetBusControl( RockConsumer.ConfigureRockConsumers );
             await _bus.StartAsync();
+            _isBusStarted = true;
         }
 
         /// <summary>
@@ -68,8 +75,8 @@ namespace Rock.Bus
         /// </summary>
         /// <param name="message">The message.</param>
         public static async Task Publish<TQueue, TMessage>( TMessage message )
-            where TQueue : IRockQueue, new()
-            where TMessage : class, IRockMessage<TQueue>
+            where TQueue : IPublishEventQueue, new()
+            where TMessage : class, IEventMessage<TQueue>
         {
             await Publish( message, typeof( TMessage ) );
         }
@@ -80,18 +87,18 @@ namespace Rock.Bus
         /// <typeparam name="TQueue">The type of the queue.</typeparam>
         /// <param name="message">The message.</param>
         /// <param name="messageType">Type of the message.</param>
-        public static async Task Publish<TQueue>( IRockMessage<TQueue> message, Type messageType )
-            where TQueue : IRockQueue, new()
+        public static async Task Publish<TQueue>( IEventMessage<TQueue> message, Type messageType )
+            where TQueue : IPublishEventQueue, new()
         {
             if ( !IsReady() )
             {
+                ExceptionLogService.LogException( $"A message was published before the message bus was ready: {RockMessage.GetLogString( message )}" );
                 return;
             }
 
-            var queue = RockQueue.Get<TQueue>();
             await _bus.Publish( message, messageType, context =>
             {
-                context.TimeToLive = TimeSpan.FromSeconds( queue.TimeToLiveSeconds );
+                context.TimeToLive = RockQueue.GetTimeToLive<TQueue>();
             } );
         }
 
@@ -100,31 +107,34 @@ namespace Rock.Bus
         /// </summary>
         /// <param name="message">The message.</param>
         public static async Task Send<TQueue, TMessage>( TMessage message )
-            where TQueue : IRockQueue, new()
-            where TMessage : class, IRockMessage<TQueue>
+            where TQueue : ISendCommandQueue, new()
+            where TMessage : class, ICommandMessage<TQueue>
         {
             await Send( message, typeof( TMessage ) );
         }
 
         /// <summary>
-        /// Sends the message.
+        /// Sends the command message.
         /// </summary>
         /// <typeparam name="TQueue">The type of the queue.</typeparam>
         /// <param name="message">The message.</param>
         /// <param name="messageType">Type of the message.</param>
-        public static async Task Send<TQueue>( IRockMessage<TQueue> message, Type messageType )
-            where TQueue : IRockQueue, new()
+        public static async Task Send<TQueue>( ICommandMessage<TQueue> message, Type messageType )
+            where TQueue : ISendCommandQueue, new()
         {
             if ( !IsReady() )
             {
+                ExceptionLogService.LogException( $"A message was sent before the message bus was ready: {RockMessage.GetLogString( message )}" );
                 return;
             }
 
             var queue = RockQueue.Get<TQueue>();
-            var endpoint = _transportComponent.GetSendEndpoint( _bus, queue.Name );
+            var queueName = queue.NameForConfiguration;
+            var endpoint = _transportComponent.GetSendEndpoint( _bus, queueName );
+
             await endpoint.Send( message, messageType, context =>
             {
-                context.TimeToLive = TimeSpan.FromSeconds( queue.TimeToLiveSeconds );
+                context.TimeToLive = RockQueue.GetTimeToLive( queue );
             } );
         }
 
@@ -136,7 +146,7 @@ namespace Rock.Bus
         /// </returns>
         private static bool IsReady()
         {
-            return _transportComponent != null && _bus != null;
+            return _isBusStarted && _transportComponent != null && _bus != null;
         }
     }
 }

@@ -70,7 +70,7 @@ namespace Rock.Transactions
         /// </summary>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public override IEnumerable<Message> GetMessages()
+        public override IEnumerable<Message> GetMessagesToSend()
         {
             return SourceEntities?.Select( e => new Message
             {
@@ -86,7 +86,7 @@ namespace Rock.Transactions
         /// <summary>
         /// Message Class
         /// </summary>
-        public sealed class Message : IRockMessage<StartTaskQueue>
+        public sealed class Message : ICommandMessage<StartTaskQueue>
         {
             /// <summary>
             /// Gets or sets the entity type identifier.

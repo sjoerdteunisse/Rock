@@ -35,12 +35,14 @@ namespace Rock.Bus.Consumer
         /// <param name="message">The message.</param>
         public override void Consume( TMessage message )
         {
-            var messageJson = message.ToJson();
-            var queueName = GetQueue().Name;
-            var messageType = typeof( TMessage ).FullName;
+            var logString = RockMessage.GetLogString( message );
             var consumerName = GetType().FullName;
 
-            Debug.WriteLine( $"==================\nConsumer: {consumerName}\nQueue: {queueName}\nMessageType: {messageType}\n{messageJson}" );
+            var expiration = ConsumeContext.ExpirationTime.HasValue ?
+                ConsumeContext.ExpirationTime.Value.ToLocalTime().ToString() :
+                "None";
+
+            Debug.WriteLine( $"==================\nConsumer: {consumerName}\nExpiration: {expiration}\n{logString}" );
         }
     }
 
