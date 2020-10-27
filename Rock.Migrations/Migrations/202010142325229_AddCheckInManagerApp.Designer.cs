@@ -7,13 +7,13 @@ namespace Rock.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.1.3-40302")]
-    public sealed partial class WorkflowActionFormAllowPersonEntry : IMigrationMetadata
+    public sealed partial class AddCheckInManagerApp : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(WorkflowActionFormAllowPersonEntry));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(AddCheckInManagerApp));
         
         string IMigrationMetadata.Id
         {
-            get { return "202010222343277_WorkflowActionFormAllowPersonEntry"; }
+            get { return "202010142325229_AddCheckInManagerApp"; }
         }
         
         string IMigrationMetadata.Source
