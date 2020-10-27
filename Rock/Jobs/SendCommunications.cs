@@ -20,7 +20,8 @@ using System.ComponentModel;
 using System.Data.Entity;
 using System.Diagnostics;
 using System.Linq;
-
+using System.Linq.Dynamic;
+using System.Threading.Tasks;
 using Quartz;
 
 using Rock.Attribute;
@@ -59,7 +60,7 @@ namespace Rock.Jobs
             int expirationDays = dataMap.GetInt( "ExpirationPeriod" );
             int delayMinutes = dataMap.GetInt( "DelayPeriod" );
 
-            IOrderedEnumerable<Model.Communication> sendCommunications = null;
+            List<Model.Communication> sendCommunications = null;
             var stopWatch = Stopwatch.StartNew();
             using ( var rockContext = new RockContext() )
             {
@@ -67,10 +68,11 @@ namespace Rock.Jobs
                     .GetQueued( expirationDays, delayMinutes, false, false )
                     .AsNoTracking()
                     .ToList()
-                    .OrderBy( c => c.Id );
+                    .OrderBy( c => c.Id )
+                    .ToList();
             }
 
-            RockLogger.Log.Information( RockLogDomains.Jobs, "{0}: Queued communication query runtime: {1} ms", nameof(SendCommunications), stopWatch.ElapsedMilliseconds );
+            RockLogger.Log.Information( RockLogDomains.Jobs, "{0}: Queued communication query runtime: {1} ms", nameof( SendCommunications ), stopWatch.ElapsedMilliseconds );
 
             if ( sendCommunications == null )
             {
@@ -80,22 +82,33 @@ namespace Rock.Jobs
             var exceptionMsgs = new List<string>();
             int communicationsSent = 0;
 
-            stopWatch = Stopwatch.StartNew();
-            foreach ( var comm in sendCommunications )
+            var sendCommunicationTasks = new Task[sendCommunications.Count()];
+            for ( var i = 0; i < sendCommunications.Count(); i++ )
             {
-                try
+                var comm = sendCommunications[i];
+                sendCommunicationTasks[i] = Task.Run( () =>
                 {
-                    Rock.Model.Communication.Send( comm );
+                    var communicationStopWatch = Stopwatch.StartNew();
+                    Model.Communication.Send( comm );
+                    RockLogger.Log.Information( RockLogDomains.Jobs, "{0}: Send communications runtime: {1} ms", nameof( SendCommunications ), communicationStopWatch.ElapsedMilliseconds );
+                } );
+            }
+
+            Task.WaitAll( sendCommunicationTasks );
+
+            for ( var i = 0; i < sendCommunicationTasks.Length; i++ )
+            {
+                var task = sendCommunicationTasks[i];
+                if ( task.Exception != null )
+                {
+                    exceptionMsgs.Add( $"Exception occurred sending communication ID:{sendCommunications[i].Id}:{Environment.NewLine}    {task.Exception.Messages().AsDelimited( Environment.NewLine + "   " )}" );
+                    ExceptionLogService.LogException( task.Exception, System.Web.HttpContext.Current );
+                }
+                else
+                {
                     communicationsSent++;
                 }
-
-                catch ( Exception ex )
-                {
-                    exceptionMsgs.Add( string.Format( "Exception occurred sending communication ID:{0}:{1}    {2}", comm.Id, Environment.NewLine, ex.Messages().AsDelimited( Environment.NewLine + "   " ) ) );
-                    ExceptionLogService.LogException( ex, System.Web.HttpContext.Current );
-                }
             }
-            RockLogger.Log.Information( RockLogDomains.Jobs, "{0}: Send communications runtime: {1} ms", nameof( SendCommunications ), stopWatch.ElapsedMilliseconds );
 
             if ( communicationsSent > 0 )
             {
