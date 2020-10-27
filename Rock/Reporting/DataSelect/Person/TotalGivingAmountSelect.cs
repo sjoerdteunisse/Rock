@@ -310,7 +310,7 @@ namespace Rock.Reporting.DataSelect.Person
                 else if ( skipComparison || ComparisonHelper.CompareNumericValues( comparisonType, totalGiving, totalAmountCutoff ) )
                 {
                     // it meets the comparison criteria, so display total amount
-                    e.FormattedValue = totalGiving?.ToString();
+                    e.FormattedValue = totalGiving?.FormatAsCurrency();
                 }
                 else
                 {
