@@ -2789,6 +2789,14 @@ $('#{this.ClientID} .{GRID_SELECT_CELL_CSS_CLASS}').on( 'click', function (event
                 {
                     return ( propValue as IEnumerable<object> ).ToList().AsDelimited( ", " );
                 }
+                else if (int.TryParse(propValue.ToString(), out var intValue ) )
+                {
+                    return intValue;
+                }
+                else if ( decimal.TryParse( propValue.ToString(), out var decimalValue ) )
+                {
+                    return decimalValue;
+                }
                 else
                 {
                     // Is the value a single link field? (such as a PersonLinkSelect field)
