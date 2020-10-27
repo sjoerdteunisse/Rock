@@ -373,7 +373,14 @@ namespace Rock.Web.UI.Controls
 
             Controls.Add( _pnlPersonEntry );
 
-            _pnlPersonEntry.Controls.Add( new Literal { Text = "<h1>Person Entry Configuration</h1>" } );
+            _pnlPersonEntry.Controls.Add( new Literal { Text = "<hr>" } );
+            _pnlPersonEntry.Controls.Add( new Literal { Text = "<legend>Person Entry Configuration</legend>" } );
+
+            _cePersonEntryHeaderText = new CodeEditor
+            {
+                ID = "_cePersonEntryHeaderText",
+                Label = "Person Form Pre-HTML"
+            };
 
             _cbPersonEntryShowCampus = new RockCheckBox
             {
@@ -460,6 +467,12 @@ namespace Rock.Web.UI.Controls
                 Label = "Record Status"
             };
 
+            _dvpPersonEntryAddressType = new DefinedValuePicker
+            {
+                ID = "_dvpPersonEntryAddressType",
+                Label = "Address Type"
+            };
+
             _ddlPersonEntryPersonAttribute = new RockDropDownList
             {
                 ID = "_ddlPersonEntryPersonAttribute",
@@ -481,12 +494,17 @@ namespace Rock.Web.UI.Controls
                 Help = ""
             };
 
-            _pnlWorkflowAttributes = new Panel
+            _cePersonEntryFooterText = new CodeEditor
             {
-                ID = "_pnlWorkflowAttributes",
-                CssClass = "form-group"
+                ID = "_cePersonEntryFooterText",
+                Label = "Person Form Post-HTML"
             };
 
+            /* Person Entry - Header Text*/
+
+            _pnlPersonEntry.Controls.Add( _cePersonEntryHeaderText );
+
+            /* Person Entry - Row 1*/
 
             Panel pnlPersonEntryRow1 = new Panel
             {
@@ -496,53 +514,174 @@ namespace Rock.Web.UI.Controls
 
             Panel pnlPersonEntryRow1Col1 = new Panel
             {
-                ID = "pnlPersonEntryCol1",
+                ID = "pnlPersonEntryRow1Col1",
                 CssClass = "col-xs-3"
             };
 
             Panel pnlPersonEntryRow1Col2 = new Panel
             {
-                ID = "pnlPersonEntryCol2",
+                ID = "pnlPersonEntryRow1Col2",
                 CssClass = "col-xs-3"
             };
 
             Panel pnlPersonEntryRow1Col3 = new Panel
             {
-                ID = "pnlPersonEntryCol3",
+                ID = "pnlPersonEntryRow1Col3",
                 CssClass = "col-xs-3"
             };
 
             Panel pnlPersonEntryRow1Col4 = new Panel
             {
-                ID = "pnlPersonEntryCol4",
+                ID = "pnlPersonEntryRow1Col4",
                 CssClass = "col-xs-3"
             };
 
+            _pnlPersonEntry.Controls.Add( pnlPersonEntryRow1 );
             pnlPersonEntryRow1.Controls.Add( pnlPersonEntryRow1Col1 );
             pnlPersonEntryRow1.Controls.Add( pnlPersonEntryRow1Col2 );
             pnlPersonEntryRow1.Controls.Add( pnlPersonEntryRow1Col3 );
             pnlPersonEntryRow1.Controls.Add( pnlPersonEntryRow1Col4 );
-
-
             pnlPersonEntryRow1Col1.Controls.Add( _cbPersonEntryShowCampus );
-            pnlPersonEntryRow1Col1.Controls.Add( _ddlPersonEntryEmailEntryOption );
-            pnlPersonEntryRow1Col1.Controls.Add( _ddlPersonEntryMaritalStatusEntryOption );
-            pnlPersonEntryRow1Col1.Controls.Add( _dvpPersonEntryAddressType );
-
             pnlPersonEntryRow1Col2.Controls.Add( _cbPersonEntryAutofillCurrentPerson );
-            pnlPersonEntryRow1Col2.Controls.Add( _ddlPersonEntryMobilePhoneEntryOption );
-            pnlPersonEntryRow1Col2.Controls.Add( _tbPersonEntrySpouseLabel );
-
             pnlPersonEntryRow1Col3.Controls.Add( _cbPersonEntryHideIfCurrentPersonKnown );
-            pnlPersonEntryRow1Col3.Controls.Add( _ddlPersonEntryBirthdateEntryOption );
-            pnlPersonEntryRow1Col3.Controls.Add( _dvpPersonEntryConnectionStatus );
-
             pnlPersonEntryRow1Col4.Controls.Add( _ddlPersonEntrySpouseEntryOption );
-            pnlPersonEntryRow1Col4.Controls.Add( _ddlPersonEntryAddressEntryOption );
-            pnlPersonEntryRow1Col4.Controls.Add( _dvpPersonEntryRecordStatus );
+
+            /* Person Entry - Row 2*/
+            Panel pnlPersonEntryRow2 = new Panel
+            {
+                ID = "pnlPersonEntryRow2",
+                CssClass = "row"
+            };
+
+            Panel pnlPersonEntryRow2Col1 = new Panel
+            {
+                ID = "pnlPersonEntryRow2Col1",
+                CssClass = "col-xs-3"
+            };
+
+            Panel pnlPersonEntryRow2Col2 = new Panel
+            {
+                ID = "pnlPersonEntryRow2Col2",
+                CssClass = "col-xs-3"
+            };
+
+            Panel pnlPersonEntryRow2Col3 = new Panel
+            {
+                ID = "pnlPersonEntryRow2Col3",
+                CssClass = "col-xs-3"
+            };
+
+            Panel pnlPersonEntryRow2Col4 = new Panel
+            {
+                ID = "pnlPersonEntryRow2Col4",
+                CssClass = "col-xs-3"
+            };
+
+            _pnlPersonEntry.Controls.Add( pnlPersonEntryRow2 );
+            pnlPersonEntryRow2.Controls.Add( pnlPersonEntryRow2Col1 );
+            pnlPersonEntryRow2.Controls.Add( pnlPersonEntryRow2Col2 );
+            pnlPersonEntryRow2.Controls.Add( pnlPersonEntryRow2Col3 );
+            pnlPersonEntryRow2.Controls.Add( pnlPersonEntryRow2Col4 );
+
+            
+            pnlPersonEntryRow2Col1.Controls.Add( _ddlPersonEntryMaritalStatusEntryOption );
+            
+            
+            pnlPersonEntryRow2Col2.Controls.Add( _tbPersonEntrySpouseLabel );
+            pnlPersonEntryRow2Col3.Controls.Add( _dvpPersonEntryConnectionStatus );
+            pnlPersonEntryRow2Col4.Controls.Add( _ddlPersonEntryAddressEntryOption );
+
+            /* Person Entry - Row 3*/
+            Panel pnlPersonEntryRow3 = new Panel
+            {
+                ID = "pnlPersonEntryRow3",
+                CssClass = "row"
+            };
+
+            Panel pnlPersonEntryRow3Col1 = new Panel
+            {
+                ID = "pnlPersonEntryRow3Col1",
+                CssClass = "col-xs-3"
+            };
+
+            Panel pnlPersonEntryRow3Col2 = new Panel
+            {
+                ID = "pnlPersonEntryRow3Col2",
+                CssClass = "col-xs-3"
+            };
+
+            Panel pnlPersonEntryRow3Col3 = new Panel
+            {
+                ID = "pnlPersonEntryRow3Col3",
+                CssClass = "col-xs-3"
+            };
+
+            Panel pnlPersonEntryRow3Col4 = new Panel
+            {
+                ID = "pnlPersonEntryRow3Col4",
+                CssClass = "col-xs-3"
+            };
+
+            _pnlPersonEntry.Controls.Add( pnlPersonEntryRow3 );
+            pnlPersonEntryRow3.Controls.Add( pnlPersonEntryRow3Col1 );
+            pnlPersonEntryRow3.Controls.Add( pnlPersonEntryRow3Col2 );
+            pnlPersonEntryRow3.Controls.Add( pnlPersonEntryRow3Col3 );
+            pnlPersonEntryRow3.Controls.Add( pnlPersonEntryRow3Col4 );
+
+            pnlPersonEntryRow3Col1.Controls.Add( _ddlPersonEntryEmailEntryOption );
+            pnlPersonEntryRow3Col1.Controls.Add( _dvpPersonEntryAddressType );
+
+            pnlPersonEntryRow3Col2.Controls.Add( _ddlPersonEntryMobilePhoneEntryOption );
+            pnlPersonEntryRow3Col3.Controls.Add( _ddlPersonEntryBirthdateEntryOption );
+            pnlPersonEntryRow3Col4.Controls.Add( _dvpPersonEntryRecordStatus );
+
+            /* Person Entry - Row 3*/
+            Panel pnlPersonEntryRow4 = new Panel
+            {
+                ID = "pnlPersonEntryRow4",
+                CssClass = "row"
+            };
+
+            Panel pnlPersonEntryRow4Col1 = new Panel
+            {
+                ID = "pnlPersonEntryRow4Col1",
+                CssClass = "col-xs-6"
+            };
+
+            Panel pnlPersonEntryRow4Col2 = new Panel
+            {
+                ID = "pnlPersonEntryRow4Col2",
+                CssClass = "col-xs-6"
+            };
+
+            Panel pnlPersonEntryRow4Col3 = new Panel
+            {
+                ID = "pnlPersonEntryRow4Col3",
+                CssClass = "col-xs-6"
+            };
+            
+
+            _pnlPersonEntry.Controls.Add( pnlPersonEntryRow4 );
+            pnlPersonEntryRow4.Controls.Add( pnlPersonEntryRow4Col1 );
+            pnlPersonEntryRow4.Controls.Add( pnlPersonEntryRow4Col2 );
+            pnlPersonEntryRow4.Controls.Add( pnlPersonEntryRow4Col3 );
+            pnlPersonEntryRow4Col1.Controls.Add( _ddlPersonEntryPersonAttribute );
+            pnlPersonEntryRow4Col2.Controls.Add( _ddlPersonEntrySpouseAttribute );
+            pnlPersonEntryRow4Col3.Controls.Add( _ddlPersonEntryFamilyAttribute );
 
 
+            /* Person Entry - Footer Text*/
+            _pnlPersonEntry.Controls.Add( _cePersonEntryFooterText );
 
+            _pnlPersonEntry.Controls.Add( new Literal { Text = "<hr>" } );
+
+
+            /* Workflow Attributes */
+            _pnlWorkflowAttributes = new Panel
+            {
+                ID = "_pnlWorkflowAttributes",
+                CssClass = "form-group"
+            };
 
             this.Controls.Add( _pnlWorkflowAttributes );
         }
