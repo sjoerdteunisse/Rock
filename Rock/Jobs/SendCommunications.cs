@@ -20,7 +20,6 @@ using System.ComponentModel;
 using System.Data.Entity;
 using System.Diagnostics;
 using System.Linq;
-using System.Linq.Dynamic;
 using System.Threading.Tasks;
 using Quartz;
 
@@ -82,16 +81,13 @@ namespace Rock.Jobs
             var exceptionMsgs = new List<string>();
             int communicationsSent = 0;
 
+            stopWatch = Stopwatch.StartNew();
             var sendCommunicationTasks = new Task[sendCommunications.Count()];
+
             for ( var i = 0; i < sendCommunications.Count(); i++ )
             {
                 var comm = sendCommunications[i];
-                sendCommunicationTasks[i] = Task.Run( () =>
-                {
-                    var communicationStopWatch = Stopwatch.StartNew();
-                    Model.Communication.Send( comm );
-                    RockLogger.Log.Information( RockLogDomains.Jobs, "{0}: Send communications runtime: {1} ms", nameof( SendCommunications ), communicationStopWatch.ElapsedMilliseconds );
-                } );
+                sendCommunicationTasks[i] = SendCommunicationAsync( comm );
             }
 
             Task.WaitAll( sendCommunicationTasks );
@@ -109,6 +105,8 @@ namespace Rock.Jobs
                     communicationsSent++;
                 }
             }
+
+            RockLogger.Log.Information( RockLogDomains.Jobs, "{0}: Send communications runtime: {1} ms", nameof( SendCommunications ), stopWatch.ElapsedMilliseconds );
 
             if ( communicationsSent > 0 )
             {
@@ -145,6 +143,13 @@ namespace Rock.Jobs
                 rockContext.BulkUpdate( qryExpiredRecipients, c => new CommunicationRecipient { Status = CommunicationRecipientStatus.Failed, StatusNote = "Communication was not sent before the expire window (possibly due to delayed approval)." } );
             }
             RockLogger.Log.Information( RockLogDomains.Jobs, "{0}: Mark failed communications runtime: {1} ms", nameof( SendCommunications ), stopWatch.ElapsedMilliseconds );
+        }
+
+        private async Task SendCommunicationAsync( Model.Communication comm )
+        {
+            var communicationStopWatch = Stopwatch.StartNew();
+            await Model.Communication.SendAsync( comm );
+            RockLogger.Log.Information( RockLogDomains.Jobs, "{0}: {1} took {2} ms", nameof( SendCommunications ), comm.Name, communicationStopWatch.ElapsedMilliseconds );
         }
     }
 }

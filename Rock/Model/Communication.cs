@@ -24,7 +24,7 @@ using System.Data.Entity.ModelConfiguration;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.Serialization;
-
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 using Rock.Communication;
@@ -967,6 +967,56 @@ namespace Rock.Model
             foreach ( var medium in communication.GetMediums() )
             {
                 medium.Send( communication );
+            }
+
+            using ( var rockContext = new RockContext() )
+            {
+                var dbCommunication = new CommunicationService( rockContext ).Get( communication.Id );
+
+                // Set the SendDateTime of the Communication
+                dbCommunication.SendDateTime = RockDateTime.Now;
+                rockContext.SaveChanges();
+            }
+        }
+
+        /// <summary>
+        /// Sends the specified communication.
+        /// </summary>
+        /// <param name="communication">The communication.</param>
+        public async static Task SendAsync( Rock.Model.Communication communication )
+        {
+            if ( communication == null || communication.Status != CommunicationStatus.Approved )
+            {
+                return;
+            }
+
+            // only alter the Recipient list if it the communication hasn't sent a message to any recipients yet
+            if ( communication.SendDateTime.HasValue == false )
+            {
+                using ( var rockContext = new RockContext() )
+                {
+                    if ( communication.ListGroupId.HasValue )
+                    {
+                        communication.RefreshCommunicationRecipientList( rockContext );
+                    }
+
+                    if ( communication.ExcludeDuplicateRecipientAddress )
+                    {
+                        communication.RemoveRecipientsWithDuplicateAddress( rockContext );
+                    }
+                }
+            }
+
+            var sendTasks = new List<Task>();
+            foreach ( var medium in communication.GetMediums() )
+            {
+                sendTasks.Add(Task.Run(()=> medium.Send( communication ));
+            }
+
+            while(sendTasks.Count > 0 )
+            {
+                var completedTask = await Task.WhenAny( sendTasks );
+                sendTasks.Remove( completedTask );
             }
 
             using ( var rockContext = new RockContext() )
