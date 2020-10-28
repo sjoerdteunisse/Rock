@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // </copyright>
-//
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,7 +47,7 @@ namespace Rock.Web.UI.Controls
 
         private Panel _pnlPersonEntry;
         private CodeEditor _cePersonEntryHeaderText;
-        
+
         private RockCheckBox _cbPersonEntryShowCampus;
         private RockCheckBox _cbPersonEntryAutofillCurrentPerson;
         private RockCheckBox _cbPersonEntryHideIfCurrentPersonKnown;
@@ -115,6 +114,26 @@ namespace Rock.Web.UI.Controls
                 form.AllowNotes = _cbAllowNotesEntry.Checked;
                 form.AllowPersonEntry = _cbAllowPersonEntry.Checked;
 
+                form.PersonEntryPreHtml = _cePersonEntryHeaderText.Text;
+                form.PersonEntryCampusIsVisible = _cbPersonEntryShowCampus.Checked;
+                form.PersonEntryAutofillCurrentPerson = _cbPersonEntryAutofillCurrentPerson.Checked;
+                form.PersonEntrySpouseEntryOption = _ddlPersonEntrySpouseEntryOption.SelectedValueAsEnum<WorkflowActionFormPersonEntryOption>();
+
+                form.PersonEntryEmailEntryOption = _ddlPersonEntryEmailEntryOption.SelectedValueAsEnum<WorkflowActionFormPersonEntryOption>();
+                form.PersonEntryMobilePhoneEntryOption = _ddlPersonEntryMobilePhoneEntryOption.SelectedValueAsEnum<WorkflowActionFormPersonEntryOption>();
+                form.PersonEntryBirthdateEntryOption = _ddlPersonEntryBirthdateEntryOption.SelectedValueAsEnum<WorkflowActionFormPersonEntryOption>();
+                form.PersonEntryAddressEntryOption = _ddlPersonEntryAddressEntryOption.SelectedValueAsEnum<WorkflowActionFormPersonEntryOption>();
+                form.PersonEntryMaritalStatusEntryOption = _ddlPersonEntryMaritalStatusEntryOption.SelectedValueAsEnum<WorkflowActionFormPersonEntryOption>();
+
+                form.PersonEntrySpouseLabel = _tbPersonEntrySpouseLabel.Text;
+                form.PersonEntryConnectionStatusValueId = _dvpPersonEntryConnectionStatus.SelectedDefinedValueId;
+                form.PersonEntryRecordStatusValueId = _dvpPersonEntryRecordStatus.SelectedDefinedValueId;
+                form.PersonEntryAddressTypeValueId = _dvpPersonEntryAddressType.SelectedDefinedValueId;
+
+                form.PersonEntryPersonAttributeGuid = _ddlPersonEntryPersonAttribute.SelectedValueAsGuid();
+                form.PersonEntrySpouseAttributeGuid = _ddlPersonEntrySpouseAttribute.SelectedValueAsGuid();
+                form.PersonEntryFamilyAttributeGuid = _ddlPersonEntryFamilyAttribute.SelectedValueAsGuid();
+
                 foreach ( var row in AttributeRows )
                 {
                     var formAttribute = new WorkflowActionFormAttribute();
@@ -139,6 +158,41 @@ namespace Rock.Web.UI.Controls
         }
 
         /// <summary>
+        /// Copies the editable properties from one workflow form to another
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="target">The target.</param>
+        public static void CopyEditableProperties( WorkflowActionForm source, WorkflowActionForm target )
+        {
+            target.NotificationSystemCommunicationId = source.NotificationSystemCommunicationId;
+            target.IncludeActionsInNotification = source.IncludeActionsInNotification;
+            target.AllowNotes = source.AllowNotes;
+            target.AllowPersonEntry = source.AllowPersonEntry;
+            target.Header = source.Header;
+            target.Footer = source.Footer;
+            target.Actions = source.Actions;
+            target.ActionAttributeGuid = source.ActionAttributeGuid;
+
+            target.AllowPersonEntry = source.AllowPersonEntry;
+            target.PersonEntryPreHtml = source.PersonEntryPreHtml;
+            target.PersonEntryCampusIsVisible = source.PersonEntryCampusIsVisible;
+            target.PersonEntryAutofillCurrentPerson = source.PersonEntryAutofillCurrentPerson;
+            target.PersonEntrySpouseEntryOption = source.PersonEntrySpouseEntryOption;
+            target.PersonEntryEmailEntryOption = source.PersonEntryEmailEntryOption;
+            target.PersonEntryMobilePhoneEntryOption = source.PersonEntryMobilePhoneEntryOption;
+            target.PersonEntryBirthdateEntryOption = source.PersonEntryBirthdateEntryOption;
+            target.PersonEntryAddressEntryOption = source.PersonEntryAddressEntryOption;
+            target.PersonEntryMaritalStatusEntryOption = source.PersonEntryMaritalStatusEntryOption;
+            target.PersonEntrySpouseLabel = source.PersonEntrySpouseLabel;
+            target.PersonEntryConnectionStatusValueId = source.PersonEntryConnectionStatusValueId;
+            target.PersonEntryRecordStatusValueId = source.PersonEntryRecordStatusValueId;
+            target.PersonEntryAddressTypeValueId = source.PersonEntryAddressTypeValueId;
+            target.PersonEntryPersonAttributeGuid = source.PersonEntryPersonAttributeGuid;
+            target.PersonEntrySpouseAttributeGuid = source.PersonEntrySpouseAttributeGuid;
+            target.PersonEntryFamilyAttributeGuid = source.PersonEntryFamilyAttributeGuid;
+        }
+
+        /// <summary>
         /// Sets the form.
         /// </summary>
         /// <param name="workflowActionForm">The workflow action form.</param>
@@ -158,6 +212,7 @@ namespace Rock.Web.UI.Controls
                 _ddlNotificationSystemEmail.SelectedIndex = 0;
                 _cbAllowNotesEntry.Checked = false;
                 _cbAllowPersonEntry.Checked = false;
+                _pnlPersonEntry.Visible = false;
                 return;
             }
 
@@ -169,6 +224,48 @@ namespace Rock.Web.UI.Controls
             _falActions.Value = workflowActionForm.Actions;
             _cbAllowNotesEntry.Checked = workflowActionForm.AllowNotes ?? false;
             _cbAllowPersonEntry.Checked = workflowActionForm.AllowPersonEntry;
+            _pnlPersonEntry.Visible = workflowActionForm.AllowPersonEntry;
+
+            _cePersonEntryHeaderText.Text = workflowActionForm.PersonEntryPreHtml;
+            _cbPersonEntryShowCampus.Checked = workflowActionForm.PersonEntryCampusIsVisible;
+            _cbPersonEntryAutofillCurrentPerson.Checked = workflowActionForm.PersonEntryAutofillCurrentPerson;
+            _ddlPersonEntrySpouseEntryOption.SetValue( ( int ) workflowActionForm.PersonEntrySpouseEntryOption );
+            _ddlPersonEntryEmailEntryOption.SetValue( ( int ) workflowActionForm.PersonEntryEmailEntryOption );
+            _ddlPersonEntryMobilePhoneEntryOption.SetValue( ( int ) workflowActionForm.PersonEntryMobilePhoneEntryOption );
+            _ddlPersonEntryBirthdateEntryOption.SetValue( ( int ) workflowActionForm.PersonEntryBirthdateEntryOption );
+            _ddlPersonEntryAddressEntryOption.SetValue( ( int ) workflowActionForm.PersonEntryAddressEntryOption );
+            _ddlPersonEntryMaritalStatusEntryOption.SetValue( ( int ) workflowActionForm.PersonEntryMaritalStatusEntryOption );
+
+            _tbPersonEntrySpouseLabel.Text = workflowActionForm.PersonEntrySpouseLabel;
+            _dvpPersonEntryConnectionStatus.SetValue( workflowActionForm.PersonEntryConnectionStatusValueId );
+            _dvpPersonEntryRecordStatus.SetValue( workflowActionForm.PersonEntryRecordStatusValueId );
+            _dvpPersonEntryAddressType.SetValue( workflowActionForm.PersonEntryAddressTypeValueId );
+
+            _ddlPersonEntryPersonAttribute.Items.Clear();
+            _ddlPersonEntryPersonAttribute.Items.Add( new ListItem() );
+            _ddlPersonEntrySpouseAttribute.Items.Clear();
+            _ddlPersonEntrySpouseAttribute.Items.Add( new ListItem() );
+            _ddlPersonEntryFamilyAttribute.Items.Clear();
+            _ddlPersonEntryFamilyAttribute.Items.Add( new ListItem() );
+
+            foreach ( var attributeItem in workflowTypeAttributes )
+            {
+                var fieldType = FieldTypeCache.Get( attributeItem.Value.FieldTypeId );
+                if ( fieldType?.Field is Rock.Field.Types.GroupFieldType )
+                {
+                    _ddlPersonEntryFamilyAttribute.Items.Add( new ListItem( attributeItem.Value.Name, attributeItem.Key.ToString() ) );
+                }
+
+                if ( fieldType?.Field is Rock.Field.Types.PersonFieldType )
+                {
+                    _ddlPersonEntryPersonAttribute.Items.Add( new ListItem( attributeItem.Value.Name, attributeItem.Key.ToString() ) );
+                    _ddlPersonEntrySpouseAttribute.Items.Add( new ListItem( attributeItem.Value.Name, attributeItem.Key.ToString() ) );
+                }
+            }
+
+            _ddlPersonEntryPersonAttribute.SetValue( workflowActionForm.PersonEntryPersonAttributeGuid );
+            _ddlPersonEntrySpouseAttribute.SetValue( workflowActionForm.PersonEntrySpouseAttributeGuid );
+            _ddlPersonEntryFamilyAttribute.SetValue( workflowActionForm.PersonEntryFamilyAttributeGuid );
 
             // Remove any existing rows (shouldn't be any)
             foreach ( var attributeRow in Controls.OfType<WorkflowFormAttributeRow>() )
@@ -261,8 +358,11 @@ namespace Rock.Web.UI.Controls
         {
             Controls.Clear();
 
-            _hfFormGuid = new HiddenField();
-            _hfFormGuid.ID = "_hfFormGuid";
+            _hfFormGuid = new HiddenField
+            {
+                ID = "_hfFormGuid"
+            };
+
             Controls.Add( _hfFormGuid );
 
             _ddlNotificationSystemEmail = new RockDropDownList
@@ -361,14 +461,18 @@ namespace Rock.Web.UI.Controls
                 Label = "Enable Person Entry",
                 Text = "Yes",
                 Help = "If enabled, the form will prompt to add a new person.",
-                ID = "_cbAllowPersonEntry",
+                ID = "_cbAllowPersonEntry"
             };
+
+            _cbAllowPersonEntry.AutoPostBack = true;
+            _cbAllowPersonEntry.CheckedChanged += _cbAllowPersonEntry_CheckedChanged;
 
             Controls.Add( _cbAllowPersonEntry );
 
             _pnlPersonEntry = new Panel
             {
-                ID = "_pnlPersonEntry"
+                ID = "_pnlPersonEntry",
+                Visible = false
             };
 
             Controls.Add( _pnlPersonEntry );
@@ -405,7 +509,6 @@ namespace Rock.Web.UI.Controls
                 ID = "_ddlPersonEntrySpouseEntryOption",
                 Label = "Spouse Entry"
             };
-            
 
             _ddlPersonEntrySpouseEntryOption.BindToEnum<WorkflowActionFormPersonEntryOption>();
 
@@ -458,40 +561,44 @@ namespace Rock.Web.UI.Controls
             _dvpPersonEntryConnectionStatus = new DefinedValuePicker
             {
                 ID = "_dvpPersonEntryConnectionStatus",
-                Label = "Connection Status"
+                Label = "Connection Status",
+                DefinedTypeId = DefinedTypeCache.GetId( Rock.SystemGuid.DefinedType.PERSON_CONNECTION_STATUS.AsGuid() )
             };
 
             _dvpPersonEntryRecordStatus = new DefinedValuePicker
             {
                 ID = "_dvpPersonEntryRecordStatus",
-                Label = "Record Status"
+                Label = "Record Status",
+                DefinedTypeId = DefinedTypeCache.GetId( Rock.SystemGuid.DefinedType.PERSON_RECORD_STATUS.AsGuid() )
             };
 
             _dvpPersonEntryAddressType = new DefinedValuePicker
             {
                 ID = "_dvpPersonEntryAddressType",
-                Label = "Address Type"
+                Label = "Address Type",
+                DefinedTypeId = DefinedTypeCache.GetId( Rock.SystemGuid.DefinedType.GROUP_LOCATION_TYPE.AsGuid() )
             };
 
             _ddlPersonEntryPersonAttribute = new RockDropDownList
             {
                 ID = "_ddlPersonEntryPersonAttribute",
                 Label = "Person Attribute",
-                Help = ""
+                Required = true,
+                Help = "Workflow attribute for entered person"
             };
 
             _ddlPersonEntrySpouseAttribute = new RockDropDownList
             {
                 ID = "_ddlPersonEntrySpouseAttribute",
                 Label = "Spouse Attribute",
-                Help = ""
+                Help = "Workflow attribute for entered person's spouse"
             };
 
             _ddlPersonEntryFamilyAttribute = new RockDropDownList
             {
                 ID = "_ddlPersonEntryFamilyAttribute",
                 Label = "Family Attribute",
-                Help = ""
+                Help = "Workflow attribute for entered person's family"
             };
 
             _cePersonEntryFooterText = new CodeEditor
@@ -505,7 +612,6 @@ namespace Rock.Web.UI.Controls
             _pnlPersonEntry.Controls.Add( _cePersonEntryHeaderText );
 
             /* Person Entry - Row 1*/
-
             Panel pnlPersonEntryRow1 = new Panel
             {
                 ID = "pnlPersonEntryRow1",
@@ -583,10 +689,7 @@ namespace Rock.Web.UI.Controls
             pnlPersonEntryRow2.Controls.Add( pnlPersonEntryRow2Col3 );
             pnlPersonEntryRow2.Controls.Add( pnlPersonEntryRow2Col4 );
 
-            
             pnlPersonEntryRow2Col1.Controls.Add( _ddlPersonEntryMaritalStatusEntryOption );
-            
-            
             pnlPersonEntryRow2Col2.Controls.Add( _tbPersonEntrySpouseLabel );
             pnlPersonEntryRow2Col3.Controls.Add( _dvpPersonEntryConnectionStatus );
             pnlPersonEntryRow2Col4.Controls.Add( _ddlPersonEntryAddressEntryOption );
@@ -629,13 +732,11 @@ namespace Rock.Web.UI.Controls
             pnlPersonEntryRow3.Controls.Add( pnlPersonEntryRow3Col4 );
 
             pnlPersonEntryRow3Col1.Controls.Add( _ddlPersonEntryEmailEntryOption );
-            pnlPersonEntryRow3Col1.Controls.Add( _dvpPersonEntryAddressType );
-
             pnlPersonEntryRow3Col2.Controls.Add( _ddlPersonEntryMobilePhoneEntryOption );
             pnlPersonEntryRow3Col3.Controls.Add( _ddlPersonEntryBirthdateEntryOption );
             pnlPersonEntryRow3Col4.Controls.Add( _dvpPersonEntryRecordStatus );
 
-            /* Person Entry - Row 3*/
+            /* Person Entry - Row 4*/
             Panel pnlPersonEntryRow4 = new Panel
             {
                 ID = "pnlPersonEntryRow4",
@@ -645,36 +746,72 @@ namespace Rock.Web.UI.Controls
             Panel pnlPersonEntryRow4Col1 = new Panel
             {
                 ID = "pnlPersonEntryRow4Col1",
-                CssClass = "col-xs-6"
+                CssClass = "col-xs-3"
             };
 
             Panel pnlPersonEntryRow4Col2 = new Panel
             {
                 ID = "pnlPersonEntryRow4Col2",
-                CssClass = "col-xs-6"
+                CssClass = "col-xs-3"
             };
 
             Panel pnlPersonEntryRow4Col3 = new Panel
             {
                 ID = "pnlPersonEntryRow4Col3",
-                CssClass = "col-xs-6"
+                CssClass = "col-xs-3"
             };
-            
+
+            Panel pnlPersonEntryRow4Col4 = new Panel
+            {
+                ID = "pnlPersonEntryRow4Col4",
+                CssClass = "col-xs-3"
+            };
 
             _pnlPersonEntry.Controls.Add( pnlPersonEntryRow4 );
             pnlPersonEntryRow4.Controls.Add( pnlPersonEntryRow4Col1 );
             pnlPersonEntryRow4.Controls.Add( pnlPersonEntryRow4Col2 );
             pnlPersonEntryRow4.Controls.Add( pnlPersonEntryRow4Col3 );
-            pnlPersonEntryRow4Col1.Controls.Add( _ddlPersonEntryPersonAttribute );
-            pnlPersonEntryRow4Col2.Controls.Add( _ddlPersonEntrySpouseAttribute );
-            pnlPersonEntryRow4Col3.Controls.Add( _ddlPersonEntryFamilyAttribute );
+            pnlPersonEntryRow4.Controls.Add( pnlPersonEntryRow4Col4 );
 
+            pnlPersonEntryRow4Col1.Controls.Add( _dvpPersonEntryAddressType );
+
+            /* Person Entry - Row 5*/
+            Panel pnlPersonEntryRow5 = new Panel
+            {
+                ID = "pnlPersonEntryRow5",
+                CssClass = "row"
+            };
+
+            Panel pnlPersonEntryRow5Col1 = new Panel
+            {
+                ID = "pnlPersonEntryRow5Col1",
+                CssClass = "col-xs-6"
+            };
+
+            Panel pnlPersonEntryRow5Col2 = new Panel
+            {
+                ID = "pnlPersonEntryRow5Col2",
+                CssClass = "col-xs-6"
+            };
+
+            Panel pnlPersonEntryRow5Col3 = new Panel
+            {
+                ID = "pnlPersonEntryRow5Col3",
+                CssClass = "col-xs-6"
+            };
+
+            _pnlPersonEntry.Controls.Add( pnlPersonEntryRow5 );
+            pnlPersonEntryRow5.Controls.Add( pnlPersonEntryRow5Col1 );
+            pnlPersonEntryRow5.Controls.Add( pnlPersonEntryRow5Col2 );
+            pnlPersonEntryRow5.Controls.Add( pnlPersonEntryRow5Col3 );
+            pnlPersonEntryRow5Col1.Controls.Add( _ddlPersonEntryPersonAttribute );
+            pnlPersonEntryRow5Col2.Controls.Add( _ddlPersonEntrySpouseAttribute );
+            pnlPersonEntryRow5Col3.Controls.Add( _ddlPersonEntryFamilyAttribute );
 
             /* Person Entry - Footer Text*/
             _pnlPersonEntry.Controls.Add( _cePersonEntryFooterText );
 
             _pnlPersonEntry.Controls.Add( new Literal { Text = "<hr>" } );
-
 
             /* Workflow Attributes */
             _pnlWorkflowAttributes = new Panel
@@ -684,6 +821,16 @@ namespace Rock.Web.UI.Controls
             };
 
             this.Controls.Add( _pnlWorkflowAttributes );
+        }
+
+        /// <summary>
+        /// Handles the CheckedChanged event of the _cbAllowPersonEntry control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        private void _cbAllowPersonEntry_CheckedChanged( object sender, EventArgs e )
+        {
+            _pnlPersonEntry.Visible = _cbAllowPersonEntry.Checked;
         }
 
         /// <summary>
@@ -829,7 +976,7 @@ namespace Rock.Web.UI.Controls
                 writer.RenderEndTag();      // th
 
                 writer.RenderEndTag();      // tr
-                writer.RenderEndTag();      // thead
+                writer.RenderEndTag();      // THead
 
                 writer.AddAttribute( HtmlTextWriterAttribute.Class, "workflow-formfield-list" );
                 writer.RenderBeginTag( HtmlTextWriterTag.Tbody );
@@ -839,7 +986,7 @@ namespace Rock.Web.UI.Controls
                     row.RenderControl( writer );
                 }
 
-                writer.RenderEndTag();      // tbody
+                writer.RenderEndTag();      // TBody
 
                 writer.RenderEndTag();      // table
 

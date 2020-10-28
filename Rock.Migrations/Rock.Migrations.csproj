@@ -197,6 +197,10 @@
     <Compile Include="Migrations\202010271845214_WorkflowActionFormAllowPersonEntry.Designer.cs">
       <DependentUpon>202010271845214_WorkflowActionFormAllowPersonEntry.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202010272358072_WorkflowActionFormAllowPersonEntry2.cs" />
+    <Compile Include="Migrations\202010272358072_WorkflowActionFormAllowPersonEntry2.Designer.cs">
+      <DependentUpon>202010272358072_WorkflowActionFormAllowPersonEntry2.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Version 11.0\Version 1.11.0\202006231558281_PrayerRequestWorkflowAction.cs" />
     <Compile Include="Migrations\Version 11.0\Version 1.11.0\202006231558281_PrayerRequestWorkflowAction.Designer.cs">
       <DependentUpon>202006231558281_PrayerRequestWorkflowAction.cs</DependentUpon>
@@ -1544,6 +1548,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202010271845214_WorkflowActionFormAllowPersonEntry.resx">
       <DependentUpon>202010271845214_WorkflowActionFormAllowPersonEntry.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202010272358072_WorkflowActionFormAllowPersonEntry2.resx">
+      <DependentUpon>202010272358072_WorkflowActionFormAllowPersonEntry2.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\Version 11.0\Version 1.11.0\202006231558281_PrayerRequestWorkflowAction.resx">
       <DependentUpon>202006231558281_PrayerRequestWorkflowAction.cs</DependentUpon>

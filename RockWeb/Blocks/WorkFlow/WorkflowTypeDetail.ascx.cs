@@ -163,7 +163,7 @@ This {{ Workflow.WorkflowType.WorkTerm }} does not currently require your attent
         {
             base.OnInit( e );
 
-            DebugHelper.SQLLoggingStart();
+            //DebugHelper.SQLLoggingStart();
 
             // assign attributes grid actions
             gAttributes.AddCssClass( "attribute-grid" );
@@ -183,7 +183,7 @@ This {{ Workflow.WorkflowType.WorkTerm }} does not currently require your attent
         protected override void OnUnload( EventArgs e )
         {
             base.OnUnload( e );
-            DebugHelper.SQLLoggingStop();
+            //DebugHelper.SQLLoggingStop();
         }
 
         /// <summary>
@@ -805,14 +805,7 @@ This {{ Workflow.WorkflowType.WorkTerm }} does not currently require your attent
                             workflowActionType.WorkflowForm = new WorkflowActionForm();
                         }
 
-                        workflowActionType.WorkflowForm.NotificationSystemCommunicationId = editorWorkflowActionType.WorkflowForm.NotificationSystemCommunicationId;
-                        workflowActionType.WorkflowForm.IncludeActionsInNotification = editorWorkflowActionType.WorkflowForm.IncludeActionsInNotification;
-                        workflowActionType.WorkflowForm.AllowNotes = editorWorkflowActionType.WorkflowForm.AllowNotes;
-                        workflowActionType.WorkflowForm.AllowPersonEntry = editorWorkflowActionType.WorkflowForm.AllowPersonEntry;
-                        workflowActionType.WorkflowForm.Header = editorWorkflowActionType.WorkflowForm.Header;
-                        workflowActionType.WorkflowForm.Footer = editorWorkflowActionType.WorkflowForm.Footer;
-                        workflowActionType.WorkflowForm.Actions = editorWorkflowActionType.WorkflowForm.Actions;
-                        workflowActionType.WorkflowForm.ActionAttributeGuid = editorWorkflowActionType.WorkflowForm.ActionAttributeGuid;
+                        WorkflowFormEditor.CopyEditableProperties( editorWorkflowActionType.WorkflowForm, workflowActionType.WorkflowForm );
 
                         var editorGuids = editorWorkflowActionType.WorkflowForm.FormAttributes
                             .Select( a => a.Attribute.Guid )

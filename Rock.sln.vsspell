@@ -34,6 +34,10 @@
     <Ignore>readonly</Ignore>
     <Ignore>texting</Ignore>
     <Ignore>workflow</Ignore>
+    <Ignore>Autofill</Ignore>
+    <Ignore>Pre-HTML</Ignore>
+    <Ignore>formfield</Ignore>
+    <Ignore>columncommand</Ignore>
   </IgnoredWords>
   <IgnoredFilePatterns>
     <FilePattern>*.Designer.cs</FilePattern>
@@ -45,5 +49,6 @@
     <Expression Match="col-.*-\d*" />
     <Expression Match="fa fa-.*" />
     <Expression Match="input-width-.*" />
+    <Expression Match="table table-.*" />
   </ExclusionExpressions>
 </SpellCheckerConfiguration>

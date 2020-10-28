@@ -267,31 +267,31 @@ namespace Rock.Model
         public int? PersonEntryAddressTypeValueId { get; set; }
 
         /// <summary>
-        /// Gets or sets the person entry person attribute identifier.
+        /// Gets or sets the person entry person attribute unique identifier.
         /// </summary>
         /// <value>
-        /// The person entry person attribute identifier.
+        /// The person entry person attribute unique identifier.
         /// </value>
         [DataMember]
-        public int? PersonEntryPersonAttributeId { get; set; }
+        public Guid? PersonEntryPersonAttributeGuid { get; set; }
 
         /// <summary>
-        /// Gets or sets the person entry spouse attribute identifier.
+        /// Gets or sets the person entry spouse attribute unique identifier.
         /// </summary>
         /// <value>
-        /// The person entry spouse attribute identifier.
+        /// The person entry spouse attribute unique identifier.
         /// </value>
         [DataMember]
-        public int? PersonEntrySpouseAttributeId { get; set; }
+        public Guid? PersonEntrySpouseAttributeGuid { get; set; }
 
         /// <summary>
-        /// Gets or sets the person entry family attribute identifier.
+        /// Gets or sets the person entry family attribute unique identifier.
         /// </summary>
         /// <value>
-        /// The person entry family attribute identifier.
+        /// The person entry family attribute unique identifier.
         /// </value>
         [DataMember]
-        public int? PersonEntryFamilyAttributeId { get; set; }
+        public Guid? PersonEntryFamilyAttributeGuid { get; set; }
 
         #endregion Person entry related Entity Properties
 
@@ -358,33 +358,6 @@ namespace Rock.Model
         /// </value>
         [DataMember]
         public DefinedValue PersonEntryAddressTypeValue { get; set; }
-
-        /// <summary>
-        /// Gets or sets the person entry person attribute identifier.
-        /// </summary>
-        /// <value>
-        /// The person entry person attribute identifier.
-        /// </value>
-        [DataMember]
-        public Attribute PersonEntryPersonAttribute { get; set; }
-
-        /// <summary>
-        /// Gets or sets the person entry spouse attribute identifier.
-        /// </summary>
-        /// <value>
-        /// The person entry spouse attribute identifier.
-        /// </value>
-        [DataMember]
-        public Attribute PersonEntrySpouseAttribute { get; set; }
-
-        /// <summary>
-        /// Gets or sets the person entry family attribute identifier.
-        /// </summary>
-        /// <value>
-        /// The person entry family attribute identifier.
-        /// </value>
-        [DataMember]
-        public Attribute PersonEntryFamilyAttribute { get; set; }
 
         #endregion Virtual Properties
 
@@ -558,10 +531,6 @@ namespace Rock.Model
             this.HasOptional( f => f.PersonEntryConnectionStatusValue ).WithMany().HasForeignKey( f => f.PersonEntryConnectionStatusValueId ).WillCascadeOnDelete( false );
             this.HasOptional( f => f.PersonEntryRecordStatusValue ).WithMany().HasForeignKey( f => f.PersonEntryRecordStatusValueId ).WillCascadeOnDelete( false );
             this.HasOptional( f => f.PersonEntryAddressTypeValue ).WithMany().HasForeignKey( f => f.PersonEntryAddressTypeValueId ).WillCascadeOnDelete( false );
-
-            this.HasOptional( f => f.PersonEntryPersonAttribute ).WithMany().HasForeignKey( f => f.PersonEntryPersonAttributeId ).WillCascadeOnDelete( false );
-            this.HasOptional( f => f.PersonEntrySpouseAttribute ).WithMany().HasForeignKey( f => f.PersonEntrySpouseAttributeId ).WillCascadeOnDelete( false );
-            this.HasOptional( f => f.PersonEntryFamilyAttribute ).WithMany().HasForeignKey( f => f.PersonEntryFamilyAttributeId ).WillCascadeOnDelete( false );
         }
     }
 
