@@ -125,7 +125,7 @@ namespace Rock.Model
         ///   <c>true</c> if [allow person entry]; otherwise, <c>false</c>.
         /// </value>
         [DataMember]
-        public bool AllowPersonEntry { get; set; }
+        public bool AllowPersonEntry { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the person entry preHTML.
@@ -152,7 +152,7 @@ namespace Rock.Model
         ///   <c>true</c> if [person entry show campus]; otherwise, <c>false</c>.
         /// </value>
         [DataMember]
-        public bool PersonEntryCampusIsVisible { get; set; }
+        public bool PersonEntryCampusIsVisible { get; set; } = true;
 
         /// <summary>
         /// Gets or sets a value indicating whether Person Entry should auto-fill with the CurrentPerson
@@ -161,7 +161,7 @@ namespace Rock.Model
         ///   <c>true</c> if [person entry auto-fill current person]; otherwise, <c>false</c>.
         /// </value>
         [DataMember]
-        public bool PersonEntryAutofillCurrentPerson { get; set; }
+        public bool PersonEntryAutofillCurrentPerson { get; set; } = true;
 
         /// <summary>
         /// Gets or sets a value indicating whether Person Entry should be hidden if the CurrentPerson is known
@@ -170,7 +170,7 @@ namespace Rock.Model
         ///   <c>true</c> if [person entry hide if current person known]; otherwise, <c>false</c>.
         /// </value>
         [DataMember]
-        public bool PersonEntryHideIfCurrentPersonKnown { get; set; }
+        public bool PersonEntryHideIfCurrentPersonKnown { get; set; } = true;
 
         /// <summary>
         /// Gets or sets the person entry spouse entry option.
@@ -267,7 +267,7 @@ namespace Rock.Model
         public int? PersonEntryAddressTypeValueId { get; set; }
 
         /// <summary>
-        /// Gets or sets the person entry person attribute unique identifier.
+        /// Gets or sets the person entry person workflow attribute unique identifier. (The one used to set the Added/Edited Person to)
         /// </summary>
         /// <value>
         /// The person entry person attribute unique identifier.
@@ -276,7 +276,7 @@ namespace Rock.Model
         public Guid? PersonEntryPersonAttributeGuid { get; set; }
 
         /// <summary>
-        /// Gets or sets the person entry spouse attribute unique identifier.
+        /// Gets or sets the person entry spouse workflow attribute unique identifier.  (The one used to set the Added/Edited Person's Spouse to)
         /// </summary>
         /// <value>
         /// The person entry spouse attribute unique identifier.
@@ -285,7 +285,7 @@ namespace Rock.Model
         public Guid? PersonEntrySpouseAttributeGuid { get; set; }
 
         /// <summary>
-        /// Gets or sets the person entry family attribute unique identifier.
+        /// Gets or sets the person entry family attribute unique identifier. (The one used to set the Added/Edited Person's Family to)
         /// </summary>
         /// <value>
         /// The person entry family attribute unique identifier.
