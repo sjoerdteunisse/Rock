@@ -295,6 +295,7 @@ namespace Rock.Web.UI.Controls
             target.PersonEntryPostHtml = source.PersonEntryPostHtml;
             target.PersonEntryCampusIsVisible = source.PersonEntryCampusIsVisible;
             target.PersonEntryAutofillCurrentPerson = source.PersonEntryAutofillCurrentPerson;
+            target.PersonEntryHideIfCurrentPersonKnown = source.PersonEntryHideIfCurrentPersonKnown;
             target.PersonEntrySpouseEntryOption = source.PersonEntrySpouseEntryOption;
             target.PersonEntryEmailEntryOption = source.PersonEntryEmailEntryOption;
             target.PersonEntryMobilePhoneEntryOption = source.PersonEntryMobilePhoneEntryOption;

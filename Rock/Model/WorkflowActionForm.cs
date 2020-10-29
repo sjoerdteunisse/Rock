@@ -339,7 +339,7 @@ namespace Rock.Model
         /// The person entry connection status value
         /// </value>
         [DataMember]
-        public DefinedValue PersonEntryConnectionStatusValue { get; set; }
+        public virtual DefinedValue PersonEntryConnectionStatusValue { get; set; }
 
         /// <summary>
         /// Gets or sets the person entry record status value identifier.
@@ -348,7 +348,7 @@ namespace Rock.Model
         /// The person entry record status value identifier.
         /// </value>
         [DataMember]
-        public DefinedValue PersonEntryRecordStatusValue { get; set; }
+        public virtual DefinedValue PersonEntryRecordStatusValue { get; set; }
 
         /// <summary>
         /// Gets or sets the person entry address type value identifier.
@@ -357,7 +357,7 @@ namespace Rock.Model
         /// The person entry address type value identifier.
         /// </value>
         [DataMember]
-        public DefinedValue PersonEntryAddressTypeValue { get; set; }
+        public virtual DefinedValue PersonEntryAddressTypeValue { get; set; }
 
         #endregion Virtual Properties
 
